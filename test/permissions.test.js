@@ -12,7 +12,7 @@ test('can() funziona con Set e array, e nega se non ci sono permessi', () => {
 })
 
 test('la barra in basso ha 5 posti, con Home al centro', () => {
-  const ids = bottomNavFor(new Set([PERM.ISSUES_VIEW, PERM.PLANNING_WORK_VIEW])).map((i) => i.id)
+  const ids = bottomNavFor(new Set([PERM.ISSUES_VIEW, PERM.PLANNING_WORK_VIEW, PERM.URGENT_VIEW])).map((i) => i.id)
   assert.deepEqual(ids, ['operations', 'planning', 'home', 'task', 'more'])
   assert.equal(ids.indexOf('home'), 2)
   assert.equal(BOTTOM_SLOTS.find((i) => i.center).id, 'home')
@@ -33,7 +33,7 @@ test('con RandAI acceso il quinto posto è RandAI', () => {
 
 test('senza permesso di vedere le segnalazioni spariscono Operatività e Home', () => {
   const ids = bottomNavFor(new Set()).map((i) => i.id)
-  assert.deepEqual(ids, ['task', 'more'])
+  assert.deepEqual(ids, ['more'])
 })
 
 test('Planning compare con almeno uno dei due permessi planning', () => {
@@ -43,6 +43,13 @@ test('Planning compare con almeno uno dei due permessi planning', () => {
   assert.ok(!ids([PERM.ISSUES_VIEW]).includes('planning'))
   assert.equal(allowed(new Set(), null), true)
   assert.equal(allowed(new Set(), [PERM.PLANNING_WORK_VIEW]), false)
+})
+
+test('Task compare con almeno uno dei due permessi task', () => {
+  const ids = (perms) => bottomNavFor(new Set(perms)).map((i) => i.id)
+  assert.ok(ids([PERM.URGENT_VIEW]).includes('task'))
+  assert.ok(ids([PERM.REMINDERS_VIEW]).includes('task'))
+  assert.ok(!ids([PERM.ISSUES_VIEW]).includes('task'))
 })
 
 test('Operatività resta accesa anche dentro le segnalazioni', () => {

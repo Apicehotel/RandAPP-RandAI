@@ -16,6 +16,12 @@ export const PERM = {
   PLANNING_SALE_VIEW: 'planning_sale.view',
   PLANNING_SALE_CREATE: 'planning_sale.create',
   PLANNING_SALE_UPDATE: 'planning_sale.update',
+  URGENT_VIEW: 'urgent.view',
+  URGENT_CREATE: 'urgent.create',
+  URGENT_UPDATE: 'urgent.update',
+  REMINDERS_VIEW: 'reminders.view',
+  REMINDERS_CREATE: 'reminders.create',
+  REMINDERS_UPDATE: 'reminders.update',
   ADMIN: 'admin.access',
 }
 
@@ -30,6 +36,7 @@ export const allowed = (permissions, perm) =>
   (Array.isArray(perm) ? perm.some((k) => can(permissions, k)) : can(permissions, perm))
 
 export const PLANNING_ANY = [PERM.PLANNING_WORK_VIEW, PERM.PLANNING_SALE_VIEW]
+export const TASK_ANY = [PERM.URGENT_VIEW, PERM.REMINDERS_VIEW]
 
 export const ROLE_LABELS = {
   admin: 'Admin',
@@ -44,13 +51,13 @@ export const roleLabel = (role) => ROLE_LABELS[role] || role || ''
 
 // Barra in basso: 5 posti fissi come nella vecchia app.
 //   1 Operatività · 2 Planning · 3 Home (al centro) · 4 Task · 5 RandAI oppure "Altro".
-// "perm" è il permesso necessario; null = visibile a tutti (Planning e Task non hanno ancora un permesso nel database).
+// "perm" è il permesso necessario (o un elenco: ne basta uno); null = visibile a tutti.
 // "match" sono i percorsi che tengono acceso il pulsante.
 export const BOTTOM_SLOTS = [
   { id: 'operations', label: 'Operatività', path: '/operations', icon: 'list', perm: PERM.ISSUES_VIEW, match: ['/operations', '/issues', '/interventions'] },
   { id: 'planning', label: 'Planning', path: '/planning', icon: 'calendar', perm: PLANNING_ANY, match: ['/planning'] },
   { id: 'home', label: 'Home', path: '/home', icon: 'home', perm: PERM.ISSUES_VIEW, match: ['/home'], center: true },
-  { id: 'task', label: 'Task', path: '/task', icon: 'check', perm: null, match: ['/task'] },
+  { id: 'task', label: 'Task', path: '/task', icon: 'check', perm: TASK_ANY, match: ['/task'] },
 ]
 
 const RANDAI_SLOT = { id: 'randai', label: 'RandAI', path: '/randai', icon: 'sparkles', match: ['/randai'] }
@@ -86,7 +93,7 @@ export function menuGroupsFor(permissions) {
         { id: 'interventions', label: 'Interventi', path: '/interventions', icon: 'wrench', perm: PERM.INTERVENTIONS_VIEW },
         { id: 'new-intervention', label: 'Nuovo intervento', path: '/interventions/new', icon: 'plus', perm: PERM.INTERVENTIONS_CREATE },
         { id: 'planning', label: 'Planning', path: '/planning', icon: 'calendar', perm: PLANNING_ANY },
-        { id: 'task', label: 'Task', path: '/task', icon: 'check', perm: null },
+        { id: 'task', label: 'Task', path: '/task', icon: 'check', perm: TASK_ANY },
       ],
     },
     {

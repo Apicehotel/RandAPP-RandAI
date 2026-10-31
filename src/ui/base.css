@@ -150,10 +150,10 @@ button { cursor: pointer; }
   display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 999px;
   font-size: 0.75rem; font-weight: 650; background: var(--surface-2); color: var(--text-2);
 }
-.badge.urgente { background: color-mix(in srgb, var(--danger) 18%, transparent); color: var(--danger); }
-.badge.in_corso { background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--accent); }
+.badge.urgente, .badge.aperto { background: color-mix(in srgb, var(--danger) 18%, transparent); color: var(--danger); }
+.badge.in_corso, .badge.in_carico { background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--accent); }
 .badge.alta { background: color-mix(in srgb, var(--warn) 20%, transparent); color: var(--warn); }
-.badge.fatto, .badge.completata { background: color-mix(in srgb, var(--ok) 18%, transparent); color: var(--ok); }
+.badge.fatto, .badge.completata, .badge.risolto { background: color-mix(in srgb, var(--ok) 18%, transparent); color: var(--ok); }
 
 .chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
 .chip {
@@ -189,8 +189,6 @@ button { cursor: pointer; }
 .weeknav { justify-content: center; gap: 8px; }
 .chips.wrap { flex-wrap: wrap; overflow-x: visible; }
 .field-label { font-size: 0.85rem; color: var(--text-2); }
-.soon { text-align: center; display: grid; gap: 8px; padding: 28px 16px; }
-.soon .icon { width: 56px; height: 56px; border-radius: 16px; display: grid; place-items: center; margin: 0 auto 4px; background: var(--surface-2); color: var(--text-2); }
 
 .error { color: var(--danger); font-size: 0.9rem; }
 .center { min-height: 100dvh; display: grid; place-items: center; padding: 24px; }

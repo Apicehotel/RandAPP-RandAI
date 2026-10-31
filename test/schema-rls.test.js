@@ -62,3 +62,14 @@ test('planning: hotel_id obbligatorio, 3 policy con has_permission ciascuna, nie
     assert.doesNotMatch(sql, new RegExp(`grant[^;]*delete[^;]*on[^;]*public\\.${table}`, 'i'))
   }
 })
+
+test('task: hotel_id obbligatorio, 3 policy con has_permission ciascuna, niente delete', () => {
+  for (const [table, prefix] of [['urgent_alerts', 'urgent'], ['reminders', 'reminders']]) {
+    assert.match(sql, new RegExp(`create table public\\.${table}[\\s\\S]*?hotel_id\\s+text not null`, 'i'))
+    const policies = [...sql.matchAll(new RegExp(`create policy\\s+\\w+\\s+on public\\.${table}[\\s\\S]*?;`, 'gi'))].map((m) => m[0])
+    assert.equal(policies.length, 3, table)
+    for (const p of policies) assert.match(p, new RegExp(`has_permission\\(hotel_id,\\s*'${prefix}\\.`, 'i'))
+    assert.doesNotMatch(sql, new RegExp(`create policy[^;]*on public\\.${table}\\s+for delete`, 'i'))
+    assert.doesNotMatch(sql, new RegExp(`grant[^;]*delete[^;]*on[^;]*public\\.${table}`, 'i'))
+  }
+})

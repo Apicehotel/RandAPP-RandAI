@@ -38,8 +38,14 @@ _Nessun lavoro in corso._ (Scrivi qui: strumento, branch, cosa stai facendo.)
   - Non ancora portato dalla vecchia app: elenco sale configurabile per struttura (ora il nome sala è testo libero con suggerimenti), clienti ricorrenti, configurazioni/allestimenti, "da preparare il" per la manutenzione, audio/video.
   - Il controllo doppie prenotazioni è nell'app (non c'è un vincolo nel database): due persone che salvano nello stesso istante potrebbero sovrapporsi. Da blindare con un vincolo quando ci sarà l'elenco sale.
 
+- 2026-10-31 — Claude (branch `claude/task`): Task con hub a due riquadri, Avvisi Urgenti e Promemoria.
+  - Migrazione `0004_task.sql` (tabelle `urgent_alerts` e `reminders`, RLS, permessi `urgent.*` e `reminders.*`). Rimossa la schermata segnaposto "In arrivo".
+  - Matrice permessi **scelta mia da confermare**: tutti vedono e inviano avvisi (manutentore, responsabile, direzione e admin li gestiscono); i promemoria li crea e gestisce reception, responsabile, direzione e admin; gli altri li vedono.
+  - **Non attivo**: l'invio dei promemoria (notifiche WhatsApp/push all'orario). Ora sono solo dati da consultare. È la voce "Notifiche" della roadmap.
+  - Non ancora portato dalla vecchia app: trasformare un avviso in segnalazione, escalation/solleciti degli avvisi urgenti, foto sui promemoria, aggiornamento in tempo reale, nome di chi ha inviato/preso in carico (ora si salva l'id utente, non lo si mostra).
+
 ## Da fare (in ordine)
-1. Creare il progetto Supabase nuovo, applicare `0001_base.sql`, `0002_interventions.sql` e `0003_planning.sql`, pubblicare `pin-auth`, creare i primi utenti (vedi README).
+1. Creare il progetto Supabase nuovo, applicare `0001_base.sql`, `0002_interventions.sql`, `0003_planning.sql` e `0004_task.sql`, pubblicare `pin-auth`, creare i primi utenti (vedi README).
 2. **Provare il login e le segnalazioni su un telefono vero** (vedi note sotto).
 3. Notifiche WhatsApp (API Meta) sulle segnalazioni.
 4. Coda offline (Dexie) che conserva l'hotel di origine dell'operazione.
@@ -50,7 +56,7 @@ _Nessun lavoro in corso._ (Scrivi qui: strumento, branch, cosa stai facendo.)
 
 ## Note per il prossimo strumento
 - **Il login non è mai stato provato end-to-end**: non esisteva ancora un progetto Supabase. Build e test passano; le schermate sono state viste renderizzate solo con dati demo (mock), non su Supabase vero: manca ancora la prova PIN → sessione → segnalazioni reale. È il primo controllo da fare.
-- Task nella barra non ha ancora un permesso nel database (`perm: null` in `src/lib/permissions.js`, visibile a tutti): quando lo costruiamo va aggiunto a `role_permissions` e il valore cambiato. Il Planning ha già i suoi permessi.
+- Tutte le sezioni della barra (Operatività, Planning, Home, Task) hanno ormai i loro permessi nel database; non resta nessuna voce con `perm: null` tranne Profilo e il menu "Altro".
 - Il PIN è di 4 cifre (come nella vecchia app): la protezione è nel blocco dopo 5 errori (10 minuti) e nel limite sulla ricerca nomi.
 - Non usare mai il database delle app vecchie: lo schema qui è pensato per un progetto Supabase separato.
 - Non aggiungere dipendenze o fogli CSS di override senza un motivo concreto; il budget del bundle è controllato da `npm run check:bundle`.

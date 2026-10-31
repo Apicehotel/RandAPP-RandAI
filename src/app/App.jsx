@@ -24,9 +24,15 @@ const WorkNew = lazyWithRetry(() => import('../screens/PlanningWorkNew.jsx'))
 const SaleList = lazyWithRetry(() => import('../screens/PlanningSale.jsx').then((m) => ({ default: m.SaleList })))
 const SaleDetail = lazyWithRetry(() => import('../screens/PlanningSale.jsx').then((m) => ({ default: m.SaleDetail })))
 const SaleNew = lazyWithRetry(() => import('../screens/PlanningSaleNew.jsx'))
+const Task = lazyWithRetry(() => import('../screens/Task.jsx'))
+const AlertList = lazyWithRetry(() => import('../screens/TaskUrgent.jsx').then((m) => ({ default: m.AlertList })))
+const AlertDetail = lazyWithRetry(() => import('../screens/TaskUrgent.jsx').then((m) => ({ default: m.AlertDetail })))
+const AlertNew = lazyWithRetry(() => import('../screens/TaskUrgentNew.jsx'))
+const ReminderList = lazyWithRetry(() => import('../screens/TaskReminders.jsx').then((m) => ({ default: m.ReminderList })))
+const ReminderDetail = lazyWithRetry(() => import('../screens/TaskReminders.jsx').then((m) => ({ default: m.ReminderDetail })))
+const ReminderNew = lazyWithRetry(() => import('../screens/TaskReminderNew.jsx'))
 const Profile = lazyWithRetry(() => import('../screens/Profile.jsx'))
 const Operations = lazyWithRetry(() => import('../screens/Operations.jsx'))
-const ComingSoon = lazyWithRetry(() => import('../screens/ComingSoon.jsx'))
 const RandAI = lazyWithRetry(loadRandAI)
 
 const HOTEL_KEY = 'randapp.hotel'
@@ -79,15 +85,38 @@ function PlanningScreen({ route, ctx }) {
   return <Planning ctx={ctx} />
 }
 
+// Task: hub + Avvisi Urgenti + Promemoria, ognuno col suo permesso.
+function TaskScreen({ route, ctx }) {
+  const has = (perm) => can(ctx.permissions, perm)
+  const [, section, third] = route.split('/').filter(Boolean) // ['task', 'urgent'|'reminders', 'new'|<id>]
+
+  if (section === 'urgent') {
+    if (!has(PERM.URGENT_VIEW)) return <NoAccess text="Non hai i permessi per gli Avvisi Urgenti." />
+    if (third === 'new') {
+      return has(PERM.URGENT_CREATE) ? <AlertNew ctx={ctx} /> : <NoAccess text="Non puoi inviare avvisi." />
+    }
+    return third ? <AlertDetail ctx={ctx} id={third} /> : <AlertList ctx={ctx} />
+  }
+  if (section === 'reminders') {
+    if (!has(PERM.REMINDERS_VIEW)) return <NoAccess text="Non hai i permessi per i Promemoria." />
+    if (third === 'new') {
+      return has(PERM.REMINDERS_CREATE) ? <ReminderNew ctx={ctx} /> : <NoAccess text="Non puoi creare promemoria." />
+    }
+    return third ? <ReminderDetail ctx={ctx} id={third} /> : <ReminderList ctx={ctx} />
+  }
+  if (!has(PERM.URGENT_VIEW) && !has(PERM.REMINDERS_VIEW)) {
+    return <NoAccess text="Non hai i permessi per vedere i Task." />
+  }
+  return <Task ctx={ctx} />
+}
+
 function Screen({ route, ctx, onLogout, onSwitchHotel }) {
   const canView = can(ctx.permissions, PERM.ISSUES_VIEW)
 
   if (route.startsWith('/profile')) return <Profile ctx={ctx} onLogout={onLogout} onSwitchHotel={onSwitchHotel} />
   if (route.startsWith('/randai') && randaiEnabled) return <RandAI />
   if (route.startsWith('/planning')) return <PlanningScreen route={route} ctx={ctx} />
-  if (route.startsWith('/task')) {
-    return <ComingSoon title="Task" icon="check" text="Qui vedrai il tuo lavoro assegnato. Lo costruiamo dopo la base." />
-  }
+  if (route.startsWith('/task')) return <TaskScreen route={route} ctx={ctx} />
   if (!canView) return <div className="page"><p className="muted">Non hai i permessi per vedere questa sezione.</p></div>
 
   if (route === '/issues/new') {
