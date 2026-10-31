@@ -33,6 +33,15 @@ const ReminderDetail = lazyWithRetry(() => import('../screens/TaskReminders.jsx'
 const ReminderNew = lazyWithRetry(() => import('../screens/TaskReminderNew.jsx'))
 const Profile = lazyWithRetry(() => import('../screens/Profile.jsx'))
 const Operations = lazyWithRetry(() => import('../screens/Operations.jsx'))
+const ItemList = lazyWithRetry(() => import('../screens/Warehouse.jsx').then((m) => ({ default: m.ItemList })))
+const ItemDetail = lazyWithRetry(() => import('../screens/Warehouse.jsx').then((m) => ({ default: m.ItemDetail })))
+const WarehouseNew = lazyWithRetry(() => import('../screens/WarehouseNew.jsx'))
+const Supplies = lazyWithRetry(() => import('../screens/Supplies.jsx'))
+const SupplyNew = lazyWithRetry(() => import('../screens/SupplyNew.jsx'))
+const SupplyProducts = lazyWithRetry(() => import('../screens/SupplyProducts.jsx'))
+const Housekeeping = lazyWithRetry(() => import('../screens/Housekeeping.jsx'))
+const Sensors = lazyWithRetry(() => import('../screens/Sensors.jsx'))
+const SensorNew = lazyWithRetry(() => import('../screens/SensorNew.jsx'))
 const RandAI = lazyWithRetry(loadRandAI)
 
 const HOTEL_KEY = 'randapp.hotel'
@@ -110,11 +119,41 @@ function TaskScreen({ route, ctx }) {
   return <Task ctx={ctx} />
 }
 
+// Moduli di gestione: Magazzino, Rifornimento, Housekeeping, Sensori. Ognuno col suo permesso.
+function ManagementScreen({ route, ctx }) {
+  const has = (perm) => can(ctx.permissions, perm)
+  const [module, a] = route.split('/').filter(Boolean)
+
+  if (module === 'warehouse') {
+    if (!has(PERM.WAREHOUSE_VIEW)) return <NoAccess text="Non hai i permessi per il Magazzino." />
+    if (a === 'new') return has(PERM.WAREHOUSE_CREATE) ? <WarehouseNew ctx={ctx} /> : <NoAccess text="Non puoi aggiungere articoli." />
+    return a ? <ItemDetail ctx={ctx} id={a} /> : <ItemList ctx={ctx} />
+  }
+  if (module === 'supplies') {
+    if (!has(PERM.SUPPLIES_VIEW)) return <NoAccess text="Non hai i permessi per il Rifornimento." />
+    if (a === 'new') return has(PERM.SUPPLIES_CREATE) ? <SupplyNew ctx={ctx} /> : <NoAccess text="Non puoi fare richieste." />
+    if (a === 'products') return has(PERM.SUPPLIES_MANAGE) ? <SupplyProducts ctx={ctx} /> : <NoAccess text="Non puoi gestire il catalogo." />
+    return <Supplies ctx={ctx} />
+  }
+  if (module === 'housekeeping') {
+    return has(PERM.HOUSEKEEPING_VIEW) ? <Housekeeping ctx={ctx} /> : <NoAccess text="Non hai i permessi per l'Housekeeping." />
+  }
+  if (module === 'sensors') {
+    if (!has(PERM.SENSORS_VIEW)) return <NoAccess text="Non hai i permessi per i Sensori." />
+    if (a === 'new') return has(PERM.SENSORS_MANAGE) ? <SensorNew ctx={ctx} /> : <NoAccess text="Non puoi aggiungere sensori." />
+    return <Sensors ctx={ctx} />
+  }
+  return null
+}
+
+const MANAGEMENT_PREFIXES = ['/warehouse', '/supplies', '/housekeeping', '/sensors']
+
 function Screen({ route, ctx, onLogout, onSwitchHotel }) {
   const canView = can(ctx.permissions, PERM.ISSUES_VIEW)
 
   if (route.startsWith('/profile')) return <Profile ctx={ctx} onLogout={onLogout} onSwitchHotel={onSwitchHotel} />
   if (route.startsWith('/randai') && randaiEnabled) return <RandAI />
+  if (MANAGEMENT_PREFIXES.some((p) => route === p || route.startsWith(`${p}/`))) return <ManagementScreen route={route} ctx={ctx} />
   if (route.startsWith('/planning')) return <PlanningScreen route={route} ctx={ctx} />
   if (route.startsWith('/task')) return <TaskScreen route={route} ctx={ctx} />
   if (route.startsWith('/interventions')) {

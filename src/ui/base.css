@@ -180,6 +180,7 @@ button { cursor: pointer; }
   background: var(--accent); color: var(--accent-text);
 }
 .hub-choice .icon.danger { background: var(--danger); }
+.stat-num { font-size: var(--fs-num); font-weight: 750; line-height: 1; }
 .hub-choice .num { font-size: var(--fs-num); font-weight: 750; line-height: 1; }
 .tile { gap: var(--gap-tight); padding: var(--pad-card); }
 .tile .head { display: flex; align-items: center; justify-content: space-between; }
