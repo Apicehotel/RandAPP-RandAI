@@ -169,6 +169,15 @@ export default function App() {
     return () => { cancelled = true }
   }, [])
 
+  // Cambio struttura senza rifare il PIN: stessa sessione, nuova iscrizione (ruolo e permessi si rileggono).
+  const changeHotel = async (hotelId) => {
+    const next = await loadContext(hotelId)
+    if (!next) throw new Error('Non hai accesso a questa struttura')
+    writeHotel(hotelId)
+    setCtx(next)
+    window.location.hash = '/home'
+  }
+
   if (!isConfigured) return <SetupNeeded />
   if (booting) return <div className="center"><Spinner /></div>
 
@@ -187,6 +196,7 @@ export default function App() {
       ctx={ctx}
       onLogout={() => setCtx(null)}
       onSwitchHotel={() => { writeHotel(null); setCtx(null) }}
+      onChangeHotel={changeHotel}
     >
       <Suspense fallback={<Spinner />}>
         <Screen
