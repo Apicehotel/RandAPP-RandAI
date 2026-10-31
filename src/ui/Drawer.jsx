@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { initialsFor, menuGroupsFor, roleLabel } from '../lib/permissions.js'
 import { hotelById } from '../lib/hotels.js'
+import Appearance from './Appearance.jsx'
 import { Icon } from './kit.jsx'
 
 // Menu laterale che si apre dal cerchio del profilo (o dal pulsante "Altro").
@@ -51,6 +52,7 @@ export default function Drawer({ open, onClose, ctx, route, onSwitchHotel, onLog
               ))}
             </section>
           ))}
+          <Appearance />
         </nav>
 
         <div className="drawer-foot">

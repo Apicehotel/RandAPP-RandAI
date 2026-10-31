@@ -47,7 +47,8 @@ const PATHS = {
 
 export function Icon({ name, size = 22 }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    <svg width={size} height={size} style={{ width: `calc(${size}px * var(--icon-k, 1))`, height: `calc(${size}px * var(--icon-k, 1))` }}
+      viewBox="0 0 24 24" fill="none" stroke="currentColor"
       strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d={PATHS[name] || PATHS.list} />
     </svg>

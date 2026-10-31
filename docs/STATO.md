@@ -9,6 +9,7 @@ _Nessun lavoro in corso._ (Scrivi qui: strumento, branch, cosa stai facendo.)
 - 2026-10-31 — Claude: struttura di collaborazione (`AGENTS.md`, `CLAUDE.md`, `.cursor/rules/`, `docs/STATO.md`, `.gitignore`).
 - 2026-10-31 — Claude (branch `claude/base-app`): base dell'app.
   - Scheletro React + Vite, schermate caricate a richiesta, stile chiaro/scuro con dimensioni P/N/G.
+  - Aspetto nel menu laterale (`ui/Appearance.jsx`): tema e dimensione. Dimensione = densità vera (token per font, spazi, controlli, icone, colonne), non zoom; test `density.test.js`. Tolto dal Profilo.
   - Login PIN + scelta struttura (`src/screens/Login.jsx`, funzione server `supabase/functions/pin-auth`).
   - Schema database `0001_base.sql` con RLS (hotel, profili, membership, permessi, segnalazioni).
   - Home (coda per priorità) e Segnalazioni (lista con filtri, dettaglio con cambio stato, nuova).
