@@ -29,6 +29,8 @@ _Nessun lavoro in corso._ (Scrivi qui: strumento, branch, cosa stai facendo.)
   - Migrazione `0002_interventions.sql` (tabella con RLS, permessi `interventions.*`), lista con filtri Aperti/Fatti/Tutti, dettaglio con cambio stato, nuovo intervento.
   - Hub Operatività con le due sezioni e le top 3 di ciascuna. Non ancora: assegnazione a un tecnico, collegamento intervento ↔ segnalazione (c'è già la colonna `issue_id`), camere multiple, ricambi/pezzi come nella vecchia app.
 
+- 2026-10-31 — Claude (branch `claude/hub-2-riquadri`): nell'hub Operatività le due sezioni sono due riquadri affiancati (`.hub-grid`).
+
 ## Da fare (in ordine)
 1. Creare il progetto Supabase nuovo, applicare `0001_base.sql` e `0002_interventions.sql`, pubblicare `pin-auth`, creare i primi utenti (vedi README).
 2. **Provare il login e le segnalazioni su un telefono vero** (vedi note sotto).
