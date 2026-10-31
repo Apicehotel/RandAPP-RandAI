@@ -151,8 +151,9 @@ button { cursor: pointer; }
   font-size: 0.75rem; font-weight: 650; background: var(--surface-2); color: var(--text-2);
 }
 .badge.urgente { background: color-mix(in srgb, var(--danger) 18%, transparent); color: var(--danger); }
+.badge.in_corso { background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--accent); }
 .badge.alta { background: color-mix(in srgb, var(--warn) 20%, transparent); color: var(--warn); }
-.badge.completata { background: color-mix(in srgb, var(--ok) 18%, transparent); color: var(--ok); }
+.badge.fatto, .badge.completata { background: color-mix(in srgb, var(--ok) 18%, transparent); color: var(--ok); }
 
 .chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
 .chip {

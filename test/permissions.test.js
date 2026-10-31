@@ -51,6 +51,21 @@ test('il menu mostra "Nuova segnalazione" solo a chi può crearle', () => {
   assert.ok(!flat(new Set([PERM.ISSUES_VIEW])).includes('new-issue'))
 })
 
+test('il menu mostra gli Interventi solo con il permesso giusto', () => {
+  const flat = (perms) => menuGroupsFor(perms).flatMap((g) => g.items.map((i) => i.id))
+  const view = new Set([PERM.ISSUES_VIEW, PERM.INTERVENTIONS_VIEW])
+  assert.ok(flat(view).includes('interventions'))
+  assert.ok(!flat(view).includes('new-intervention'))
+  assert.ok(flat(new Set([...view, PERM.INTERVENTIONS_CREATE])).includes('new-intervention'))
+  assert.ok(!flat(new Set([PERM.ISSUES_VIEW])).includes('interventions'))
+})
+
+test('Operatività resta accesa anche dentro gli interventi', () => {
+  const operations = BOTTOM_SLOTS.find((i) => i.id === 'operations')
+  assert.equal(isActivePath(operations, '/interventions'), true)
+  assert.equal(isActivePath(operations, '/interventions/xyz'), true)
+})
+
 test('il menu ha sempre il profilo e nessun gruppo vuoto', () => {
   const groups = menuGroupsFor(new Set())
   assert.ok(groups.every((g) => g.items.length > 0))

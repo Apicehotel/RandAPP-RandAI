@@ -42,3 +42,12 @@ test('le policy sulle segnalazioni passano da has_permission con hotel_id', () =
   assert.equal(policies.length, 3)
   for (const p of policies) assert.match(p, /has_permission\(hotel_id,/i)
 })
+
+test('gli interventi: hotel_id obbligatorio, 3 policy con has_permission, niente delete', () => {
+  assert.match(sql, /create table public\.interventions[\s\S]*?hotel_id\s+text not null/i)
+  const policies = [...sql.matchAll(/create policy\s+\w+\s+on public\.interventions[\s\S]*?;/gi)].map((m) => m[0])
+  assert.equal(policies.length, 3)
+  for (const p of policies) assert.match(p, /has_permission\(hotel_id,\s*'interventions\./i)
+  assert.doesNotMatch(sql, /create policy[^;]*on public\.interventions\s+for delete/i)
+  assert.doesNotMatch(sql, /grant[^;]*delete[^;]*on public\.interventions/i)
+})

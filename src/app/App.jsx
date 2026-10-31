@@ -14,6 +14,9 @@ const Home = lazyWithRetry(() => import('../screens/Home.jsx'))
 const IssueList = lazyWithRetry(() => import('../screens/Issues.jsx').then((m) => ({ default: m.IssueList })))
 const IssueDetail = lazyWithRetry(() => import('../screens/Issues.jsx').then((m) => ({ default: m.IssueDetail })))
 const IssueNew = lazyWithRetry(() => import('../screens/IssueNew.jsx'))
+const InterventionList = lazyWithRetry(() => import('../screens/Interventions.jsx').then((m) => ({ default: m.InterventionList })))
+const InterventionDetail = lazyWithRetry(() => import('../screens/Interventions.jsx').then((m) => ({ default: m.InterventionDetail })))
+const InterventionNew = lazyWithRetry(() => import('../screens/InterventionNew.jsx'))
 const Profile = lazyWithRetry(() => import('../screens/Profile.jsx'))
 const Operations = lazyWithRetry(() => import('../screens/Operations.jsx'))
 const ComingSoon = lazyWithRetry(() => import('../screens/ComingSoon.jsx'))
@@ -61,6 +64,18 @@ function Screen({ route, ctx, onLogout, onSwitchHotel }) {
   }
   if (route.startsWith('/issues/')) return <IssueDetail ctx={ctx} id={route.split('/')[2]} />
   if (route.startsWith('/issues')) return <IssueList ctx={ctx} />
+  if (route.startsWith('/interventions')) {
+    if (!can(ctx.permissions, PERM.INTERVENTIONS_VIEW)) {
+      return <div className="page"><p className="muted">Non hai i permessi per vedere gli interventi.</p></div>
+    }
+    if (route === '/interventions/new') {
+      return can(ctx.permissions, PERM.INTERVENTIONS_CREATE)
+        ? <InterventionNew ctx={ctx} />
+        : <div className="page"><p className="muted">Non puoi creare interventi.</p></div>
+    }
+    if (route.startsWith('/interventions/')) return <InterventionDetail ctx={ctx} id={route.split('/')[2]} />
+    return <InterventionList ctx={ctx} />
+  }
   if (route.startsWith('/operations')) return <Operations ctx={ctx} />
   return <Home ctx={ctx} />
 }
