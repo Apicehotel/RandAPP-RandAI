@@ -1,0 +1,12 @@
+---
+description: Regole del progetto RandAPP-RandAI (condivise con Claude e Codex)
+alwaysApply: true
+---
+
+Le regole complete sono in `AGENTS.md` nella root del repo: leggile e seguile.
+
+Promemoria rapido:
+- Leggi `README.md` e `docs/STATO.md` prima di iniziare.
+- Aggiorna `README.md` e `docs/STATO.md` dopo ogni modifica.
+- Mai PIN, password o token nel README, nei commit o nel codice.
+- Lavora sul branch `cursor/<descrizione>`, mai direttamente su `main`.
