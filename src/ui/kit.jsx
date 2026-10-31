@@ -35,6 +35,13 @@ const PATHS = {
   wrench: 'M14 6a4 4 0 0 0 5 5l-9 9a2.5 2.5 0 0 1-4-4l9-9a4 4 0 0 0-1-1z',
   clock: 'M12 7v5l3 2M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z',
   box: 'M3 7l9-4 9 4v10l-9 4-9-4zM3 7l9 4 9-4M12 11v10',
+  calendar: 'M4 6h16v14H4zM4 10h16M8 3v4M16 3v4',
+  check: 'M5 12l5 5L20 7',
+  menu: 'M4 7h16M4 12h16M4 17h16',
+  plus: 'M12 5v14M5 12h14',
+  sparkles: 'M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z',
+  building: 'M5 21V4h9v17M14 9h5v12M3 21h18M8 8h2M8 12h2M8 16h2',
+  close: 'M6 6l12 12M18 6L6 18',
 }
 
 export function Icon({ name, size = 22 }) {
