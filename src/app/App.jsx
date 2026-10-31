@@ -15,6 +15,8 @@ const IssueList = lazyWithRetry(() => import('../screens/Issues.jsx').then((m) =
 const IssueDetail = lazyWithRetry(() => import('../screens/Issues.jsx').then((m) => ({ default: m.IssueDetail })))
 const IssueNew = lazyWithRetry(() => import('../screens/IssueNew.jsx'))
 const Profile = lazyWithRetry(() => import('../screens/Profile.jsx'))
+const Operations = lazyWithRetry(() => import('../screens/Operations.jsx'))
+const ComingSoon = lazyWithRetry(() => import('../screens/ComingSoon.jsx'))
 const RandAI = lazyWithRetry(loadRandAI)
 
 const HOTEL_KEY = 'randapp.hotel'
@@ -44,6 +46,12 @@ function Screen({ route, ctx, onLogout, onSwitchHotel }) {
 
   if (route.startsWith('/profile')) return <Profile ctx={ctx} onLogout={onLogout} onSwitchHotel={onSwitchHotel} />
   if (route.startsWith('/randai') && randaiEnabled) return <RandAI />
+  if (route.startsWith('/planning')) {
+    return <ComingSoon title="Planning" icon="calendar" text="Qui vedrai gli interventi pianificati. Lo costruiamo dopo la base." />
+  }
+  if (route.startsWith('/task')) {
+    return <ComingSoon title="Task" icon="check" text="Qui vedrai il tuo lavoro assegnato. Lo costruiamo dopo la base." />
+  }
   if (!canView) return <div className="page"><p className="muted">Non hai i permessi per vedere questa sezione.</p></div>
 
   if (route === '/issues/new') {
@@ -53,6 +61,7 @@ function Screen({ route, ctx, onLogout, onSwitchHotel }) {
   }
   if (route.startsWith('/issues/')) return <IssueDetail ctx={ctx} id={route.split('/')[2]} />
   if (route.startsWith('/issues')) return <IssueList ctx={ctx} />
+  if (route.startsWith('/operations')) return <Operations ctx={ctx} />
   return <Home ctx={ctx} />
 }
 
@@ -94,7 +103,12 @@ export default function App() {
   }
 
   return (
-    <Shell route={route} ctx={ctx}>
+    <Shell
+      route={route}
+      ctx={ctx}
+      onLogout={() => setCtx(null)}
+      onSwitchHotel={() => { writeHotel(null); setCtx(null) }}
+    >
       <Suspense fallback={<Spinner />}>
         <Screen
           route={route}

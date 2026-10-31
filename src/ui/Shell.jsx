@@ -1,32 +1,62 @@
-import { navFor } from '../lib/permissions.js'
+import { useState } from 'react'
+import { bottomNavFor, initialsFor, isActivePath } from '../lib/permissions.js'
 import { hotelById } from '../lib/hotels.js'
-import { roleLabel } from '../lib/permissions.js'
+import { FEATURES } from '../app/features.js'
+import { logout } from '../lib/auth.js'
+import Drawer from './Drawer.jsx'
 import { Icon } from './kit.jsx'
 
-const ICONS = { home: 'home', issues: 'list', profile: 'user' }
-
 // Unica fonte del "chrome" dell'app: nessuna schermata costruisce la propria barra.
-export default function Shell({ route, ctx, children }) {
-  const items = navFor(ctx.permissions)
+// In alto: struttura a sinistra, cerchio del profilo a destra. In basso: 5 sezioni.
+export default function Shell({ route, ctx, onLogout, onSwitchHotel, children }) {
+  const [menuOpen, setMenuOpen] = useState(false)
+  const items = bottomNavFor(ctx.permissions, { randai: FEATURES.randai })
+  const hotelName = hotelById(ctx.hotelId)?.name || ctx.hotelId
+
   return (
     <div className="shell">
       <header className="shell-top">
-        <span className="hotel">{hotelById(ctx.hotelId)?.name || ctx.hotelId}</span>
-        <span className="who">{ctx.name} · {roleLabel(ctx.role)}</span>
+        <span className="hotel-chip"><Icon name="building" size={18} /><span>{hotelName}</span></span>
+        <button
+          type="button"
+          className="avatar"
+          aria-label={`Apri il menu di ${ctx.name || 'profilo'}`}
+          onClick={() => setMenuOpen(true)}
+        >
+          {initialsFor(ctx.name)}
+        </button>
       </header>
+
       <main className="shell-stage">{children}</main>
-      <nav className="shell-nav" aria-label="Navigazione principale">
-        {items.map((item) => (
-          <a
-            key={item.id}
-            href={`#${item.path}`}
-            aria-current={route.startsWith(item.path) ? 'page' : undefined}
-          >
-            <Icon name={ICONS[item.id]} />
-            <span>{item.label}</span>
-          </a>
-        ))}
+
+      <nav className="shell-nav" aria-label="Navigazione principale" data-count={items.length}>
+        {items.map((item) => {
+          const active = isActivePath(item, route)
+          const cls = `nav-item${item.center ? ' center' : ''}`
+          const inner = (
+            <>
+              <span className="ico"><Icon name={item.icon} /></span>
+              <span className="lbl">{item.label}</span>
+            </>
+          )
+          return item.action === 'menu' ? (
+            <button key={item.id} type="button" className={cls} onClick={() => setMenuOpen(true)}>{inner}</button>
+          ) : (
+            <a key={item.id} href={`#${item.path}`} className={cls} aria-current={active ? 'page' : undefined}>
+              {inner}
+            </a>
+          )
+        })}
       </nav>
+
+      <Drawer
+        open={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        ctx={ctx}
+        route={route}
+        onSwitchHotel={onSwitchHotel}
+        onLogout={async () => { await logout(); onLogout() }}
+      />
     </div>
   )
 }

@@ -42,6 +42,8 @@ Se mancano le variabili `VITE_*`, l'app mostra la schermata "Configurazione manc
 - **Multi-hotel**: ogni segnalazione ha `hotel_id`; le policy RLS e le query la filtrano sempre per la struttura dell'utente.
 - **Ruoli**: `admin`, `direzione`, `responsabile`, `manutentore`, `governante`, `reception`.
 - **Home**: coda di lavoro ordinata per urgenza (poi la più vecchia), con 4 contatori. Non c'è un pulsante "Nuova": le segnalazioni si creano dalla sezione Segnalazioni.
+- **Navigazione** (come la vecchia app): barra in basso con 5 posti fissi — **Operatività · Planning · Home (al centro) · Task · Altro**. Il quinto posto diventa **RandAI** quando RandAI è acceso; finché è in pausa è "Altro" e apre il menu completo. In alto a sinistra c'è la struttura, in alto a destra il **cerchio con le iniziali** dell'utente che apre il menu laterale (sezioni, profilo, Cambia struttura, Esci). Pulsanti e voci compaiono solo se il ruolo ha il permesso.
+- **Operatività**: hub con il collegamento alle Segnalazioni e le 3 più importanti. **Planning** e **Task** sono per ora schermate "In arrivo".
 - **Stati segnalazione**: Da fare · Tecnico · Attesa pezzo · Completata.
 - **Stile**: tema Sistema/Chiaro/Scuro e dimensione Piccolo/Normale/Grande (dal Profilo). Colori e dimensioni sono solo in `src/ui/tokens.css`.
 - **Velocità**: ogni schermata si scarica solo quando la apri (`React.lazy`). `npm run check:bundle` fa fallire il controllo se l'avvio supera 160 KB compressi.
@@ -70,8 +72,8 @@ docs/STATO.md          passaggio di consegne tra strumenti
 src/app/               App, router a hash, interruttori funzioni (features.js)
 src/lib/               supabase, auth, permessi, coda priorità, preferenze UI, hook
 src/data/              accesso ai dati (sempre filtrato per hotel_id)
-src/screens/           Login, Home, Segnalazioni, Nuova segnalazione, Profilo
-src/ui/                tokens.css (colori/dimensioni), base.css, Shell, componenti
+src/screens/           Login, Home, Operatività, Segnalazioni, Nuova segnalazione, Profilo, "In arrivo"
+src/ui/                tokens.css (colori/dimensioni), base.css, Shell (barra + header), Drawer (menu), componenti
 src/randai/            RandAI (predisposto, spento)
 supabase/migrations/   schema database con RLS
 supabase/functions/    pin-auth (login con PIN lato server)

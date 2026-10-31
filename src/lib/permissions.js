@@ -26,12 +26,62 @@ export const ROLE_LABELS = {
 
 export const roleLabel = (role) => ROLE_LABELS[role] || role || ''
 
-// Voci di navigazione. "perm" è il permesso necessario per vederle.
-export const NAV_ITEMS = [
-  { id: 'home', label: 'Home', path: '/home', perm: PERM.ISSUES_VIEW },
-  { id: 'issues', label: 'Segnalazioni', path: '/issues', perm: PERM.ISSUES_VIEW },
-  { id: 'profile', label: 'Profilo', path: '/profile', perm: null },
+// Barra in basso: 5 posti fissi come nella vecchia app.
+//   1 Operatività · 2 Planning · 3 Home (al centro) · 4 Task · 5 RandAI oppure "Altro".
+// "perm" è il permesso necessario; null = visibile a tutti (Planning e Task non hanno ancora un permesso nel database).
+// "match" sono i percorsi che tengono acceso il pulsante.
+export const BOTTOM_SLOTS = [
+  { id: 'operations', label: 'Operatività', path: '/operations', icon: 'list', perm: PERM.ISSUES_VIEW, match: ['/operations', '/issues'] },
+  { id: 'planning', label: 'Planning', path: '/planning', icon: 'calendar', perm: null, match: ['/planning'] },
+  { id: 'home', label: 'Home', path: '/home', icon: 'home', perm: PERM.ISSUES_VIEW, match: ['/home'], center: true },
+  { id: 'task', label: 'Task', path: '/task', icon: 'check', perm: null, match: ['/task'] },
 ]
 
-export const navFor = (permissions) =>
-  NAV_ITEMS.filter((item) => item.perm === null || can(permissions, item.perm))
+const RANDAI_SLOT = { id: 'randai', label: 'RandAI', path: '/randai', icon: 'sparkles', match: ['/randai'] }
+// Finché RandAI è in pausa il quinto posto apre il menu completo (come "Altro" nella vecchia app).
+const MORE_SLOT = { id: 'more', label: 'Altro', icon: 'menu', action: 'menu' }
+
+export function bottomNavFor(permissions, { randai = false } = {}) {
+  const items = BOTTOM_SLOTS.filter((item) => item.perm === null || can(permissions, item.perm))
+  items.push(randai ? RANDAI_SLOT : MORE_SLOT)
+  return items
+}
+
+export const isActivePath = (item, route) =>
+  Boolean(item.match?.some((prefix) => route === prefix || route.startsWith(`${prefix}/`)))
+
+// Menu laterale aperto dal cerchio del profilo.
+export function menuGroupsFor(permissions) {
+  const groups = [
+    {
+      id: 'principale',
+      label: 'Principale',
+      items: [
+        { id: 'home', label: 'Home', path: '/home', icon: 'home', perm: PERM.ISSUES_VIEW },
+        { id: 'operations', label: 'Operatività', path: '/operations', icon: 'list', perm: PERM.ISSUES_VIEW },
+      ],
+    },
+    {
+      id: 'operativita',
+      label: 'Operatività',
+      items: [
+        { id: 'issues', label: 'Segnalazioni', path: '/issues', icon: 'alert', perm: PERM.ISSUES_VIEW },
+        { id: 'new-issue', label: 'Nuova segnalazione', path: '/issues/new', icon: 'plus', perm: PERM.ISSUES_CREATE },
+        { id: 'planning', label: 'Planning', path: '/planning', icon: 'calendar', perm: null },
+        { id: 'task', label: 'Task', path: '/task', icon: 'check', perm: null },
+      ],
+    },
+    {
+      id: 'account',
+      label: 'Profilo',
+      items: [{ id: 'profile', label: 'Il mio profilo', path: '/profile', icon: 'user', perm: null }],
+    },
+  ]
+  return groups
+    .map((g) => ({ ...g, items: g.items.filter((i) => i.perm === null || can(permissions, i.perm)) }))
+    .filter((g) => g.items.length)
+}
+
+// Iniziali per il cerchio del profilo ("Marco Bianchi" -> "MB").
+export const initialsFor = (name = '') =>
+  String(name).split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0]).join('').toUpperCase() || 'R'
