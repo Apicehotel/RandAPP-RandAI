@@ -89,7 +89,7 @@ export default function Home({ ctx }) {
       )}
 
       {visible.length > 0 && (
-        <div className="hub-grid">
+        <div className="hub-grid tiles">
           {visible.map((k) => {
             const t = tiles[k]
             return (

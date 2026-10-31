@@ -1,11 +1,40 @@
 /* Unico punto dove si definiscono colori, dimensioni e raggi. Niente altri fogli di override. */
 
 :root {
-  --size-scale: 1;
+  /* Densità "Normale". Piccolo e Grande ridefiniscono TUTTE queste misure più sotto (non è uno zoom). */
+  --fs: 16px;
+  --fs-md: 15px;
+  --fs-sm: 14px;
+  --fs-xs: 12px;
+  --fs-h1: 22px;
+  --fs-h2: 18px;
+  --fs-num: 30px;
+  --fs-key: 21px;
+  --pad-page: 16px;
+  --pad-card: 14px;
+  --gap: 12px;
+  --gap-list: 10px;
+  --gap-tight: 8px;
   --radius: 14px;
   --radius-sm: 10px;
-  --gap: 12px;
+  --control: 44px;
+  --chip-h: 38px;
+  --row-h: 46px;
+  --key-h: 56px;
   --nav-h: 60px;
+  --home-bubble: 46px;
+  --avatar: 40px;
+  --avatar-big: 48px;
+  --icon-k: 1;
+  --tile-icon: 36px;
+  --hub-icon: 48px;
+  --logo-chip: 28px;
+  --logo-pick: 56px;
+  --logo-pick-sm: 44px;
+  --brand: 132px;
+  --drawer-w: 340px;
+  --hub-cols: 2;
+  --tile-cols: 2;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 
@@ -60,8 +89,26 @@
   }
 }
 
-/* Dimensioni: Piccolo / Normale / Grande */
-:root[data-size='small'] { --size-scale: 0.92; }
-:root[data-size='large'] { --size-scale: 1.14; }
+/* Dimensioni: Piccolo / Normale / Grande.
+   Ognuna è una densità vera: testi, spazi, altezze dei controlli, icone, loghi, colonne dei riquadri.
+   Normale è in :root; qui sotto le altre due. */
+:root[data-size='small'] {
+  --fs: 14px; --fs-md: 13.5px; --fs-sm: 12.5px; --fs-xs: 11px; --fs-h1: 19px; --fs-h2: 15.5px; --fs-num: 26px; --fs-key: 18px;
+  --pad-page: 12px; --pad-card: 10px; --gap: 8px; --gap-list: 6px; --gap-tight: 6px;
+  --radius: 12px; --radius-sm: 8px;
+  --control: 38px; --chip-h: 32px; --row-h: 40px; --key-h: 48px; --nav-h: 54px; --home-bubble: 40px;
+  --avatar: 34px; --avatar-big: 42px; --icon-k: 0.85; --tile-icon: 30px; --hub-icon: 40px;
+  --logo-chip: 24px; --logo-pick: 48px; --logo-pick-sm: 38px; --brand: 110px; --drawer-w: 300px;
+  --hub-cols: 2; --tile-cols: 3;
+}
+:root[data-size='large'] {
+  --fs: 19px; --fs-md: 18px; --fs-sm: 16.5px; --fs-xs: 14px; --fs-h1: 27px; --fs-h2: 22px; --fs-num: 38px; --fs-key: 26px;
+  --pad-page: 20px; --pad-card: 18px; --gap: 16px; --gap-list: 14px; --gap-tight: 12px;
+  --radius: 18px; --radius-sm: 12px;
+  --control: 56px; --chip-h: 48px; --row-h: 58px; --key-h: 68px; --nav-h: 74px; --home-bubble: 58px;
+  --avatar: 48px; --avatar-big: 56px; --icon-k: 1.3; --tile-icon: 46px; --hub-icon: 58px;
+  --logo-chip: 36px; --logo-pick: 68px; --logo-pick-sm: 54px; --brand: 160px; --drawer-w: 380px;
+  --hub-cols: 1; --tile-cols: 1;
+}
 
-html { font-size: calc(16px * var(--size-scale)); }
+html { font-size: 16px; }

@@ -54,7 +54,7 @@ Se mancano le variabili `VITE_*`, l'app mostra la schermata "Configurazione manc
   - **Promemoria** (`reminders`): messaggio per uno o più ruoli (nessun ruolo = tutti), ripetizione (una volta, ogni giorno, giorni scelti, ogni mese), uno o più orari, date di inizio e fine; si accende e si spegne. **L'invio automatico delle notifiche non è ancora attivo**: oggi si consultano nell'app. Chi può crearli vede "Per me" e "Tutti".
   - Permessi `urgent.*` e `reminders.*` (view/create/update). Il pulsante Task in basso compare se c'è almeno uno dei due permessi di vista.
 - **Stati segnalazione**: Da fare · Tecnico · Attesa pezzo · Completata.
-- **Stile**: tema Sistema/Chiaro/Scuro e dimensione Piccolo/Normale/Grande (dal Profilo). Colori e dimensioni sono solo in `src/ui/tokens.css`.
+- **Stile**: tema Sistema/Chiaro/Scuro e dimensione Piccolo/Normale/Grande, scelti dal **menu laterale** (sezione Aspetto). La dimensione NON è uno zoom: ogni livello ridefinisce font, spazi, altezza di pulsanti/campi/barra, icone, loghi e colonne dei riquadri (Piccolo 3 per riga, Normale 2, Grande 1, con filtri a capo). Colori e misure sono solo in `src/ui/tokens.css`; `base.css` usa solo quei valori.
 - **Attenzione agli stili**: le classi generiche (es. `.center`) valgono per tutta l'app; per i componenti della barra usare nomi specifici (`nav-*`).
 - **Velocità**: ogni schermata si scarica solo quando la apri (`React.lazy`). `npm run check:bundle` fa fallire il controllo se l'avvio supera 160 KB compressi.
 
