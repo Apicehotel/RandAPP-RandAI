@@ -31,8 +31,15 @@ _Nessun lavoro in corso._ (Scrivi qui: strumento, branch, cosa stai facendo.)
 
 - 2026-10-31 — Claude (branch `claude/hub-2-riquadri`): nell'hub Operatività le due sezioni sono due riquadri affiancati (`.hub-grid`).
 
+- 2026-10-31 — Claude (branch `claude/planning`): Planning con hub a due riquadri, Planning Sale e Planning Lavori.
+  - Migrazione `0003_planning.sql` (tabelle `planning_works` e `sale_bookings`, RLS, permessi `planning_work.*` e `planning_sale.*`).
+  - Planning Lavori: lavori su più giorni, vista settimanale, stato. Planning Sale: prenotazioni per giorno, turni, controllo sovrapposizioni, annullamento.
+  - La matrice dei permessi per ruolo del Planning è una **scelta mia da confermare**: manutentore gestisce i lavori e vede le sale; reception gestisce le sale e vede i lavori; governante solo vista.
+  - Non ancora portato dalla vecchia app: elenco sale configurabile per struttura (ora il nome sala è testo libero con suggerimenti), clienti ricorrenti, configurazioni/allestimenti, "da preparare il" per la manutenzione, audio/video.
+  - Il controllo doppie prenotazioni è nell'app (non c'è un vincolo nel database): due persone che salvano nello stesso istante potrebbero sovrapporsi. Da blindare con un vincolo quando ci sarà l'elenco sale.
+
 ## Da fare (in ordine)
-1. Creare il progetto Supabase nuovo, applicare `0001_base.sql` e `0002_interventions.sql`, pubblicare `pin-auth`, creare i primi utenti (vedi README).
+1. Creare il progetto Supabase nuovo, applicare `0001_base.sql`, `0002_interventions.sql` e `0003_planning.sql`, pubblicare `pin-auth`, creare i primi utenti (vedi README).
 2. **Provare il login e le segnalazioni su un telefono vero** (vedi note sotto).
 3. Notifiche WhatsApp (API Meta) sulle segnalazioni.
 4. Coda offline (Dexie) che conserva l'hotel di origine dell'operazione.
@@ -43,7 +50,7 @@ _Nessun lavoro in corso._ (Scrivi qui: strumento, branch, cosa stai facendo.)
 
 ## Note per il prossimo strumento
 - **Il login non è mai stato provato end-to-end**: non esisteva ancora un progetto Supabase. Build e test passano; le schermate sono state viste renderizzate solo con dati demo (mock), non su Supabase vero: manca ancora la prova PIN → sessione → segnalazioni reale. È il primo controllo da fare.
-- Planning e Task nella barra non hanno ancora un permesso nel database (`perm: null` in `src/lib/permissions.js`, visibili a tutti): quando li costruiamo vanno aggiunti a `role_permissions` e il valore va cambiato.
+- Task nella barra non ha ancora un permesso nel database (`perm: null` in `src/lib/permissions.js`, visibile a tutti): quando lo costruiamo va aggiunto a `role_permissions` e il valore cambiato. Il Planning ha già i suoi permessi.
 - Il PIN è di 4 cifre (come nella vecchia app): la protezione è nel blocco dopo 5 errori (10 minuti) e nel limite sulla ricerca nomi.
 - Non usare mai il database delle app vecchie: lo schema qui è pensato per un progetto Supabase separato.
 - Non aggiungere dipendenze o fogli CSS di override senza un motivo concreto; il budget del bundle è controllato da `npm run check:bundle`.
