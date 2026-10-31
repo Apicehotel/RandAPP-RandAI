@@ -46,6 +46,7 @@ Se mancano le variabili `VITE_*`, l'app mostra la schermata "Configurazione manc
 - **Operatività**: hub con il collegamento alle Segnalazioni e le 3 più importanti. **Planning** e **Task** sono per ora schermate "In arrivo".
 - **Stati segnalazione**: Da fare · Tecnico · Attesa pezzo · Completata.
 - **Stile**: tema Sistema/Chiaro/Scuro e dimensione Piccolo/Normale/Grande (dal Profilo). Colori e dimensioni sono solo in `src/ui/tokens.css`.
+- **Attenzione agli stili**: le classi generiche (es. `.center`) valgono per tutta l'app; per i componenti della barra usare nomi specifici (`nav-*`).
 - **Velocità**: ogni schermata si scarica solo quando la apri (`React.lazy`). `npm run check:bundle` fa fallire il controllo se l'avvio supera 160 KB compressi.
 
 ## Messa in funzione del database (nuovo progetto Supabase)
