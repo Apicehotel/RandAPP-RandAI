@@ -32,7 +32,7 @@ export default function Shell({ route, ctx, onLogout, onSwitchHotel, children })
       <nav className="shell-nav" aria-label="Navigazione principale" data-count={items.length}>
         {items.map((item) => {
           const active = isActivePath(item, route)
-          const cls = `nav-item${item.center ? ' center' : ''}`
+          const cls = `nav-item${item.center ? ' nav-home' : ''}`
           const inner = (
             <>
               <span className="ico"><Icon name={item.icon} /></span>

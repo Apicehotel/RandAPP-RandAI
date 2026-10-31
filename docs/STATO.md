@@ -21,6 +21,10 @@ _Nessun lavoro in corso._ (Scrivi qui: strumento, branch, cosa stai facendo.)
   - Hub Operatività (collegamento alle Segnalazioni + top 3). Planning e Task sono segnaposto "In arrivo".
   - Test: 25 passano. Avvio 134,4 KB compressi (limite 160).
 
+- 2026-10-31 — Claude (branch `claude/fix-barra-home`): corretto un errore di layout trovato guardando l'anteprima in un browser vero.
+  - Il pulsante Home della barra usava la classe `.center`, già usata dalle schermate a tutta pagina (`min-height: 100dvh`): allungava la barra a tutto lo schermo. Ora la classe è `.nav-home`.
+  - Prima schermata Home vista renderizzata (anteprima con dati demo, PIN demo 1234): ora struttura, cerchio profilo e 5 sezioni sono al posto giusto.
+
 ## Da fare (in ordine)
 1. Creare il progetto Supabase nuovo, applicare `0001_base.sql`, pubblicare `pin-auth`, creare i primi utenti (vedi README).
 2. **Provare il login e le segnalazioni su un telefono vero** (vedi note sotto).
@@ -32,7 +36,7 @@ _Nessun lavoro in corso._ (Scrivi qui: strumento, branch, cosa stai facendo.)
 8. Riattivare RandAI (dopo il lancio).
 
 ## Note per il prossimo strumento
-- **Il login non è mai stato provato end-to-end**: non esisteva ancora un progetto Supabase. Build e test passano, ma nessuno ha visto le schermate renderizzate né provato PIN → sessione → segnalazioni. È il primo controllo da fare.
+- **Il login non è mai stato provato end-to-end**: non esisteva ancora un progetto Supabase. Build e test passano; le schermate sono state viste renderizzate solo con dati demo (mock), non su Supabase vero: manca ancora la prova PIN → sessione → segnalazioni reale. È il primo controllo da fare.
 - Planning e Task nella barra non hanno ancora un permesso nel database (`perm: null` in `src/lib/permissions.js`, visibili a tutti): quando li costruiamo vanno aggiunti a `role_permissions` e il valore va cambiato.
 - Il PIN è di 4 cifre (come nella vecchia app): la protezione è nel blocco dopo 5 errori (10 minuti) e nel limite sulla ricerca nomi.
 - Non usare mai il database delle app vecchie: lo schema qui è pensato per un progetto Supabase separato.
