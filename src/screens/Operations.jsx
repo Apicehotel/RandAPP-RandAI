@@ -34,29 +34,27 @@ export default function Operations({ ctx }) {
         <p className="muted">Segnalazioni e interventi.</p>
       </div>
 
-      <a className="card hub-choice" href="#/issues">
-        <span className="icon"><Icon name="alert" /></span>
-        <span className="body">
+      <div className="hub-grid">
+        <a className="card hub-choice" href="#/issues">
+          <span className="icon"><Icon name="alert" /></span>
           <strong>Segnalazioni</strong>
           <span className="metrics">
             <span>{stats.open} aperte</span>
             <span>{stats.urgent} urgenti</span>
           </span>
-        </span>
-      </a>
+        </a>
 
-      {showInterventions && (
-        <a className="card hub-choice" href="#/interventions">
-          <span className="icon"><Icon name="wrench" /></span>
-          <span className="body">
+        {showInterventions && (
+          <a className="card hub-choice" href="#/interventions">
+            <span className="icon"><Icon name="wrench" /></span>
             <strong>Interventi</strong>
             <span className="metrics">
               <span>{iStats.open} aperti</span>
               <span>{iStats.running} in corso</span>
             </span>
-          </span>
-        </a>
-      )}
+          </a>
+        )}
+      </div>
 
       <h2>Top 3 segnalazioni</h2>
       {topIssues.length === 0 ? (
