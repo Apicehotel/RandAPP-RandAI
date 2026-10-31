@@ -24,6 +24,19 @@ export const PERM = {
   REMINDERS_UPDATE: 'reminders.update',
   PRESENCE_VIEW: 'presence.view',
   PRESENCE_UPDATE: 'presence.update',
+  WAREHOUSE_VIEW: 'warehouse.view',
+  WAREHOUSE_CREATE: 'warehouse.create',
+  WAREHOUSE_MOVE: 'warehouse.move',
+  WAREHOUSE_MANAGE: 'warehouse.manage',
+  SUPPLIES_VIEW: 'supplies.view',
+  SUPPLIES_CREATE: 'supplies.create',
+  SUPPLIES_COMPLETE: 'supplies.complete',
+  SUPPLIES_MANAGE: 'supplies.manage',
+  HOUSEKEEPING_VIEW: 'housekeeping.view',
+  HOUSEKEEPING_UPDATE: 'housekeeping.update',
+  HOUSEKEEPING_MANAGE: 'housekeeping.manage',
+  SENSORS_VIEW: 'sensors.view',
+  SENSORS_MANAGE: 'sensors.manage',
   ADMIN: 'admin.access',
 }
 
@@ -97,6 +110,16 @@ export function menuGroupsFor(permissions) {
         { id: 'new-intervention', label: 'Nuovo intervento', path: '/interventions/new', icon: 'plus', perm: PERM.INTERVENTIONS_CREATE },
         { id: 'planning', label: 'Planning', path: '/planning', icon: 'calendar', perm: PLANNING_ANY },
         { id: 'task', label: 'Task', path: '/task', icon: 'check', perm: TASK_ANY },
+      ],
+    },
+    {
+      id: 'gestione',
+      label: 'Gestione',
+      items: [
+        { id: 'warehouse', label: 'Magazzino', path: '/warehouse', icon: 'box', perm: PERM.WAREHOUSE_VIEW },
+        { id: 'supplies', label: 'Rifornimento', path: '/supplies', icon: 'cart', perm: PERM.SUPPLIES_VIEW },
+        { id: 'housekeeping', label: 'Housekeeping', path: '/housekeeping', icon: 'bed', perm: PERM.HOUSEKEEPING_VIEW },
+        { id: 'sensors', label: 'Sensori e impianti', path: '/sensors', icon: 'thermo', perm: PERM.SENSORS_VIEW },
       ],
     },
     {

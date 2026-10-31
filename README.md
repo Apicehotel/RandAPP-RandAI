@@ -53,6 +53,12 @@ Se mancano le variabili `VITE_*`, l'app mostra la schermata "Configurazione manc
   - **Avvisi Urgenti** (`urgent_alerts`): nota rapida (max 300 caratteri) che passa da Aperto a In carico a Risolto, con ora di presa in carico e di risoluzione. Prima quelli da prendere, il più vecchio in cima. Non si cancellano.
   - **Promemoria** (`reminders`): messaggio per uno o più ruoli (nessun ruolo = tutti), ripetizione (una volta, ogni giorno, giorni scelti, ogni mese), uno o più orari, date di inizio e fine; si accende e si spegne. **L'invio automatico delle notifiche non è ancora attivo**: oggi si consultano nell'app. Chi può crearli vede "Per me" e "Tutti".
   - Permessi `urgent.*` e `reminders.*` (view/create/update). Il pulsante Task in basso compare se c'è almeno uno dei due permessi di vista.
+- **Gestione** (voci nel menu laterale, ognuna col suo permesso; versioni "vuote": struttura completa, nessun dato importato):
+  - **Magazzino** (`inventory_items`, `inventory_movements`, migrazione `0006`): articoli con categoria, unità, scorta minima, ubicazione; filtri Tutti / Sotto scorta / Esauriti e ricerca. La giacenza cambia **solo** con la funzione server `inventory_move` (Carico, Scarico, Rettifica), che lascia sempre un movimento e impedisce giacenze negative. Permessi `warehouse.view/create/move/manage`.
+  - **Rifornimento** (`supply_products`, `supply_requests`, `supply_request_items`, migrazione `0007`): la governante chiede prodotti (Minibar / Consumo), il manutentore li segna Consegnato o Manca. Catalogo prodotti vuoto per struttura, gestito da chi ha `supplies.manage`. Richieste e righe si scrivono solo con `supply_create_request` e `supply_resolve_item`. Permessi `supplies.view/create/complete/manage`.
+  - **Housekeeping** (`hk_rooms`, migrazione `0008`): camere per piano con stato Da fare · In corso · Fatta e nota. Camere aggiunte a mano (`housekeeping.manage`); "Riparti da zero" rimette tutto da fare. **Non c'è ancora l'import da Slope.** Permessi `housekeeping.view/update/manage`.
+  - **Sensori e impianti** (`sensors`, migrazione `0009`): sensori di temperatura/umidità con soglie di allerta e relay (acceso/spento/misto); stati Regolare · In allerta · Non aggiornato (nessun dato da più di 30 minuti). Le misure le scriverà un servizio di sincronizzazione col service role (eWeLink): **non ancora attivo**, dal browser si gestisce solo l'anagrafica. Permessi `sensors.view/manage`.
+  - Come per il resto: niente DELETE dal browser, RLS su ogni tabella, `hotel_id` sempre filtrato. Le matrici dei ruoli sono scelte mie da confermare.
 - **Stati segnalazione**: Da fare · Tecnico · Attesa pezzo · Completata.
 - **Stile**: tema Sistema/Chiaro/Scuro e dimensione Piccolo/Normale/Grande, scelti dal **menu laterale** (sezione Aspetto). La dimensione NON è uno zoom: ogni livello ridefinisce font, spazi, altezza di pulsanti/campi/barra, icone, loghi e colonne dei riquadri (Piccolo 3 per riga, Normale 2, Grande 1, con filtri a capo). Colori e misure sono solo in `src/ui/tokens.css`; `base.css` usa solo quei valori.
 - **Attenzione agli stili**: le classi generiche (es. `.center`) valgono per tutta l'app; per i componenti della barra usare nomi specifici (`nav-*`).
@@ -66,7 +72,7 @@ Presi dalla vecchia app `Apicehotel-Manutenzione`.
 
 ## Messa in funzione del database (nuovo progetto Supabase)
 1. Crea un progetto Supabase **nuovo e separato** da quelli esistenti.
-2. Applica in ordine `supabase/migrations/0001_base.sql`, `0002_interventions.sql`, `0003_planning.sql`, `0004_task.sql` e `0005_presence.sql`.
+2. Applica in ordine `supabase/migrations/0001_base.sql`, `0002_interventions.sql`, `0003_planning.sql`, `0004_task.sql`, `0005_presence.sql`, `0006_warehouse.sql`, `0007_supplies.sql`, `0008_housekeeping.sql` e `0009_sensors.sql`.
 3. Pubblica la funzione `pin-auth` (`supabase/functions/pin-auth`).
 4. Crea i primi utenti dal tuo terminale:
    ```bash
@@ -88,7 +94,7 @@ docs/STATO.md          passaggio di consegne tra strumenti
 src/app/               App, router a hash, interruttori funzioni (features.js)
 src/lib/               supabase, auth, permessi, coda priorità, preferenze UI, hook
 src/data/              accesso ai dati (sempre filtrato per hotel_id)
-src/screens/           Login, Home (riepilogo), Operatività, Segnalazioni, Interventi, Planning (hub, Lavori, Sale), Task (hub, Avvisi Urgenti, Promemoria), Nuova segnalazione/intervento, Profilo
+src/screens/           Login, Home (riepilogo), Operatività, Segnalazioni, Interventi, Planning (hub, Lavori, Sale), Task (hub, Avvisi Urgenti, Promemoria), Magazzino, Rifornimento, Housekeeping, Sensori, Nuova segnalazione/intervento, Profilo
 src/assets/logos/      loghi (ApiceHotel e strutture)
 src/ui/                tokens.css (colori/dimensioni), base.css, Shell (barra + header), Drawer (menu), componenti
 src/randai/            RandAI (predisposto, spento)

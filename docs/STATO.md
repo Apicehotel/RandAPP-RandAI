@@ -6,6 +6,11 @@ File di passaggio di consegne tra Claude, Cursor e Codex. Aggiornalo a ogni sess
 _Nessun lavoro in corso._ (Scrivi qui: strumento, branch, cosa stai facendo.)
 
 ## Fatto
+- 2026-10-31 — Claude (branch `claude/moduli-operativi`): moduli di gestione dalla vecchia app, in versione "vuota" (struttura completa, nessun dato importato). Impianti = sensori e relay.
+  - Migrazioni `0006` Magazzino, `0007` Rifornimento, `0008` Housekeeping, `0009` Sensori. Menu laterale: gruppo **Gestione**. Test `management.test.js` (87 in totale), avvio 138,3 KB.
+  - Scritture sensibili solo da funzioni server: giacenza (`inventory_move`), richieste (`supply_create_request`/`supply_resolve_item`), struttura camere (`hk_set_room_active`, `hk_reset_day`); misure dei sensori non scrivibili dal browser.
+  - **Non portato** (da fare se serve): magazzino con categorie/ubicazioni gerarchiche, trasferimenti, inventario, ricambi negli interventi, barcode; import camere da Slope e contabilità housekeeping; sincronizzazione eWeLink (misure, comando relay), regole stagionali dei sensori; notifiche; tile nella Home per i nuovi moduli.
+  - Matrici dei permessi dei 4 moduli = mie scelte, da confermare. Verificato solo con l'anteprima (dati demo): le migrazioni non sono mai state eseguite su un Postgres vero.
 - 2026-10-31 — Claude: struttura di collaborazione (`AGENTS.md`, `CLAUDE.md`, `.cursor/rules/`, `docs/STATO.md`, `.gitignore`).
 - 2026-10-31 — Claude (branch `claude/base-app`): base dell'app.
   - Scheletro React + Vite, schermate caricate a richiesta, stile chiaro/scuro con dimensioni P/N/G.
@@ -62,7 +67,7 @@ _Nessun lavoro in corso._ (Scrivi qui: strumento, branch, cosa stai facendo.)
   - **Da provare sul Supabase vero**: il cambio al volo funziona se lo stesso utente ha l'iscrizione in più strutture (`npm run user:create --hotels hotelgio,chocohotel`).
 
 ## Da fare (in ordine)
-1. Creare il progetto Supabase nuovo, applicare `0001_base.sql`, `0002_interventions.sql`, `0003_planning.sql`, `0004_task.sql` e `0005_presence.sql`, pubblicare `pin-auth`, creare i primi utenti (vedi README).
+1. Creare il progetto Supabase nuovo, applicare `0001`…`0009` in ordine, pubblicare `pin-auth`, creare i primi utenti (vedi README).
 2. **Provare il login e le segnalazioni su un telefono vero** (vedi note sotto).
 3. Notifiche WhatsApp (API Meta) sulle segnalazioni.
 4. Coda offline (Dexie) che conserva l'hotel di origine dell'operazione.
