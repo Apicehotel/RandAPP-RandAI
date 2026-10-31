@@ -41,7 +41,8 @@ Se mancano le variabili `VITE_*`, l'app mostra la schermata "Configurazione manc
 - **Permessi**: la matrice ruolo → permessi è nel database (`role_permissions`). Il browser la legge solo per mostrare/nascondere le voci; la sicurezza vera sono le policy RLS.
 - **Multi-hotel**: ogni segnalazione ha `hotel_id`; le policy RLS e le query la filtrano sempre per la struttura dell'utente.
 - **Ruoli**: `admin`, `direzione`, `responsabile`, `manutentore`, `governante`, `reception`.
-- **Home**: coda di lavoro ordinata per urgenza (poi la più vecchia), con 4 contatori. Non c'è un pulsante "Nuova": le segnalazioni si creano dalla sezione Segnalazioni.
+- **Home** (riepilogo della giornata, visibile a tutti): un riquadro per ogni sezione che l'utente può vedere (Avvisi da prendere, Segnalazioni da fare, Interventi da fare, Lavori oggi, Sale occupate oggi, Promemoria per me), poi **Chi c'è in struttura** e **Da fare adesso** (elenco unico, al massimo 3 voci per sezione e 10 in tutto: prima avvisi, poi segnalazioni, interventi, lavori, sale, promemoria). Se una sezione non si carica, le altre si vedono lo stesso. Non c'è un pulsante "Nuova": si crea dentro le singole sezioni.
+- **Chi c'è in struttura** (tabella `presence`, migrazione `0005`): ognuno segna a mano "Sono arrivato" / "Sono uscito" (niente GPS). Si scrive solo con la funzione server `set_presence`, che copia nome e ruolo dall'utente collegato (il browser non può falsificarli). Dopo 16 ore senza uscita una persona non risulta più presente. Permessi `presence.view/update` per tutti i ruoli.
 - **Navigazione** (come la vecchia app): barra in basso con 5 posti fissi — **Operatività · Planning · Home (al centro) · Task · Altro**. Il quinto posto diventa **RandAI** quando RandAI è acceso; finché è in pausa è "Altro" e apre il menu completo. In alto a sinistra c'è la struttura, in alto a destra il **cerchio con le iniziali** dell'utente che apre il menu laterale (sezioni, profilo, Cambia struttura, Esci). Pulsanti e voci compaiono solo se il ruolo ha il permesso.
 - **Operatività**: hub con **due sezioni interne, Segnalazioni e Interventi**, ciascuna con le 3 più importanti; in cima le due sezioni sono **due riquadri affiancati**. Gli **Interventi** (tabella `interventions`, migrazione `0002`) sono lavori di manutenzione anche programmati: titolo, camera/zona, data, note, stato Da fare · In corso · Fatto. Permessi `interventions.view/create/update` (governante e reception solo vista).
 - **Planning**: hub con **due riquadri affiancati, Planning Sale e Planning Lavori**, e sotto cosa c'è oggi.
@@ -59,7 +60,7 @@ Se mancano le variabili `VITE_*`, l'app mostra la schermata "Configurazione manc
 
 ## Messa in funzione del database (nuovo progetto Supabase)
 1. Crea un progetto Supabase **nuovo e separato** da quelli esistenti.
-2. Applica in ordine `supabase/migrations/0001_base.sql`, `0002_interventions.sql`, `0003_planning.sql` e `0004_task.sql`.
+2. Applica in ordine `supabase/migrations/0001_base.sql`, `0002_interventions.sql`, `0003_planning.sql`, `0004_task.sql` e `0005_presence.sql`.
 3. Pubblica la funzione `pin-auth` (`supabase/functions/pin-auth`).
 4. Crea i primi utenti dal tuo terminale:
    ```bash
@@ -81,7 +82,7 @@ docs/STATO.md          passaggio di consegne tra strumenti
 src/app/               App, router a hash, interruttori funzioni (features.js)
 src/lib/               supabase, auth, permessi, coda priorità, preferenze UI, hook
 src/data/              accesso ai dati (sempre filtrato per hotel_id)
-src/screens/           Login, Home, Operatività, Segnalazioni, Interventi, Planning (hub, Lavori, Sale), Task (hub, Avvisi Urgenti, Promemoria), Nuova segnalazione/intervento, Profilo
+src/screens/           Login, Home (riepilogo), Operatività, Segnalazioni, Interventi, Planning (hub, Lavori, Sale), Task (hub, Avvisi Urgenti, Promemoria), Nuova segnalazione/intervento, Profilo
 src/ui/                tokens.css (colori/dimensioni), base.css, Shell (barra + header), Drawer (menu), componenti
 src/randai/            RandAI (predisposto, spento)
 supabase/migrations/   schema database con RLS

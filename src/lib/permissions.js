@@ -22,6 +22,8 @@ export const PERM = {
   REMINDERS_VIEW: 'reminders.view',
   REMINDERS_CREATE: 'reminders.create',
   REMINDERS_UPDATE: 'reminders.update',
+  PRESENCE_VIEW: 'presence.view',
+  PRESENCE_UPDATE: 'presence.update',
   ADMIN: 'admin.access',
 }
 
@@ -36,6 +38,7 @@ export const allowed = (permissions, perm) =>
   (Array.isArray(perm) ? perm.some((k) => can(permissions, k)) : can(permissions, perm))
 
 export const PLANNING_ANY = [PERM.PLANNING_WORK_VIEW, PERM.PLANNING_SALE_VIEW]
+export const OPERATIONS_ANY = [PERM.ISSUES_VIEW, PERM.INTERVENTIONS_VIEW]
 export const TASK_ANY = [PERM.URGENT_VIEW, PERM.REMINDERS_VIEW]
 
 export const ROLE_LABELS = {
@@ -54,9 +57,9 @@ export const roleLabel = (role) => ROLE_LABELS[role] || role || ''
 // "perm" è il permesso necessario (o un elenco: ne basta uno); null = visibile a tutti.
 // "match" sono i percorsi che tengono acceso il pulsante.
 export const BOTTOM_SLOTS = [
-  { id: 'operations', label: 'Operatività', path: '/operations', icon: 'list', perm: PERM.ISSUES_VIEW, match: ['/operations', '/issues', '/interventions'] },
+  { id: 'operations', label: 'Operatività', path: '/operations', icon: 'list', perm: OPERATIONS_ANY, match: ['/operations', '/issues', '/interventions'] },
   { id: 'planning', label: 'Planning', path: '/planning', icon: 'calendar', perm: PLANNING_ANY, match: ['/planning'] },
-  { id: 'home', label: 'Home', path: '/home', icon: 'home', perm: PERM.ISSUES_VIEW, match: ['/home'], center: true },
+  { id: 'home', label: 'Home', path: '/home', icon: 'home', perm: null, match: ['/home'], center: true },
   { id: 'task', label: 'Task', path: '/task', icon: 'check', perm: TASK_ANY, match: ['/task'] },
 ]
 
@@ -80,8 +83,8 @@ export function menuGroupsFor(permissions) {
       id: 'principale',
       label: 'Principale',
       items: [
-        { id: 'home', label: 'Home', path: '/home', icon: 'home', perm: PERM.ISSUES_VIEW },
-        { id: 'operations', label: 'Operatività', path: '/operations', icon: 'list', perm: PERM.ISSUES_VIEW },
+        { id: 'home', label: 'Home', path: '/home', icon: 'home', perm: null },
+        { id: 'operations', label: 'Operatività', path: '/operations', icon: 'list', perm: OPERATIONS_ANY },
       ],
     },
     {

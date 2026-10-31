@@ -185,6 +185,16 @@ button { cursor: pointer; }
   width: 48px; height: 48px; border-radius: 14px; display: grid; place-items: center; flex: none;
   background: var(--accent); color: var(--accent-text);
 }
+.hub-choice .icon.danger { background: var(--danger); }
+.hub-choice .num { font-size: 1.9rem; font-weight: 750; line-height: 1; }
+.tile { gap: 6px; padding: 12px; }
+.tile .head { display: flex; align-items: center; justify-content: space-between; }
+.tile .icon { width: 36px; height: 36px; border-radius: 10px; }
+.tile strong { font-size: 0.92rem; line-height: 1.2; }
+.tile .metrics { font-size: 0.8rem; }
+.people { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.people li { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.people .who { font-weight: 600; }
 .hub-choice .metrics { display: grid; gap: 2px; color: var(--text-2); font-size: 0.85rem; }
 .weeknav { justify-content: center; gap: 8px; }
 .chips.wrap { flex-wrap: wrap; overflow-x: visible; }

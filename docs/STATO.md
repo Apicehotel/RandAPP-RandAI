@@ -44,8 +44,14 @@ _Nessun lavoro in corso._ (Scrivi qui: strumento, branch, cosa stai facendo.)
   - **Non attivo**: l'invio dei promemoria (notifiche WhatsApp/push all'orario). Ora sono solo dati da consultare. È la voce "Notifiche" della roadmap.
   - Non ancora portato dalla vecchia app: trasformare un avviso in segnalazione, escalation/solleciti degli avvisi urgenti, foto sui promemoria, aggiornamento in tempo reale, nome di chi ha inviato/preso in carico (ora si salva l'id utente, non lo si mostra).
 
+- 2026-10-31 — Claude (branch `claude/home-riepilogo`): Home riscritta come riepilogo della giornata.
+  - Riquadri per sezione, **Chi c'è in struttura** (presenza manuale, migrazione `0005_presence.sql`), **Da fare adesso** (elenco unico).
+  - Home ora visibile a tutti (`perm: null`); Operatività compare con segnalazioni **o** interventi; le rotte `/issues` e `/interventions` hanno ciascuna il proprio controllo permessi.
+  - Presenza: solo check-in/out a mano, niente GPS né storico; dopo 16 ore non risulta più presente. Scelta mia, da confermare.
+  - Non ancora: aggiornamento in tempo reale, presenze per orario/turno, GPS.
+
 ## Da fare (in ordine)
-1. Creare il progetto Supabase nuovo, applicare `0001_base.sql`, `0002_interventions.sql`, `0003_planning.sql` e `0004_task.sql`, pubblicare `pin-auth`, creare i primi utenti (vedi README).
+1. Creare il progetto Supabase nuovo, applicare `0001_base.sql`, `0002_interventions.sql`, `0003_planning.sql`, `0004_task.sql` e `0005_presence.sql`, pubblicare `pin-auth`, creare i primi utenti (vedi README).
 2. **Provare il login e le segnalazioni su un telefono vero** (vedi note sotto).
 3. Notifiche WhatsApp (API Meta) sulle segnalazioni.
 4. Coda offline (Dexie) che conserva l'hotel di origine dell'operazione.

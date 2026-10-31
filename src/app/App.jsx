@@ -117,28 +117,30 @@ function Screen({ route, ctx, onLogout, onSwitchHotel }) {
   if (route.startsWith('/randai') && randaiEnabled) return <RandAI />
   if (route.startsWith('/planning')) return <PlanningScreen route={route} ctx={ctx} />
   if (route.startsWith('/task')) return <TaskScreen route={route} ctx={ctx} />
-  if (!canView) return <div className="page"><p className="muted">Non hai i permessi per vedere questa sezione.</p></div>
-
-  if (route === '/issues/new') {
-    return can(ctx.permissions, PERM.ISSUES_CREATE)
-      ? <IssueNew ctx={ctx} />
-      : <div className="page"><p className="muted">Non puoi creare segnalazioni.</p></div>
-  }
-  if (route.startsWith('/issues/')) return <IssueDetail ctx={ctx} id={route.split('/')[2]} />
-  if (route.startsWith('/issues')) return <IssueList ctx={ctx} />
   if (route.startsWith('/interventions')) {
-    if (!can(ctx.permissions, PERM.INTERVENTIONS_VIEW)) {
-      return <div className="page"><p className="muted">Non hai i permessi per vedere gli interventi.</p></div>
-    }
+    if (!can(ctx.permissions, PERM.INTERVENTIONS_VIEW)) return <NoAccess text="Non hai i permessi per vedere gli interventi." />
     if (route === '/interventions/new') {
       return can(ctx.permissions, PERM.INTERVENTIONS_CREATE)
         ? <InterventionNew ctx={ctx} />
-        : <div className="page"><p className="muted">Non puoi creare interventi.</p></div>
+        : <NoAccess text="Non puoi creare interventi." />
     }
     if (route.startsWith('/interventions/')) return <InterventionDetail ctx={ctx} id={route.split('/')[2]} />
     return <InterventionList ctx={ctx} />
   }
-  if (route.startsWith('/operations')) return <Operations ctx={ctx} />
+  if (route.startsWith('/issues')) {
+    if (!canView) return <NoAccess text="Non hai i permessi per vedere le segnalazioni." />
+    if (route === '/issues/new') {
+      return can(ctx.permissions, PERM.ISSUES_CREATE)
+        ? <IssueNew ctx={ctx} />
+        : <NoAccess text="Non puoi creare segnalazioni." />
+    }
+    if (route.startsWith('/issues/')) return <IssueDetail ctx={ctx} id={route.split('/')[2]} />
+    return <IssueList ctx={ctx} />
+  }
+  if (route.startsWith('/operations')) {
+    if (!canView && !can(ctx.permissions, PERM.INTERVENTIONS_VIEW)) return <NoAccess text="Non hai i permessi per vedere l'Operatività." />
+    return <Operations ctx={ctx} />
+  }
   return <Home ctx={ctx} />
 }
 
