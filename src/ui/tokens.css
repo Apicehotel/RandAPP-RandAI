@@ -1,0 +1,67 @@
+/* Unico punto dove si definiscono colori, dimensioni e raggi. Niente altri fogli di override. */
+
+:root {
+  --size-scale: 1;
+  --radius: 14px;
+  --radius-sm: 10px;
+  --gap: 12px;
+  --nav-h: 60px;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+
+  /* Tema chiaro: nessuna superficie scura */
+  --bg: #f4f5f7;
+  --surface: #ffffff;
+  --surface-2: #eceef2;
+  --text: #1b1f24;
+  --text-2: #5b6572;
+  --border: #dde1e7;
+  --accent: #2f6fed;
+  --accent-text: #ffffff;
+  --ok: #1f9d55;
+  --warn: #d98a00;
+  --danger: #d64545;
+  --shadow: 0 1px 2px rgba(20, 24, 31, 0.06), 0 4px 14px rgba(20, 24, 31, 0.05);
+  color-scheme: light;
+}
+
+/* Tema scuro: tonalità di grigio, bianco e nero */
+:root[data-theme='dark'] {
+  --bg: #121212;
+  --surface: #1c1c1e;
+  --surface-2: #2a2a2d;
+  --text: #f2f2f2;
+  --text-2: #a3a3ab;
+  --border: #38383c;
+  --accent: #7aa7ff;
+  --accent-text: #0d0d0d;
+  --ok: #4cc27f;
+  --warn: #e5a93a;
+  --danger: #ef6b6b;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']):not([data-theme='dark']) {
+    --bg: #121212;
+    --surface: #1c1c1e;
+    --surface-2: #2a2a2d;
+    --text: #f2f2f2;
+    --text-2: #a3a3ab;
+    --border: #38383c;
+    --accent: #7aa7ff;
+    --accent-text: #0d0d0d;
+    --ok: #4cc27f;
+    --warn: #e5a93a;
+    --danger: #ef6b6b;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+    color-scheme: dark;
+  }
+}
+
+/* Dimensioni: Piccolo / Normale / Grande */
+:root[data-size='small'] { --size-scale: 0.92; }
+:root[data-size='large'] { --size-scale: 1.14; }
+
+html { font-size: calc(16px * var(--size-scale)); }
