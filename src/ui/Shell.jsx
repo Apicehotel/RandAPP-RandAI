@@ -11,12 +11,16 @@ import { Icon } from './kit.jsx'
 export default function Shell({ route, ctx, onLogout, onSwitchHotel, children }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const items = bottomNavFor(ctx.permissions, { randai: FEATURES.randai })
-  const hotelName = hotelById(ctx.hotelId)?.name || ctx.hotelId
+  const hotel = hotelById(ctx.hotelId)
+  const hotelName = hotel?.name || ctx.hotelId
 
   return (
     <div className="shell">
       <header className="shell-top">
-        <span className="hotel-chip"><Icon name="building" size={18} /><span>{hotelName}</span></span>
+        <span className="hotel-chip">
+          {hotel?.logo ? <img src={hotel.logo} alt="" width="28" height="28" /> : <Icon name="building" size={18} />}
+          <span>{hotelName}</span>
+        </span>
         <button
           type="button"
           className="avatar"

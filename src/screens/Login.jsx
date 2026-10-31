@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { HOTELS } from '../lib/hotels.js'
+import { HOTELS, apiceLogo } from '../lib/hotels.js'
 import { searchUsers, loginWithPin } from '../lib/auth.js'
 import { Button, ErrorText, Spinner } from '../ui/kit.jsx'
 
@@ -74,11 +74,15 @@ export default function Login({ initialHotel, onLoggedIn }) {
     return (
       <div className="center">
         <div className="auth-box">
+          <img className="brand-logo" src={apiceLogo} alt="ApiceHotel" width="132" height="132" />
           <h1>RandApp</h1>
           <p className="muted">Scegli la struttura</p>
           <div className="hotels">
             {HOTELS.map((h) => (
-              <Button key={h.id} onClick={() => setHotelId(h.id)}>{h.name}</Button>
+              <button key={h.id} type="button" className="hotel-pick" onClick={() => setHotelId(h.id)}>
+                <img src={h.logo} alt="" width="56" height="56" />
+                <span>{h.name}</span>
+              </button>
             ))}
           </div>
         </div>
