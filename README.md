@@ -48,7 +48,10 @@ Se mancano le variabili `VITE_*`, l'app mostra la schermata "Configurazione manc
   - **Planning Lavori** (`planning_works`): un lavoro con descrizione e uno o più giorni (anche di settimane diverse); vista per settimana, stato Da fare · Fatto.
   - **Planning Sale** (`sale_bookings`): prenotazione sala con cliente, sala, dal/al, turno (Mattina · Pomeriggio · Sera · Tutto il giorno), persone, note; vista per giorno. Una sala già occupata nello stesso periodo e turno non si può prenotare (controllo nell'app e di nuovo al salvataggio). Le prenotazioni non si cancellano: si annullano.
   - Permessi `planning_work.*` e `planning_sale.*` (view/create/update). Il pulsante Planning in basso compare se c'è almeno uno dei due permessi di vista.
-- **Task** è per ora una schermata "In arrivo".
+- **Task**: hub con **due riquadri affiancati, Avvisi Urgenti e Promemoria**, e sotto gli avvisi aperti e i promemoria per il tuo ruolo.
+  - **Avvisi Urgenti** (`urgent_alerts`): nota rapida (max 300 caratteri) che passa da Aperto a In carico a Risolto, con ora di presa in carico e di risoluzione. Prima quelli da prendere, il più vecchio in cima. Non si cancellano.
+  - **Promemoria** (`reminders`): messaggio per uno o più ruoli (nessun ruolo = tutti), ripetizione (una volta, ogni giorno, giorni scelti, ogni mese), uno o più orari, date di inizio e fine; si accende e si spegne. **L'invio automatico delle notifiche non è ancora attivo**: oggi si consultano nell'app. Chi può crearli vede "Per me" e "Tutti".
+  - Permessi `urgent.*` e `reminders.*` (view/create/update). Il pulsante Task in basso compare se c'è almeno uno dei due permessi di vista.
 - **Stati segnalazione**: Da fare · Tecnico · Attesa pezzo · Completata.
 - **Stile**: tema Sistema/Chiaro/Scuro e dimensione Piccolo/Normale/Grande (dal Profilo). Colori e dimensioni sono solo in `src/ui/tokens.css`.
 - **Attenzione agli stili**: le classi generiche (es. `.center`) valgono per tutta l'app; per i componenti della barra usare nomi specifici (`nav-*`).
@@ -56,7 +59,7 @@ Se mancano le variabili `VITE_*`, l'app mostra la schermata "Configurazione manc
 
 ## Messa in funzione del database (nuovo progetto Supabase)
 1. Crea un progetto Supabase **nuovo e separato** da quelli esistenti.
-2. Applica in ordine `supabase/migrations/0001_base.sql`, `0002_interventions.sql` e `0003_planning.sql`.
+2. Applica in ordine `supabase/migrations/0001_base.sql`, `0002_interventions.sql`, `0003_planning.sql` e `0004_task.sql`.
 3. Pubblica la funzione `pin-auth` (`supabase/functions/pin-auth`).
 4. Crea i primi utenti dal tuo terminale:
    ```bash
@@ -78,7 +81,7 @@ docs/STATO.md          passaggio di consegne tra strumenti
 src/app/               App, router a hash, interruttori funzioni (features.js)
 src/lib/               supabase, auth, permessi, coda priorità, preferenze UI, hook
 src/data/              accesso ai dati (sempre filtrato per hotel_id)
-src/screens/           Login, Home, Operatività, Segnalazioni, Interventi, Planning (hub, Lavori, Sale), Nuova segnalazione/intervento, Profilo, "In arrivo"
+src/screens/           Login, Home, Operatività, Segnalazioni, Interventi, Planning (hub, Lavori, Sale), Task (hub, Avvisi Urgenti, Promemoria), Nuova segnalazione/intervento, Profilo
 src/ui/                tokens.css (colori/dimensioni), base.css, Shell (barra + header), Drawer (menu), componenti
 src/randai/            RandAI (predisposto, spento)
 supabase/migrations/   schema database con RLS
