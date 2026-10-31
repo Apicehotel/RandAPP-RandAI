@@ -73,3 +73,15 @@ test('task: hotel_id obbligatorio, 3 policy con has_permission ciascuna, niente 
     assert.doesNotMatch(sql, new RegExp(`grant[^;]*delete[^;]*on[^;]*public\\.${table}`, 'i'))
   }
 })
+
+test('presenza: si legge con has_permission, si scrive solo con la funzione del server', () => {
+  const policies = [...sql.matchAll(/create policy\s+\w+\s+on public\.presence[\s\S]*?;/gi)].map((m) => m[0])
+  assert.equal(policies.length, 1)
+  assert.match(policies[0], /for select/i)
+  assert.match(policies[0], /has_permission\(hotel_id,\s*'presence\.view'/i)
+  assert.match(sql, /revoke all on public\.presence from anon, authenticated/i)
+  assert.doesNotMatch(sql, /grant[^;]*(insert|update|delete)[^;]*on public\.presence/i)
+  assert.match(sql, /function public\.set_presence[\s\S]*security definer/i)
+  assert.match(sql, /has_permission\(p_hotel,\s*'presence\.update'\)/i)
+  assert.match(sql, /grant execute on function public\.set_presence\(text, boolean\) to authenticated/i)
+})

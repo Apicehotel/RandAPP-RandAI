@@ -31,9 +31,9 @@ test('con RandAI acceso il quinto posto è RandAI', () => {
   assert.equal(last.path, '/randai')
 })
 
-test('senza permesso di vedere le segnalazioni spariscono Operatività e Home', () => {
+test('senza permessi restano solo Home e Altro', () => {
   const ids = bottomNavFor(new Set()).map((i) => i.id)
-  assert.deepEqual(ids, ['more'])
+  assert.deepEqual(ids, ['home', 'more'])
 })
 
 test('Planning compare con almeno uno dei due permessi planning', () => {
@@ -43,6 +43,14 @@ test('Planning compare con almeno uno dei due permessi planning', () => {
   assert.ok(!ids([PERM.ISSUES_VIEW]).includes('planning'))
   assert.equal(allowed(new Set(), null), true)
   assert.equal(allowed(new Set(), [PERM.PLANNING_WORK_VIEW]), false)
+})
+
+test('Operatività compare con segnalazioni o interventi; Home sempre', () => {
+  const ids = (perms) => bottomNavFor(new Set(perms)).map((i) => i.id)
+  assert.ok(ids([PERM.INTERVENTIONS_VIEW]).includes('operations'))
+  assert.ok(ids([PERM.ISSUES_VIEW]).includes('operations'))
+  assert.ok(!ids([PERM.URGENT_VIEW]).includes('operations'))
+  assert.ok(ids([PERM.URGENT_VIEW]).includes('home'))
 })
 
 test('Task compare con almeno uno dei due permessi task', () => {

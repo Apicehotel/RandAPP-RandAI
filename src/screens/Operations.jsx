@@ -9,14 +9,15 @@ import { InterventionCard } from './Interventions.jsx'
 
 // Hub "Operatività": due sezioni interne, Segnalazioni e Interventi, con le 3 più importanti di ciascuna.
 export default function Operations({ ctx }) {
+  const showIssues = can(ctx.permissions, PERM.ISSUES_VIEW)
   const showInterventions = can(ctx.permissions, PERM.INTERVENTIONS_VIEW)
   const { data, error, loading } = useAsync(async () => {
     const [issues, interventions] = await Promise.all([
-      listIssues(ctx.hotelId),
+      showIssues ? listIssues(ctx.hotelId) : Promise.resolve([]),
       showInterventions ? listInterventions(ctx.hotelId) : Promise.resolve([]),
     ])
     return { issues, interventions }
-  }, [ctx.hotelId, showInterventions])
+  }, [ctx.hotelId, showIssues, showInterventions])
 
   if (loading && !data) return <Spinner />
   if (error) return <div className="page"><ErrorText>{error}</ErrorText></div>
@@ -35,14 +36,16 @@ export default function Operations({ ctx }) {
       </div>
 
       <div className="hub-grid">
-        <a className="card hub-choice" href="#/issues">
-          <span className="icon"><Icon name="alert" /></span>
-          <strong>Segnalazioni</strong>
-          <span className="metrics">
-            <span>{stats.open} aperte</span>
-            <span>{stats.urgent} urgenti</span>
-          </span>
-        </a>
+        {showIssues && (
+          <a className="card hub-choice" href="#/issues">
+            <span className="icon"><Icon name="alert" /></span>
+            <strong>Segnalazioni</strong>
+            <span className="metrics">
+              <span>{stats.open} aperte</span>
+              <span>{stats.urgent} urgenti</span>
+            </span>
+          </a>
+        )}
 
         {showInterventions && (
           <a className="card hub-choice" href="#/interventions">
@@ -56,24 +59,28 @@ export default function Operations({ ctx }) {
         )}
       </div>
 
-      <h2>Top 3 segnalazioni</h2>
-      {topIssues.length === 0 ? (
-        <div className="card muted">Nessuna segnalazione aperta.</div>
-      ) : (
-        <div className="list">
-          {topIssues.map((issue) => (
-            <a key={issue.id} className="card issue" href={`#/issues/${issue.id}`}>
-              <div className="row">
-                <span className="title">{issue.title}</span>
-                <UrgencyBadge urgency={issue.urgency} />
-              </div>
-              <div className="row muted">
-                <span>{issue.room ? `Camera/zona ${issue.room}` : issue.category}</span>
-                <span><StatusBadge status={issue.status} /> {formatDate(issue.created_at)}</span>
-              </div>
-            </a>
-          ))}
-        </div>
+      {showIssues && (
+        <>
+          <h2>Top 3 segnalazioni</h2>
+          {topIssues.length === 0 ? (
+            <div className="card muted">Nessuna segnalazione aperta.</div>
+          ) : (
+            <div className="list">
+              {topIssues.map((issue) => (
+                <a key={issue.id} className="card issue" href={`#/issues/${issue.id}`}>
+                  <div className="row">
+                    <span className="title">{issue.title}</span>
+                    <UrgencyBadge urgency={issue.urgency} />
+                  </div>
+                  <div className="row muted">
+                    <span>{issue.room ? `Camera/zona ${issue.room}` : issue.category}</span>
+                    <span><StatusBadge status={issue.status} /> {formatDate(issue.created_at)}</span>
+                  </div>
+                </a>
+              ))}
+            </div>
+          )}
+        </>
       )}
 
       {showInterventions && (
