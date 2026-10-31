@@ -50,6 +50,11 @@ _Nessun lavoro in corso._ (Scrivi qui: strumento, branch, cosa stai facendo.)
   - Presenza: solo check-in/out a mano, niente GPS né storico; dopo 16 ore non risulta più presente. Scelta mia, da confermare.
   - Non ancora: aggiornamento in tempo reale, presenze per orario/turno, GPS.
 
+- 2026-10-31 — Claude (branch `claude/loghi`): loghi presi dalla vecchia app.
+  - Mascotte ApiceHotel nel login, logo di ogni struttura nella scelta struttura e nell'intestazione.
+  - Icone installabili e `manifest.webmanifest` (senza service worker: la PWA offline resta da fare).
+  - Lasciati fuori: card grandi delle strutture, `randai-cat.webp`, `icon-urgent-192.png`.
+
 ## Da fare (in ordine)
 1. Creare il progetto Supabase nuovo, applicare `0001_base.sql`, `0002_interventions.sql`, `0003_planning.sql`, `0004_task.sql` e `0005_presence.sql`, pubblicare `pin-auth`, creare i primi utenti (vedi README).
 2. **Provare il login e le segnalazioni su un telefono vero** (vedi note sotto).

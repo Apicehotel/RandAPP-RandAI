@@ -58,6 +58,12 @@ Se mancano le variabili `VITE_*`, l'app mostra la schermata "Configurazione manc
 - **Attenzione agli stili**: le classi generiche (es. `.center`) valgono per tutta l'app; per i componenti della barra usare nomi specifici (`nav-*`).
 - **Velocità**: ogni schermata si scarica solo quando la apri (`React.lazy`). `npm run check:bundle` fa fallire il controllo se l'avvio supera 160 KB compressi.
 
+## Loghi e icona dell'app
+Presi dalla vecchia app `Apicehotel-Manutenzione`.
+- `src/assets/logos/`: mascotte **ApiceHotel** (login) e loghi di **Hotel Giò, Choco Hotel, Il Brigantino** (scelta struttura e intestazione). Sono importati dal codice (`src/lib/hotels.js`), quindi vengono pubblicati con nome a prova di cache.
+- `public/icons/` + `public/manifest.webmanifest`: icona **RandApp** (192, 512, maskable, Apple) per aggiungere l'app alla schermata Home del telefono. Per ora c'è solo il manifest: il servizio di funzionamento offline arriva con la PWA completa.
+- Non ancora presi: le "card" grandi delle strutture, il gatto di RandAI (quando lo riattiviamo), l'icona degli avvisi urgenti.
+
 ## Messa in funzione del database (nuovo progetto Supabase)
 1. Crea un progetto Supabase **nuovo e separato** da quelli esistenti.
 2. Applica in ordine `supabase/migrations/0001_base.sql`, `0002_interventions.sql`, `0003_planning.sql`, `0004_task.sql` e `0005_presence.sql`.
@@ -83,6 +89,7 @@ src/app/               App, router a hash, interruttori funzioni (features.js)
 src/lib/               supabase, auth, permessi, coda priorità, preferenze UI, hook
 src/data/              accesso ai dati (sempre filtrato per hotel_id)
 src/screens/           Login, Home (riepilogo), Operatività, Segnalazioni, Interventi, Planning (hub, Lavori, Sale), Task (hub, Avvisi Urgenti, Promemoria), Nuova segnalazione/intervento, Profilo
+src/assets/logos/      loghi (ApiceHotel e strutture)
 src/ui/                tokens.css (colori/dimensioni), base.css, Shell (barra + header), Drawer (menu), componenti
 src/randai/            RandAI (predisposto, spento)
 supabase/migrations/   schema database con RLS
