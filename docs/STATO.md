@@ -25,8 +25,12 @@ _Nessun lavoro in corso._ (Scrivi qui: strumento, branch, cosa stai facendo.)
   - Il pulsante Home della barra usava la classe `.center`, già usata dalle schermate a tutta pagina (`min-height: 100dvh`): allungava la barra a tutto lo schermo. Ora la classe è `.nav-home`.
   - Prima schermata Home vista renderizzata (anteprima con dati demo, PIN demo 1234): ora struttura, cerchio profilo e 5 sezioni sono al posto giusto.
 
+- 2026-10-31 — Claude (branch `claude/interventi`): Operatività ora ha 2 sezioni interne, Segnalazioni e Interventi.
+  - Migrazione `0002_interventions.sql` (tabella con RLS, permessi `interventions.*`), lista con filtri Aperti/Fatti/Tutti, dettaglio con cambio stato, nuovo intervento.
+  - Hub Operatività con le due sezioni e le top 3 di ciascuna. Non ancora: assegnazione a un tecnico, collegamento intervento ↔ segnalazione (c'è già la colonna `issue_id`), camere multiple, ricambi/pezzi come nella vecchia app.
+
 ## Da fare (in ordine)
-1. Creare il progetto Supabase nuovo, applicare `0001_base.sql`, pubblicare `pin-auth`, creare i primi utenti (vedi README).
+1. Creare il progetto Supabase nuovo, applicare `0001_base.sql` e `0002_interventions.sql`, pubblicare `pin-auth`, creare i primi utenti (vedi README).
 2. **Provare il login e le segnalazioni su un telefono vero** (vedi note sotto).
 3. Notifiche WhatsApp (API Meta) sulle segnalazioni.
 4. Coda offline (Dexie) che conserva l'hotel di origine dell'operazione.

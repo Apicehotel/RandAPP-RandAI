@@ -7,6 +7,9 @@ export const PERM = {
   ISSUES_CREATE: 'issues.create',
   ISSUES_UPDATE: 'issues.update',
   ISSUES_ASSIGN: 'issues.assign',
+  INTERVENTIONS_VIEW: 'interventions.view',
+  INTERVENTIONS_CREATE: 'interventions.create',
+  INTERVENTIONS_UPDATE: 'interventions.update',
   ADMIN: 'admin.access',
 }
 
@@ -31,7 +34,7 @@ export const roleLabel = (role) => ROLE_LABELS[role] || role || ''
 // "perm" è il permesso necessario; null = visibile a tutti (Planning e Task non hanno ancora un permesso nel database).
 // "match" sono i percorsi che tengono acceso il pulsante.
 export const BOTTOM_SLOTS = [
-  { id: 'operations', label: 'Operatività', path: '/operations', icon: 'list', perm: PERM.ISSUES_VIEW, match: ['/operations', '/issues'] },
+  { id: 'operations', label: 'Operatività', path: '/operations', icon: 'list', perm: PERM.ISSUES_VIEW, match: ['/operations', '/issues', '/interventions'] },
   { id: 'planning', label: 'Planning', path: '/planning', icon: 'calendar', perm: null, match: ['/planning'] },
   { id: 'home', label: 'Home', path: '/home', icon: 'home', perm: PERM.ISSUES_VIEW, match: ['/home'], center: true },
   { id: 'task', label: 'Task', path: '/task', icon: 'check', perm: null, match: ['/task'] },
@@ -67,6 +70,8 @@ export function menuGroupsFor(permissions) {
       items: [
         { id: 'issues', label: 'Segnalazioni', path: '/issues', icon: 'alert', perm: PERM.ISSUES_VIEW },
         { id: 'new-issue', label: 'Nuova segnalazione', path: '/issues/new', icon: 'plus', perm: PERM.ISSUES_CREATE },
+        { id: 'interventions', label: 'Interventi', path: '/interventions', icon: 'wrench', perm: PERM.INTERVENTIONS_VIEW },
+        { id: 'new-intervention', label: 'Nuovo intervento', path: '/interventions/new', icon: 'plus', perm: PERM.INTERVENTIONS_CREATE },
         { id: 'planning', label: 'Planning', path: '/planning', icon: 'calendar', perm: null },
         { id: 'task', label: 'Task', path: '/task', icon: 'check', perm: null },
       ],
