@@ -17,6 +17,13 @@ const IssueNew = lazyWithRetry(() => import('../screens/IssueNew.jsx'))
 const InterventionList = lazyWithRetry(() => import('../screens/Interventions.jsx').then((m) => ({ default: m.InterventionList })))
 const InterventionDetail = lazyWithRetry(() => import('../screens/Interventions.jsx').then((m) => ({ default: m.InterventionDetail })))
 const InterventionNew = lazyWithRetry(() => import('../screens/InterventionNew.jsx'))
+const Planning = lazyWithRetry(() => import('../screens/Planning.jsx'))
+const WorkList = lazyWithRetry(() => import('../screens/PlanningWork.jsx').then((m) => ({ default: m.WorkList })))
+const WorkDetail = lazyWithRetry(() => import('../screens/PlanningWork.jsx').then((m) => ({ default: m.WorkDetail })))
+const WorkNew = lazyWithRetry(() => import('../screens/PlanningWorkNew.jsx'))
+const SaleList = lazyWithRetry(() => import('../screens/PlanningSale.jsx').then((m) => ({ default: m.SaleList })))
+const SaleDetail = lazyWithRetry(() => import('../screens/PlanningSale.jsx').then((m) => ({ default: m.SaleDetail })))
+const SaleNew = lazyWithRetry(() => import('../screens/PlanningSaleNew.jsx'))
 const Profile = lazyWithRetry(() => import('../screens/Profile.jsx'))
 const Operations = lazyWithRetry(() => import('../screens/Operations.jsx'))
 const ComingSoon = lazyWithRetry(() => import('../screens/ComingSoon.jsx'))
@@ -44,14 +51,40 @@ function SetupNeeded() {
   )
 }
 
+const NoAccess = ({ text }) => <div className="page"><p className="muted">{text}</p></div>
+
+// Planning: hub + Planning Lavori + Planning Sale, ognuno col suo permesso.
+function PlanningScreen({ route, ctx }) {
+  const has = (perm) => can(ctx.permissions, perm)
+  const parts = route.split('/').filter(Boolean) // ['planning', 'work'|'sale', 'new'|<id>]
+  const [, section, third] = parts
+
+  if (section === 'work') {
+    if (!has(PERM.PLANNING_WORK_VIEW)) return <NoAccess text="Non hai i permessi per il Planning Lavori." />
+    if (third === 'new') {
+      return has(PERM.PLANNING_WORK_CREATE) ? <WorkNew ctx={ctx} /> : <NoAccess text="Non puoi aggiungere lavori." />
+    }
+    return third ? <WorkDetail ctx={ctx} id={third} /> : <WorkList ctx={ctx} />
+  }
+  if (section === 'sale') {
+    if (!has(PERM.PLANNING_SALE_VIEW)) return <NoAccess text="Non hai i permessi per il Planning Sale." />
+    if (third === 'new') {
+      return has(PERM.PLANNING_SALE_CREATE) ? <SaleNew ctx={ctx} /> : <NoAccess text="Non puoi prenotare le sale." />
+    }
+    return third ? <SaleDetail ctx={ctx} id={third} /> : <SaleList ctx={ctx} />
+  }
+  if (!has(PERM.PLANNING_WORK_VIEW) && !has(PERM.PLANNING_SALE_VIEW)) {
+    return <NoAccess text="Non hai i permessi per vedere il Planning." />
+  }
+  return <Planning ctx={ctx} />
+}
+
 function Screen({ route, ctx, onLogout, onSwitchHotel }) {
   const canView = can(ctx.permissions, PERM.ISSUES_VIEW)
 
   if (route.startsWith('/profile')) return <Profile ctx={ctx} onLogout={onLogout} onSwitchHotel={onSwitchHotel} />
   if (route.startsWith('/randai') && randaiEnabled) return <RandAI />
-  if (route.startsWith('/planning')) {
-    return <ComingSoon title="Planning" icon="calendar" text="Qui vedrai gli interventi pianificati. Lo costruiamo dopo la base." />
-  }
+  if (route.startsWith('/planning')) return <PlanningScreen route={route} ctx={ctx} />
   if (route.startsWith('/task')) {
     return <ComingSoon title="Task" icon="check" text="Qui vedrai il tuo lavoro assegnato. Lo costruiamo dopo la base." />
   }

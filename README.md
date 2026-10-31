@@ -43,7 +43,12 @@ Se mancano le variabili `VITE_*`, l'app mostra la schermata "Configurazione manc
 - **Ruoli**: `admin`, `direzione`, `responsabile`, `manutentore`, `governante`, `reception`.
 - **Home**: coda di lavoro ordinata per urgenza (poi la più vecchia), con 4 contatori. Non c'è un pulsante "Nuova": le segnalazioni si creano dalla sezione Segnalazioni.
 - **Navigazione** (come la vecchia app): barra in basso con 5 posti fissi — **Operatività · Planning · Home (al centro) · Task · Altro**. Il quinto posto diventa **RandAI** quando RandAI è acceso; finché è in pausa è "Altro" e apre il menu completo. In alto a sinistra c'è la struttura, in alto a destra il **cerchio con le iniziali** dell'utente che apre il menu laterale (sezioni, profilo, Cambia struttura, Esci). Pulsanti e voci compaiono solo se il ruolo ha il permesso.
-- **Operatività**: hub con **due sezioni interne, Segnalazioni e Interventi**, ciascuna con le 3 più importanti; in cima le due sezioni sono **due riquadri affiancati**. Gli **Interventi** (tabella `interventions`, migrazione `0002`) sono lavori di manutenzione anche programmati: titolo, camera/zona, data, note, stato Da fare · In corso · Fatto. Permessi `interventions.view/create/update` (governante e reception solo vista). **Planning** e **Task** sono per ora schermate "In arrivo".
+- **Operatività**: hub con **due sezioni interne, Segnalazioni e Interventi**, ciascuna con le 3 più importanti; in cima le due sezioni sono **due riquadri affiancati**. Gli **Interventi** (tabella `interventions`, migrazione `0002`) sono lavori di manutenzione anche programmati: titolo, camera/zona, data, note, stato Da fare · In corso · Fatto. Permessi `interventions.view/create/update` (governante e reception solo vista).
+- **Planning**: hub con **due riquadri affiancati, Planning Sale e Planning Lavori**, e sotto cosa c'è oggi.
+  - **Planning Lavori** (`planning_works`): un lavoro con descrizione e uno o più giorni (anche di settimane diverse); vista per settimana, stato Da fare · Fatto.
+  - **Planning Sale** (`sale_bookings`): prenotazione sala con cliente, sala, dal/al, turno (Mattina · Pomeriggio · Sera · Tutto il giorno), persone, note; vista per giorno. Una sala già occupata nello stesso periodo e turno non si può prenotare (controllo nell'app e di nuovo al salvataggio). Le prenotazioni non si cancellano: si annullano.
+  - Permessi `planning_work.*` e `planning_sale.*` (view/create/update). Il pulsante Planning in basso compare se c'è almeno uno dei due permessi di vista.
+- **Task** è per ora una schermata "In arrivo".
 - **Stati segnalazione**: Da fare · Tecnico · Attesa pezzo · Completata.
 - **Stile**: tema Sistema/Chiaro/Scuro e dimensione Piccolo/Normale/Grande (dal Profilo). Colori e dimensioni sono solo in `src/ui/tokens.css`.
 - **Attenzione agli stili**: le classi generiche (es. `.center`) valgono per tutta l'app; per i componenti della barra usare nomi specifici (`nav-*`).
@@ -51,7 +56,7 @@ Se mancano le variabili `VITE_*`, l'app mostra la schermata "Configurazione manc
 
 ## Messa in funzione del database (nuovo progetto Supabase)
 1. Crea un progetto Supabase **nuovo e separato** da quelli esistenti.
-2. Applica in ordine `supabase/migrations/0001_base.sql` e `0002_interventions.sql`.
+2. Applica in ordine `supabase/migrations/0001_base.sql`, `0002_interventions.sql` e `0003_planning.sql`.
 3. Pubblica la funzione `pin-auth` (`supabase/functions/pin-auth`).
 4. Crea i primi utenti dal tuo terminale:
    ```bash
@@ -73,7 +78,7 @@ docs/STATO.md          passaggio di consegne tra strumenti
 src/app/               App, router a hash, interruttori funzioni (features.js)
 src/lib/               supabase, auth, permessi, coda priorità, preferenze UI, hook
 src/data/              accesso ai dati (sempre filtrato per hotel_id)
-src/screens/           Login, Home, Operatività, Segnalazioni, Interventi, Nuova segnalazione/intervento, Profilo, "In arrivo"
+src/screens/           Login, Home, Operatività, Segnalazioni, Interventi, Planning (hub, Lavori, Sale), Nuova segnalazione/intervento, Profilo, "In arrivo"
 src/ui/                tokens.css (colori/dimensioni), base.css, Shell (barra + header), Drawer (menu), componenti
 src/randai/            RandAI (predisposto, spento)
 supabase/migrations/   schema database con RLS
