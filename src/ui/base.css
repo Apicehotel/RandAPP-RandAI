@@ -179,13 +179,13 @@ button { cursor: pointer; }
 .issue .title { font-weight: 650; }
 
 /* Hub Operatività */
-.hub-choice { display: flex; align-items: center; gap: 14px; text-decoration: none; color: inherit; }
+.hub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap); }
+.hub-choice { display: grid; align-content: start; gap: 10px; text-decoration: none; color: inherit; }
 .hub-choice .icon {
   width: 48px; height: 48px; border-radius: 14px; display: grid; place-items: center; flex: none;
   background: var(--accent); color: var(--accent-text);
 }
-.hub-choice .body { flex: 1; display: grid; gap: 2px; }
-.hub-choice .metrics { display: flex; gap: 14px; color: var(--text-2); font-size: 0.85rem; }
+.hub-choice .metrics { display: grid; gap: 2px; color: var(--text-2); font-size: 0.85rem; }
 .soon { text-align: center; display: grid; gap: 8px; padding: 28px 16px; }
 .soon .icon { width: 56px; height: 56px; border-radius: 16px; display: grid; place-items: center; margin: 0 auto 4px; background: var(--surface-2); color: var(--text-2); }
 
