@@ -68,6 +68,20 @@ export async function loadContext(hotelId) {
   }
 }
 
+// Le strutture a cui l'utente collegato ha accesso (per cambiare struttura senza rifare il PIN).
+export async function listMyHotels() {
+  const { data: userData } = await supabase.auth.getUser()
+  const user = userData?.user
+  if (!user) return []
+  const { data, error } = await supabase
+    .from('hotel_memberships')
+    .select('hotel_id, role')
+    .eq('auth_user_id', user.id)
+    .eq('active', true)
+  if (error) throw new Error('Impossibile caricare le strutture')
+  return data || []
+}
+
 export async function hasActiveSession() {
   const { data } = await supabase.auth.getSession()
   return Boolean(data?.session)

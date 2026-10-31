@@ -55,6 +55,11 @@ _Nessun lavoro in corso._ (Scrivi qui: strumento, branch, cosa stai facendo.)
   - Icone installabili e `manifest.webmanifest` (senza service worker: la PWA offline resta da fare).
   - Lasciati fuori: card grandi delle strutture, `randai-cat.webp`, `icon-urgent-192.png`.
 
+- 2026-10-31 — Claude (branch `claude/cambia-struttura`): cambio struttura dal chip in alto a sinistra (e da "Cambia struttura" nel menu).
+  - Selettore `src/ui/HotelPicker.jsx`: legge le iscrizioni dell'utente (`hotel_memberships`, già leggibili) e rilegge ruolo e permessi della nuova struttura con la stessa sessione, senza PIN. Le schermate si ricaricano da sole perché dipendono da `ctx.hotelId`.
+  - Se l'utente ha una sola struttura il selettore lo dice e offre "Entra con un altro utente" (vecchio comportamento: torna al login).
+  - **Da provare sul Supabase vero**: il cambio al volo funziona se lo stesso utente ha l'iscrizione in più strutture (`npm run user:create --hotels hotelgio,chocohotel`).
+
 ## Da fare (in ordine)
 1. Creare il progetto Supabase nuovo, applicare `0001_base.sql`, `0002_interventions.sql`, `0003_planning.sql`, `0004_task.sql` e `0005_presence.sql`, pubblicare `pin-auth`, creare i primi utenti (vedi README).
 2. **Provare il login e le segnalazioni su un telefono vero** (vedi note sotto).

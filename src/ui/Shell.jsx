@@ -4,12 +4,14 @@ import { hotelById } from '../lib/hotels.js'
 import { FEATURES } from '../app/features.js'
 import { logout } from '../lib/auth.js'
 import Drawer from './Drawer.jsx'
+import HotelPicker from './HotelPicker.jsx'
 import { Icon } from './kit.jsx'
 
 // Unica fonte del "chrome" dell'app: nessuna schermata costruisce la propria barra.
 // In alto: struttura a sinistra, cerchio del profilo a destra. In basso: 5 sezioni.
-export default function Shell({ route, ctx, onLogout, onSwitchHotel, children }) {
+export default function Shell({ route, ctx, onLogout, onSwitchHotel, onChangeHotel, children }) {
   const [menuOpen, setMenuOpen] = useState(false)
+  const [pickerOpen, setPickerOpen] = useState(false)
   const items = bottomNavFor(ctx.permissions, { randai: FEATURES.randai })
   const hotel = hotelById(ctx.hotelId)
   const hotelName = hotel?.name || ctx.hotelId
@@ -17,10 +19,17 @@ export default function Shell({ route, ctx, onLogout, onSwitchHotel, children })
   return (
     <div className="shell">
       <header className="shell-top">
-        <span className="hotel-chip">
+        <button
+          type="button"
+          className="hotel-chip"
+          aria-haspopup="dialog"
+          aria-label={`Struttura: ${hotelName}. Tocca per cambiare`}
+          onClick={() => setPickerOpen(true)}
+        >
           {hotel?.logo ? <img src={hotel.logo} alt="" width="28" height="28" /> : <Icon name="building" size={18} />}
           <span>{hotelName}</span>
-        </span>
+          <Icon name="chevron" size={16} />
+        </button>
         <button
           type="button"
           className="avatar"
@@ -58,8 +67,15 @@ export default function Shell({ route, ctx, onLogout, onSwitchHotel, children })
         onClose={() => setMenuOpen(false)}
         ctx={ctx}
         route={route}
-        onSwitchHotel={onSwitchHotel}
+        onSwitchHotel={() => setPickerOpen(true)}
         onLogout={async () => { await logout(); onLogout() }}
+      />
+      <HotelPicker
+        open={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        currentId={ctx.hotelId}
+        onChange={onChangeHotel}
+        onOtherUser={() => { setPickerOpen(false); onSwitchHotel() }}
       />
     </div>
   )
