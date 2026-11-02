@@ -87,6 +87,9 @@ function PlanningScreen({ route, ctx }) {
     if (third === 'new') {
       return has(PERM.PLANNING_SALE_CREATE) ? <SaleNew ctx={ctx} /> : <NoAccess text="Non puoi prenotare le sale." />
     }
+    if (third === 'edit') {
+      return has(PERM.PLANNING_SALE_UPDATE) ? <SaleNew ctx={ctx} editId={parts[3]} /> : <NoAccess text="Non puoi modificare le prenotazioni." />
+    }
     if (third === 'config') {
       return has(PERM.PLANNING_SALE_MANAGE) ? <SaleConfig ctx={ctx} /> : <NoAccess text="Non puoi configurare le sale." />
     }

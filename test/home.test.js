@@ -41,9 +41,10 @@ test('lavori e sale di oggi', () => {
   const data = {
     ...empty,
     works: [
-      { id: 'w1', description: 'a', days: ['2026-10-31'], status: 'da_fare' },
-      { id: 'w2', description: 'b', days: ['2026-10-31'], status: 'fatto' },
-      { id: 'w3', description: 'c', days: ['2026-10-29'], status: 'da_fare' },
+      { id: 'd1', work_id: 'w1', description: 'a', day: '2026-10-31', status: 'da_fare' },
+      { id: 'd2', work_id: 'w2', description: 'b', day: '2026-10-31', status: 'fatto' },
+      { id: 'd3', work_id: 'w3', description: 'c', day: '2026-10-29', status: 'da_fare' },
+      { id: 'd4', work_id: 'w4', description: 'd', day: '2026-10-30', status: 'annullato' },
     ],
     bookings: [
       { id: 'b1', room: 'Sala', client: 'X', date_from: '2026-10-31', date_to: '2026-10-31', shift: 'sera', status: 'attiva' },
@@ -71,7 +72,7 @@ test('da fare adesso: ordine per importanza, massimo 3 per sezione e 10 in tutto
     alerts: Array.from({ length: 5 }, (_, i) => ({ id: `a${i}`, note: `n${i}`, status: 'aperto', created_at: `2026-10-31T0${i}:00:00Z` })),
     issues: Array.from({ length: 6 }, (_, i) => issue(i, 'da_fare', 'urgente', `2026-10-31T0${i}:00:00Z`)),
     interventions: Array.from({ length: 4 }, (_, i) => intv(i, 'da_fare')),
-    works: Array.from({ length: 4 }, (_, i) => ({ id: `w${i}`, description: 'w', days: [today], status: 'da_fare' })),
+    works: Array.from({ length: 4 }, (_, i) => ({ id: `d${i}`, work_id: `w${i}`, description: 'w', day: today, status: 'da_fare' })),
   }
   const todo = buildTodo(data, { today, role })
   assert.equal(todo.length, 10)

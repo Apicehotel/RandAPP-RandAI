@@ -3,7 +3,7 @@ import { bookingConflicts, shiftLabel, shortDate } from '../lib/planning.js'
 
 const WORK_COLUMNS = 'id,hotel_id,description,days,category,assignee_ids,status,created_by,created_at,updated_at,completed_at'
 const BOOKING_COLUMNS =
-  'id,hotel_id,room,client,date_from,date_to,shift,pax,notes,layout,prep_date,audio_required,video_required,status,created_by,created_at,updated_at'
+  'id,hotel_id,room,client,date_from,date_to,shift,pax,notes,layout,prep_date,audio_required,video_required,op_status,op_by_name,op_at,audio_status,audio_by_name,audio_at,video_status,video_by_name,video_at,status,created_by,created_at,updated_at'
 
 // ---- Planning Lavori (sempre filtrato per hotel_id)
 export async function listWorks(hotelId, { limit = 300 } = {}) {
@@ -42,15 +42,42 @@ export async function createWork(hotelId, userId, input) {
   return data
 }
 
-export async function updateWorkStatus(hotelId, id, status) {
+// Giorni dei lavori (uno stato per giorno), con descrizione/categoria/assegnatari del lavoro.
+const DAY_COLUMNS =
+  'id,hotel_id,work_id,day,status,status_by_name,status_at,planning_works(description,category,assignee_ids)'
+
+export async function listWorkDays(hotelId, { from, to, limit = 500 } = {}) {
+  let q = supabase.from('planning_work_days').select(DAY_COLUMNS).eq('hotel_id', hotelId)
+  if (from) q = q.gte('day', from)
+  if (to) q = q.lte('day', to)
+  const { data, error } = await q.order('day', { ascending: true }).limit(limit)
+  if (error) throw new Error('Impossibile caricare i giorni di lavoro')
+  return (data || []).map(flatDay)
+}
+
+export async function listWorkDaysOf(hotelId, workId) {
   const { data, error } = await supabase
-    .from('planning_works')
-    .update({ status, completed_at: status === 'fatto' ? new Date().toISOString() : null })
+    .from('planning_work_days')
+    .select(DAY_COLUMNS)
     .eq('hotel_id', hotelId)
-    .eq('id', id)
-    .select(WORK_COLUMNS)
-    .single()
-  if (error) throw new Error('Impossibile aggiornare lo stato')
+    .eq('work_id', workId)
+    .order('day', { ascending: true })
+    .limit(40)
+  if (error) throw new Error('Impossibile caricare i giorni del lavoro')
+  return (data || []).map(flatDay)
+}
+
+const flatDay = (r) => ({
+  id: r.id, hotel_id: r.hotel_id, work_id: r.work_id, day: r.day, status: r.status,
+  status_by_name: r.status_by_name, status_at: r.status_at,
+  description: r.planning_works?.description || '', category: r.planning_works?.category || null,
+  assignee_ids: r.planning_works?.assignee_ids || [],
+})
+
+// Cambia lo stato di UN giorno (chi e quando li scrive il server).
+export async function setWorkDayStatus(dayId, status) {
+  const { data, error } = await supabase.rpc('planning_work_day_set', { p_day: dayId, p_status: status })
+  if (error) throw new Error('Impossibile aggiornare il giorno')
   return data
 }
 
@@ -79,7 +106,7 @@ export async function getBooking(hotelId, id) {
   return data
 }
 
-export async function createBooking(hotelId, userId, input) {
+export async function createBooking(hotelId, userId, input, rooms = []) {
   const row = {
     hotel_id: hotelId,
     created_by: userId,
@@ -97,7 +124,7 @@ export async function createBooking(hotelId, userId, input) {
   }
   // Ricontrollo con i dati freschi: riduce il rischio di doppia prenotazione.
   const fresh = await listBookings(hotelId, row.date_from)
-  const clash = bookingConflicts(row, fresh)[0]
+  const clash = bookingConflicts(row, fresh, rooms)[0]
   if (clash) {
     throw new Error(`Sala già occupata: ${clash.client} (${shortDate(clash.date_from)}, ${shiftLabel(clash.shift)})`)
   }
@@ -106,12 +133,13 @@ export async function createBooking(hotelId, userId, input) {
   return data
 }
 
-export async function updateBookingStatus(hotelId, id, status) {
+// Annulla / riattiva (anagrafica della prenotazione, non lo stato operativo).
+export async function updateBookingStatus(hotelId, id, status, rooms = []) {
   if (status === 'attiva') {
     const current = await getBooking(hotelId, id)
     if (current) {
       const fresh = await listBookings(hotelId, current.date_from)
-      const clash = bookingConflicts({ ...current, status: 'attiva' }, fresh)[0]
+      const clash = bookingConflicts({ ...current, status: 'attiva' }, fresh, rooms)[0]
       if (clash) throw new Error(`Non si può riattivare: sala occupata da ${clash.client}`)
     }
   }
@@ -123,5 +151,41 @@ export async function updateBookingStatus(hotelId, id, status) {
     .select(BOOKING_COLUMNS)
     .single()
   if (error) throw new Error('Impossibile aggiornare la prenotazione')
+  return data
+}
+
+// Modifica dei dati della prenotazione (chi può: planning_sale.update).
+export async function updateBooking(hotelId, id, input, rooms = []) {
+  const row = {
+    room: input.room.trim(),
+    client: input.client.trim(),
+    date_from: input.date_from,
+    date_to: input.date_to,
+    shift: input.shift,
+    pax: input.pax ? Number(input.pax) : null,
+    notes: (input.notes || '').trim() || null,
+    layout: input.layout || null,
+    prep_date: input.prep_date || null,
+    audio_required: Boolean(input.audio_required),
+    video_required: Boolean(input.video_required),
+  }
+  const fresh = await listBookings(hotelId, row.date_from)
+  const clash = bookingConflicts({ ...row, id }, fresh, rooms)[0]
+  if (clash) throw new Error(`Sala già occupata: ${clash.client} (${shortDate(clash.date_from)}, ${shiftLabel(clash.shift)})`)
+  const { data, error } = await supabase
+    .from('sale_bookings').update(row).eq('hotel_id', hotelId).eq('id', id).select(BOOKING_COLUMNS).single()
+  if (error) throw new Error('Impossibile modificare la prenotazione')
+  return data
+}
+
+// Stato operativo (Da fare · Da finire · Fatto) e check Audio/Video: solo tramite il server.
+export async function setBookingOp(id, status) {
+  const { data, error } = await supabase.rpc('sale_booking_set_op', { p_id: id, p_status: status })
+  if (error) throw new Error(error.message?.includes('controlli') ? error.message : 'Impossibile aggiornare lo stato')
+  return data
+}
+export async function setBookingCheck(id, kind, state) {
+  const { data, error } = await supabase.rpc('sale_booking_set_check', { p_id: id, p_kind: kind, p_state: state })
+  if (error) throw new Error('Impossibile aggiornare il controllo')
   return data
 }

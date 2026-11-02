@@ -286,3 +286,30 @@ button { cursor: pointer; }
 .checkrow { display: flex; align-items: center; gap: var(--gap-tight); min-height: var(--control); }
 .checkrow input { width: 20px; height: 20px; }
 .banner { padding: var(--gap-tight) var(--gap); border-radius: var(--radius-sm); background: var(--surface-2); color: var(--text-2); font-size: var(--fs-sm); }
+
+/* Planning: statistiche, righe-giorno, spunte, check */
+.stats3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--gap-tight); }
+.stats3 .card { display: grid; gap: 2px; padding: var(--gap-tight) var(--gap); text-align: center; }
+.stat-num.warn, .warn-text { color: var(--warn); }
+.stat-num.ok, .ok-text { color: var(--ok); }
+.dayrow { display: grid; gap: var(--gap-tight); }
+.dayrow-main { display: grid; grid-template-columns: var(--control) 1fr; gap: var(--gap); align-items: center; }
+.dayrow small { display: block; }
+.dayrow[data-status='da_finire'] { border-color: var(--warn); }
+.dayrow-actions { justify-content: flex-end; flex-wrap: wrap; gap: var(--gap-tight); }
+.tick { width: var(--control); height: var(--control); border-radius: var(--radius-sm); border: 0; background: var(--surface-2); color: var(--text); font-size: 20px; }
+.tick[data-on] { background: var(--ok); color: #fff; }
+.checkpill { display: flex; justify-content: space-between; align-items: center; gap: var(--gap-tight); min-height: var(--row-h); padding: 0 var(--gap); border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface-2); color: var(--text); text-align: left; }
+.checkpill strong { font-size: var(--fs-xs); }
+.checkpill[data-state='ok'] strong { color: var(--ok); }
+.checkpill[data-state='problema'] strong { color: var(--danger); }
+.checkpill[data-state='da_verificare'] strong { color: var(--accent); }
+.cal-day { display: grid; gap: 4px; padding: var(--gap-tight) 0; border-top: 1px solid var(--border); }
+.cal-day[data-today] > strong { color: var(--accent); }
+.cal-event { display: grid; gap: 2px; padding: 6px var(--gap-tight); border-radius: var(--radius-sm); background: var(--surface-2); font-size: var(--fs-sm); }
+.chip:disabled { opacity: 0.45; }
+.stats3.mini { gap: var(--gap-tight); }
+.stats3.mini > span { display: grid; text-align: center; }
+.stats3.mini b { font-size: var(--fs-key); line-height: 1.1; }
+.stats3.mini small { color: var(--text-2); font-size: var(--fs-xs); }
+.accent-text { color: var(--accent); }
