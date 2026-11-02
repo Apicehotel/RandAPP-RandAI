@@ -138,6 +138,11 @@ test('sensori: formati, ordine e riepilogo', () => {
   assert.equal(X.optionalNumber('x'), undefined)
 })
 
+test('sensori: i nascosti si trovano e si possono rimostrare', () => {
+  const list = [{ name: 'B', active: false }, { name: 'A', active: false }, { name: 'C', active: true }, { name: 'D' }]
+  assert.deepEqual(X.hiddenSensors(list).map((s) => s.name), ['A', 'B'])
+})
+
 // ---- Menu
 test('menu Gestione: ogni voce compare solo col suo permesso', () => {
   const ids = (perms) => menuGroupsFor(new Set(perms)).flatMap((g) => g.items.map((i) => i.id))
