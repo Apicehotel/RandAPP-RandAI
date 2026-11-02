@@ -1,18 +1,22 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { createBooking, listBookings } from '../data/planning.js'
+import { createBooking, getBooking, listBookings, updateBooking } from '../data/planning.js'
 import { addSaleLayout, getSaleConfig, saveSaleClient } from '../data/forms.js'
 import { applyRecall, clearDraft, findClient, loadDraft, prepDefaults, prepOk, saveDraft } from '../lib/forms.js'
 import { useAsync, go } from '../lib/hooks.js'
 import { can, PERM } from '../lib/permissions.js'
-import { SHIFTS, addDaysIso, bookingConflicts, roomNames, shiftLabel, shortDate, todayIso } from '../lib/planning.js'
+import {
+  FORM_SHIFTS, addDaysIso, bookingConflicts, prepDay, roomAvailability, roomNames, roomsByFamily, shiftLabel, shortDate, todayIso,
+} from '../lib/planning.js'
 import { Button, ErrorText, Field } from '../ui/kit.jsx'
 import { ChipPick, Stepper } from '../ui/forms.jsx'
 
-const SHIFT_OPTS = SHIFTS.map((s) => ({ id: s.id, label: s.label }))
+const SHIFT_OPTS = FORM_SHIFTS.map((s) => ({ id: s.id, label: s.id === 'giornata' ? 'Giornata intera' : s.label }))
+const AVAIL = { free: '● Libera', partial: '◐ Parziale', busy: '● Occupata' }
 
-export default function PlanningSaleNew({ ctx }) {
+// editId: se presente la schermata modifica una prenotazione esistente (niente bozza).
+export default function PlanningSaleNew({ ctx, editId = null }) {
   const today = todayIso()
-  const draft = useRef(loadDraft('sale', ctx.hotelId, ctx.userId))
+  const draft = useRef(editId ? null : loadDraft('sale', ctx.hotelId, ctx.userId))
   const [form, setForm] = useState({
     client: '', room: '', layout: '', date_from: today, date_to: today, prep_date: today, shift: 'mattina',
     pax: '1', notes: '', audio: false, video: false, saveRecall: false, ...(draft.current || {}),
@@ -23,10 +27,21 @@ export default function PlanningSaleNew({ ctx }) {
   const { data: existing } = useAsync(() => listBookings(ctx.hotelId, todayIso()), [ctx.hotelId])
   const { data: config, reload: reloadConfig } = useAsync(() => getSaleConfig(ctx.hotelId), [ctx.hotelId])
 
+  const { data: current } = useAsync(() => (editId ? getBooking(ctx.hotelId, editId) : null), [ctx.hotelId, editId])
   useEffect(() => {
+    if (!current) return
+    setForm({
+      client: current.client, room: current.room, layout: current.layout || '', date_from: current.date_from,
+      date_to: current.date_to, prep_date: prepDay(current), shift: current.shift, pax: String(current.pax || 1),
+      notes: current.notes || '', audio: current.audio_required, video: current.video_required, saveRecall: false,
+    })
+  }, [current])
+
+  useEffect(() => {
+    if (editId) return undefined
     const t = setTimeout(() => saveDraft('sale', ctx.hotelId, ctx.userId, form), 300)
     return () => clearTimeout(t)
-  }, [form, ctx.hotelId, ctx.userId])
+  }, [form, ctx.hotelId, ctx.userId, editId])
 
   const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }))
   const pick = (key) => (value) => setForm((f) => ({ ...f, [key]: value }))
@@ -38,7 +53,8 @@ export default function PlanningSaleNew({ ctx }) {
     }))
   }
 
-  const configuredRooms = (config?.rooms || []).filter((r) => r.active)
+  const configuredRooms = (config?.rooms || []).filter((r) => r.active || r.name === form.room)
+  const allRooms = config?.rooms || []
   const hasConfig = configuredRooms.length > 0
   const layouts = config?.layouts || []
   const roomHints = useMemo(() => roomNames(existing || []), [existing])
@@ -47,9 +63,10 @@ export default function PlanningSaleNew({ ctx }) {
   const canManage = can(ctx.permissions, PERM.PLANNING_SALE_MANAGE)
 
   // Stato di ogni sala nel periodo scelto: libera o già occupata (e da chi).
-  const clashFor = (room) =>
-    form.date_to >= form.date_from ? bookingConflicts({ ...form, room }, existing || [])[0] : null
-  const clash = form.room.trim() ? clashFor(form.room) : null
+  const period = { date_from: form.date_from, date_to: form.date_to, shift: form.shift }
+  const clash = form.room.trim() && form.date_to >= form.date_from
+    ? bookingConflicts({ ...form, id: editId, room: form.room }, existing || [], allRooms)[0]
+    : null
 
   const addLayout = async () => {
     if (!newLayout.trim()) return
@@ -73,11 +90,12 @@ export default function PlanningSaleNew({ ctx }) {
     setBusy(true)
     setError('')
     try {
-      const booking = await createBooking(ctx.hotelId, ctx.userId, {
-        ...form, audio_required: form.audio, video_required: form.video,
-      })
+      const input = { ...form, audio_required: form.audio, video_required: form.video }
+      const booking = editId
+        ? await updateBooking(ctx.hotelId, editId, input, allRooms)
+        : await createBooking(ctx.hotelId, ctx.userId, input, allRooms)
       if (form.saveRecall) await saveSaleClient(ctx.hotelId, form).catch(() => {})
-      clearDraft('sale', ctx.hotelId, ctx.userId)
+      if (!editId) clearDraft('sale', ctx.hotelId, ctx.userId)
       go(`/planning/sale/${booking.id}`)
     } catch (err) {
       setError(`${err.message}. La bozza resta sul telefono: riprova.`)
@@ -87,9 +105,9 @@ export default function PlanningSaleNew({ ctx }) {
 
   return (
     <form className="page" onSubmit={submit}>
-      <a href="#/planning/sale">← Planning Sale</a>
+      <a href={editId ? `#/planning/sale/${editId}` : '#/planning/sale'}>← {editId ? 'Prenotazione' : 'Planning Sale'}</a>
       <div className="row">
-        <h1>Nuova prenotazione sala</h1>
+        <h1>{editId ? 'Modifica prenotazione' : 'Nuova prenotazione sala'}</h1>
         {canManage && <a href="#/planning/sale/config">Configura</a>}
       </div>
       <div className="card stack">
@@ -113,7 +131,7 @@ export default function PlanningSaleNew({ ctx }) {
           </Field>
         </div>
         <div className="stack">
-          <span className="field-label">Turno</span>
+          <span className="field-label">Turno evento</span>
           <ChipPick label="Turno" options={SHIFT_OPTS} value={form.shift} onChange={pick('shift')} />
         </div>
 
@@ -128,18 +146,23 @@ export default function PlanningSaleNew({ ctx }) {
 
         {hasConfig ? (
           <div className="stack">
-            <span className="field-label">Sala</span>
-            <div className="chips wrap" role="group" aria-label="Sala">
-              {configuredRooms.map((r) => {
-                const busyBy = clashFor(r.name)
-                return (
-                  <button type="button" key={r.id} className="chip" aria-pressed={form.room === r.name} disabled={Boolean(busyBy)}
-                    title={busyBy ? `Occupata: ${busyBy.client}` : undefined} onClick={() => pick('room')(r.name)}>
-                    {r.name}{busyBy ? ' · occupata' : ''}
-                  </button>
-                )
-              })}
-            </div>
+            <span className="field-label">Sala · {configuredRooms.filter((r) => roomAvailability(r, period, existing || [], allRooms, editId) === 'free').length} libere nel periodo</span>
+            {roomsByFamily(configuredRooms).map((g) => (
+              <div key={g.name} className="stack">
+                <small className="muted">{g.name}</small>
+                <div className="chips wrap" role="group" aria-label={`Sale ${g.name}`}>
+                  {g.rooms.map((r) => {
+                    const a = roomAvailability(r, period, existing || [], allRooms, editId)
+                    return (
+                      <button type="button" key={r.id} className="chip" aria-pressed={form.room === r.name} disabled={a !== 'free'}
+                        onClick={() => pick('room')(r.name)}>
+                        {r.name} <small>{AVAIL[a]}</small>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            ))}
           </div>
         ) : (
           <Field label="Sala" id="room">
@@ -187,7 +210,7 @@ export default function PlanningSaleNew({ ctx }) {
         )}
         <ErrorText>{error}</ErrorText>
         <Button variant="primary" type="submit" block disabled={busy || Boolean(clash)}>
-          {busy ? 'Salvo…' : 'Prenota la sala'}
+          {busy ? 'Salvo…' : editId ? 'Salva modifiche' : 'Prenota la sala'}
         </Button>
       </div>
     </form>

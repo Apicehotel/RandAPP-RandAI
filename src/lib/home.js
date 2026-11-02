@@ -3,7 +3,7 @@
 import { workQueue } from './queue.js'
 import { filterAlerts, isForRole, isReminderCurrent, sortAlerts, summarizeAlerts, describeSchedule } from './task.js'
 import { filterInterventions, sortInterventions, summarizeInterventions, interventionStatusLabel } from './interventions.js'
-import { bookingsOnDay, shiftLabel, shortDate, worksInWeek, worksOnDay, weekStartIso } from './planning.js'
+import { bookingsOnDay, shiftLabel, shortDate, liveDays, workDaysOn } from './planning.js'
 import { urgencyLabel, statusLabel } from './queue.js'
 
 const count = (arr, fn) => (arr ? arr.filter(fn).length : null)
@@ -13,7 +13,8 @@ export function buildTiles(data, { today, role }) {
   const issues = data.issues
   const iv = data.interventions && summarizeInterventions(data.interventions)
   const alerts = data.alerts && summarizeAlerts(data.alerts)
-  const openWorks = data.works && data.works.filter((w) => w.status !== 'fatto')
+  // `data.works` sono i giorni di lavoro della settimana: contano quelli non annullati e non fatti.
+  const openWorks = data.works && liveDays(data.works).filter((r) => r.status !== 'fatto')
   return {
     issues: issues && {
       value: count(issues, (i) => i.status === 'da_fare'),
@@ -28,9 +29,9 @@ export function buildTiles(data, { today, role }) {
       href: '#/interventions', icon: 'wrench',
     },
     works: openWorks && {
-      value: worksOnDay(openWorks, today).length,
+      value: workDaysOn(openWorks, today).length,
       label: 'Lavori oggi',
-      detail: `${worksInWeek(openWorks, weekStartIso(today)).length} in settimana`,
+      detail: `${openWorks.length} in settimana`,
       href: '#/planning/work', icon: 'calendar',
     },
     sale: data.bookings && {
@@ -77,8 +78,8 @@ export function buildTodo(data, { today, role, perSection = 3, max = 10 }) {
     })))
   }
   if (data.works) {
-    push('Lavoro', worksOnDay(data.works.filter((w) => w.status !== 'fatto'), today).map((w) => ({
-      key: `w-${w.id}`, title: w.description, meta: 'Oggi', href: `#/planning/work/${w.id}`,
+    push('Lavoro', workDaysOn(data.works.filter((r) => r.status !== 'fatto'), today).map((r) => ({
+      key: `w-${r.id}`, title: r.description, meta: r.status === 'da_finire' ? 'Da finire' : 'Oggi', href: `#/planning/work/${r.work_id}`,
     })))
   }
   if (data.bookings) {

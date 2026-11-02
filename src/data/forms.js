@@ -23,7 +23,7 @@ export async function listStaff(hotelId) {
 // ---- Sale: configurazione, allestimenti, clienti
 export async function getSaleConfig(hotelId) {
   const [rooms, layouts, clients] = await Promise.all([
-    supabase.from('sale_rooms').select('id,name,capacity,sort_order,active').eq('hotel_id', hotelId).order('sort_order').limit(200),
+    supabase.from('sale_rooms').select('id,name,family,parts,capacity,sort_order,active').eq('hotel_id', hotelId).order('sort_order').limit(200),
     supabase.from('sale_layouts').select('id,name,sort_order').eq('hotel_id', hotelId).order('sort_order').limit(200),
     supabase
       .from('sale_clients')
@@ -36,9 +36,12 @@ export async function getSaleConfig(hotelId) {
   return { rooms: rooms.data || [], layouts: layouts.data || [], clients: clients.data || [] }
 }
 
-export async function addSaleRoom(hotelId, { name, capacity, sort_order }) {
-  const row = { hotel_id: hotelId, name: name.trim(), capacity: capacity ? Number(capacity) : null, sort_order: sort_order || 0 }
-  const { data, error } = await supabase.from('sale_rooms').insert(row).select('id,name,capacity,sort_order,active').single()
+export async function addSaleRoom(hotelId, { name, family, parts, capacity, sort_order }) {
+  const row = {
+    hotel_id: hotelId, name: name.trim(), family: (family || '').trim() || null, parts: parts || [],
+    capacity: capacity ? Number(capacity) : null, sort_order: sort_order || 0,
+  }
+  const { data, error } = await supabase.from('sale_rooms').insert(row).select('id,name,family,parts,capacity,sort_order,active').single()
   if (error) throw new Error(error.code === '23505' ? 'Esiste già una sala con questo nome' : 'Impossibile aggiungere la sala')
   return data
 }

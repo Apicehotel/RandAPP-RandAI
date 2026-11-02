@@ -17,6 +17,7 @@ export const PERM = {
   PLANNING_SALE_CREATE: 'planning_sale.create',
   PLANNING_SALE_UPDATE: 'planning_sale.update',
   PLANNING_SALE_MANAGE: 'planning_sale.manage',
+  PLANNING_SALE_OPERATE: 'planning_sale.operate',
   URGENT_VIEW: 'urgent.view',
   URGENT_CREATE: 'urgent.create',
   URGENT_UPDATE: 'urgent.update',

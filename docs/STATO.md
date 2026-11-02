@@ -80,8 +80,15 @@ _Nessun lavoro in corso._ (Scrivi qui: strumento, branch, cosa stai facendo.)
   - **Seed dei luoghi** fuori dal repo (pubblico): va eseguito dopo `0011`. Non portati: foto, ricambi, avviso→segnalazione, gestione luoghi da app, "da preparare il" nella lista lavori del manutentore.
   - **Decisione utente (2026-11-02)**: niente nuovo progetto Supabase; ci si aggancia al Supabase esistente più avanti. Prima di applicare le migrazioni lì va controllato che i nomi delle tabelle (`issues`, `interventions`, `sale_bookings`…) non collidano con quelle della vecchia app.
 
+- 2026-11-02 — Claude (branch `claude/planning-allineato`): Planning riallineato alla vecchia app (migrazione `0012_planning_ops.sql`). Nella PR #18 avevo aggiunto campi ma lasciato un modello diverso; qui è corretto.
+  - **Lavori**: stato **per giorno** (`planning_work_days`, riempita da un trigger alla creazione del lavoro e per i lavori esistenti) con Da fare · Da finire · Fatto · Annullato, chi e quando; funzione `planning_work_day_set`. `planning_works.status` ora lo imposta il server (il browser non lo scrive più).
+  - **Sale**: lista per giorno di preparazione, stato operativo e **check Audio/Video** con "Fatto" bloccato (`sale_booking_set_op/_check`, permesso `planning_sale.operate`), famiglie e **combinazioni** (`sale_rooms.family/parts`), disponibilità Libera/Parziale/Occupata, modifica prenotazione, calendario eventi nel riepilogo Planning.
+  - Grant a colonne su `sale_bookings`: dal browser solo i dati; stati/check solo via funzioni. Home: i lavori contano i giorni (non più il lavoro intero).
+  - Logica in `src/lib/planning.js` (test in `test/planning.test.js`, 116 test totali). Anteprima: `dayStats`, `prepStats`, `roomAvailability`.
+  - Non portato: sensori/audio-video automatici (test con microfono/telecamera: nel vecchio erano solo segnaposto), notifiche di assegnazione, eliminazione di un giorno (qui "annulla"), ruolo "Direttore Centro Congressi" (qui: `planning_sale.manage/update` a direzione e responsabile; da confermare).
+
 ## Da fare (in ordine)
-1. Agganciare il Supabase **esistente** (scelta dell'utente): verificare collisioni di nomi, applicare `0001`…`0011` in ordine, pubblicare `pin-auth` e `ewelink-sync`, creare i primi utenti, eseguire i seed (sensori, luoghi).
+1. Agganciare il Supabase **esistente** (scelta dell'utente): verificare collisioni di nomi, applicare `0001`…`0012` in ordine, pubblicare `pin-auth` e `ewelink-sync`, creare i primi utenti, eseguire i seed (sensori, luoghi).
 2. **Provare il login e le segnalazioni su un telefono vero** (vedi note sotto).
 3. Notifiche WhatsApp (API Meta) sulle segnalazioni.
 4. Coda offline (Dexie) che conserva l'hotel di origine dell'operazione.
