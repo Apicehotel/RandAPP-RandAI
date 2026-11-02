@@ -51,3 +51,7 @@ export function optionalNumber(value) {
   const n = Number(text.replace(',', '.'))
   return Number.isFinite(n) ? n : undefined
 }
+
+// Sensori nascosti (si possono rimostrare).
+export const hiddenSensors = (sensors) =>
+  sensors.filter((s) => s.active === false).sort((a, b) => a.name.localeCompare(b.name, 'it'))

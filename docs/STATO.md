@@ -6,6 +6,7 @@ File di passaggio di consegne tra Claude, Cursor e Codex. Aggiornalo a ogni sess
 _Nessun lavoro in corso._ (Scrivi qui: strumento, branch, cosa stai facendo.)
 
 ## Fatto
+- 2026-11-02 — Claude (branch `claude/sensori-nascosti`): in Sensori e impianti chi gestisce vede il filtro "Nascosti (n)" e li può rimostrare. I 45 sensori della vecchia app (progetto Apice MultiHotel) sono pronti da importare con uno script **tenuto fuori dal repo** (repo pubblico: codici dispositivo e nomi delle zone sono dati interni); si applica al nuovo database dopo `0009` e dopo il primo utente.
 - 2026-11-02 — Claude (branch `claude/lettore-ewelink`): lettore eWeLink per i sensori.
   - Funzione `ewelink-sync` + `_shared/ewelink.js` (login firmato, elenco dispositivi, lettura temperatura/umidità/relay, modalità prova `?dry=1`, elenco dispositivi senza sensore). Test `ewelink.test.js` (97 in totale).
   - **Non provato contro l'API eWeLink vera**: formato delle risposte scritto dalla documentazione v2; da verificare con la modalità prova appena ci sono app id/secret. Da verificare anche paginazione dell'elenco e limiti di login.

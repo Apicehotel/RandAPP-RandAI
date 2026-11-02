@@ -3,7 +3,7 @@ import { listSensors, updateSensor } from '../data/sensors.js'
 import { useAsync, go } from '../lib/hooks.js'
 import { can, PERM } from '../lib/permissions.js'
 import {
-  STATE_LABELS, formatHumidity, formatTemp, sensorKindLabel, sensorState, sortSensors, summarizeSensors, switchLabel,
+  STATE_LABELS, formatHumidity, hiddenSensors, formatTemp, sensorKindLabel, sensorState, sortSensors, summarizeSensors, switchLabel,
 } from '../lib/sensors.js'
 import { Badge, Button, ErrorText, Spinner, formatDate } from '../ui/kit.jsx'
 
@@ -16,10 +16,12 @@ export default function Sensors({ ctx }) {
   const canManage = can(ctx.permissions, PERM.SENSORS_MANAGE)
   const list = sortSensors(data || [])
   const sum = summarizeSensors(data || [])
+  const hidden = hiddenSensors(data || [])
+  const [showHidden, setShowHidden] = useState(false)
 
-  const hide = async (id) => {
+  const setActive = async (id, active) => {
     setBusy(true); setActionError('')
-    try { await updateSensor(ctx.hotelId, id, { active: false }); await reload() }
+    try { await updateSensor(ctx.hotelId, id, { active }); await reload() }
     catch (e) { setActionError(e.message) } finally { setBusy(false) }
   }
 
@@ -49,11 +51,22 @@ export default function Sensors({ ctx }) {
               )}
               <div className="row muted">
                 <span>{s.last_seen ? `Aggiornato ${formatDate(s.last_seen)}` : 'Mai aggiornato'}</span>
-                {canManage && <button className="link-btn" disabled={busy} onClick={() => hide(s.id)}>Nascondi</button>}
+                {canManage && <button className="link-btn" disabled={busy} onClick={() => setActive(s.id, false)}>Nascondi</button>}
               </div>
             </div>
           )
         })}
+        {canManage && hidden.length > 0 && (
+          <button className="chip" aria-pressed={showHidden} onClick={() => setShowHidden((v) => !v)}>
+            Nascosti ({hidden.length})
+          </button>
+        )}
+        {canManage && showHidden && hidden.map((s) => (
+          <div key={s.id} className="card row">
+            <span>{s.name} <span className="muted">· {sensorKindLabel(s.kind)}</span></span>
+            <button className="link-btn" disabled={busy} onClick={() => setActive(s.id, true)}>Mostra</button>
+          </div>
+        ))}
         {data && list.length === 0 && <div className="card muted">Nessun sensore{canManage ? ': aggiungi il primo.' : '.'}</div>}
       </div>
     </div>
