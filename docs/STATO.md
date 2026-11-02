@@ -6,6 +6,9 @@ File di passaggio di consegne tra Claude, Cursor e Codex. Aggiornalo a ogni sess
 _Nessun lavoro in corso._ (Scrivi qui: strumento, branch, cosa stai facendo.)
 
 ## Fatto
+- 2026-11-02 — Claude (branch `claude/sensori-stagioni`): Sensori divisi in **Temperature** e **Interruttori** (Accesi/Spenti/Misti/Non raggiungibili) con **stagione Inverno/Estate**.
+  - Migrazione `0010_sensor_seasons.sql`: ruolo del sensore (ambiente/motore/frigo) e tabella `sensor_settings` (stagione e soglie 20/18/0 della vecchia app). Test: 101.
+  - Interpretazione mia della richiesta (la frase era troncata): da confermare. Lo script di importazione dei 45 sensori (fuori dal repo) ora assegna il ruolo "motore" ai sensori C/F; va eseguito dopo `0009` e `0010`.
 - 2026-11-02 — Claude (branch `claude/sensori-nascosti`): in Sensori e impianti chi gestisce vede il filtro "Nascosti (n)" e li può rimostrare. I 45 sensori della vecchia app (progetto Apice MultiHotel) sono pronti da importare con uno script **tenuto fuori dal repo** (repo pubblico: codici dispositivo e nomi delle zone sono dati interni); si applica al nuovo database dopo `0009` e dopo il primo utente.
 - 2026-11-02 — Claude (branch `claude/lettore-ewelink`): lettore eWeLink per i sensori.
   - Funzione `ewelink-sync` + `_shared/ewelink.js` (login firmato, elenco dispositivi, lettura temperatura/umidità/relay, modalità prova `?dry=1`, elenco dispositivi senza sensore). Test `ewelink.test.js` (97 in totale).
@@ -72,7 +75,7 @@ _Nessun lavoro in corso._ (Scrivi qui: strumento, branch, cosa stai facendo.)
   - **Da provare sul Supabase vero**: il cambio al volo funziona se lo stesso utente ha l'iscrizione in più strutture (`npm run user:create --hotels hotelgio,chocohotel`).
 
 ## Da fare (in ordine)
-1. Creare il progetto Supabase nuovo, applicare `0001`…`0009` in ordine, pubblicare `pin-auth`, creare i primi utenti (vedi README).
+1. Creare il progetto Supabase nuovo, applicare `0001`…`0010` in ordine, pubblicare `pin-auth`, creare i primi utenti (vedi README).
 2. **Provare il login e le segnalazioni su un telefono vero** (vedi note sotto).
 3. Notifiche WhatsApp (API Meta) sulle segnalazioni.
 4. Coda offline (Dexie) che conserva l'hotel di origine dell'operazione.

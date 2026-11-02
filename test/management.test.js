@@ -143,6 +143,47 @@ test('sensori: i nascosti si trovano e si possono rimostrare', () => {
   assert.deepEqual(X.hiddenSensors(list).map((s) => s.name), ['A', 'B'])
 })
 
+test('sensori: stagione inverno/estate per i motori, frigo e ambiente', () => {
+  const base = { kind: 'temperatura', online: true, last_seen: fresh }
+  const winter = { season: 'inverno', winter_min: 20, summer_max: 18, fridge_max: 0 }
+  const summer = { ...winter, season: 'estate' }
+  const motor = { ...base, role: 'motore' }
+  assert.equal(X.sensorState({ ...motor, temperature: 15 }, NOW, winter), 'allerta') // inverno: sotto la minima
+  assert.equal(X.sensorState({ ...motor, temperature: 57 }, NOW, winter), 'ok')
+  assert.equal(X.sensorState({ ...motor, temperature: 15 }, NOW, summer), 'ok') // estate: conta solo il massimo
+  assert.equal(X.sensorState({ ...motor, temperature: 25 }, NOW, summer), 'allerta')
+  const fridge = { ...base, role: 'frigo' }
+  assert.equal(X.sensorState({ ...fridge, temperature: 3 }, NOW, winter), 'allerta')
+  assert.equal(X.sensorState({ ...fridge, temperature: -18 }, NOW, winter), 'ok')
+  const room = { ...base, role: 'ambiente', alert_max: 26 }
+  assert.equal(X.sensorState({ ...room, temperature: 27 }, NOW, winter), 'allerta')
+  assert.deepEqual(X.thresholdsFor(motor, summer), { min: null, max: 18 })
+  assert.deepEqual(X.thresholdsFor(motor, winter), { min: 20, max: null })
+  assert.deepEqual(X.thresholdsFor({ role: 'ambiente' }, undefined), { min: null, max: null })
+  // senza impostazioni usa i valori di partenza (inverno)
+  assert.equal(X.sensorState({ ...motor, temperature: 10 }, NOW), 'allerta')
+})
+
+test('sensori: temperature e interruttori separati, interruttori per Acceso/Spento', () => {
+  const sensors = [
+    { name: 'T1', kind: 'temperatura' },
+    { name: 'R2', kind: 'relay', online: true, last_seen: fresh, switch_state: 'on' },
+    { name: 'R10', kind: 'relay', online: true, last_seen: fresh, switch_state: 'on' },
+    { name: 'R1', kind: 'relay', online: true, last_seen: fresh, switch_state: 'off' },
+    { name: 'R3', kind: 'relay', online: true, last_seen: fresh, switch_state: 'mixed' },
+    { name: 'R4', kind: 'relay', online: false, last_seen: fresh, switch_state: 'on' },
+    { name: 'R5', kind: 'relay', online: true, last_seen: '2026-10-01T00:00:00Z', switch_state: 'on' },
+    { name: 'R6', kind: 'relay', online: true, last_seen: fresh, switch_state: null },
+    { name: 'R7', kind: 'relay', online: true, last_seen: fresh, switch_state: 'on', active: false },
+  ]
+  assert.equal(X.temperatureSensors(sensors).length, 1)
+  assert.equal(X.switchSensors(sensors).length, 8)
+  const groups = X.groupSwitches(sensors, NOW)
+  assert.deepEqual(groups.map((g) => g.id), ['on', 'off', 'mixed', 'unreachable'])
+  assert.deepEqual(groups[0].items.map((s) => s.name), ['R2', 'R10']) // ordine numerico, nascosto escluso
+  assert.deepEqual(groups[3].items.map((s) => s.name).sort(), ['R4', 'R5', 'R6'])
+})
+
 // ---- Menu
 test('menu Gestione: ogni voce compare solo col suo permesso', () => {
   const ids = (perms) => menuGroupsFor(new Set(perms)).flatMap((g) => g.items.map((i) => i.id))
@@ -194,6 +235,17 @@ test('housekeeping: dal browser solo stato e nota; struttura e giornata passano 
   assert.match(sql, /function public\.hk_set_room_active[\s\S]*security definer/i)
   assert.match(sql, /function public\.hk_reset_day[\s\S]*security definer/i)
   assert.equal([...sql.matchAll(/has_permission\((?:v_hotel|p_hotel),\s*'housekeeping\.manage'\)/gi)].length, 2)
+})
+
+test('stagione sensori: tabella per struttura con RLS, niente DELETE, solo sensors.manage scrive', () => {
+  assert.match(sql, /create table public\.sensor_settings[\s\S]*?hotel_id\s+text primary key/i)
+  const policies = policiesOf('sensor_settings')
+  assert.equal(policies.length, 3)
+  assert.match(policies[0], /sensors\.view/)
+  assert.match(policies[1], /sensors\.manage/)
+  assert.match(policies[2], /sensors\.manage/)
+  assert.doesNotMatch(sql, /grant[^;]*delete[^;]*on[^;]*public\.sensor_settings/i)
+  assert.match(sql, /season\s+text not null default 'inverno' check \(season in \('inverno','estate'\)\)/i)
 })
 
 test('sensori: le misure non sono scrivibili dal browser', () => {

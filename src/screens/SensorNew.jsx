@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { createSensor } from '../data/sensors.js'
 import { go } from '../lib/hooks.js'
-import { SENSOR_KINDS, optionalNumber } from '../lib/sensors.js'
+import { SENSOR_KINDS, SENSOR_ROLES, optionalNumber } from '../lib/sensors.js'
 import { Button, ErrorText, Field } from '../ui/kit.jsx'
 
 export default function SensorNew({ ctx }) {
-  const [form, setForm] = useState({ name: '', device_key: '', kind: 'temperatura', min: '', max: '' })
+  const [form, setForm] = useState({ name: '', device_key: '', kind: 'temperatura', role: 'ambiente', min: '', max: '' })
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }))
@@ -19,7 +19,7 @@ export default function SensorNew({ ctx }) {
     if (min !== null && max !== null && min > max) { setError('La soglia minima supera la massima'); return }
     setBusy(true); setError('')
     try {
-      await createSensor(ctx.hotelId, ctx.userId, { name: form.name, device_key: form.device_key, kind: form.kind, alert_min: min, alert_max: max })
+      await createSensor(ctx.hotelId, ctx.userId, { name: form.name, device_key: form.device_key, kind: form.kind, role: form.kind === 'temperatura' ? form.role : 'ambiente', alert_min: min, alert_max: max })
       go('/sensors')
     } catch (err) { setError(err.message); setBusy(false) }
   }
@@ -37,6 +37,16 @@ export default function SensorNew({ ctx }) {
           ))}
         </div>
         {form.kind === 'temperatura' && (
+          <>
+            <div className="chips" role="group" aria-label="Ruolo">
+              {SENSOR_ROLES.map((r) => (
+                <button key={r.id} type="button" className="chip" aria-pressed={form.role === r.id} onClick={() => setForm((f) => ({ ...f, role: r.id }))}>{r.label}</button>
+              ))}
+            </div>
+            <p className="muted">{SENSOR_ROLES.find((r) => r.id === form.role)?.hint}</p>
+          </>
+        )}
+        {form.kind === 'temperatura' && form.role === 'ambiente' && (
           <>
             <Field label="Allerta sotto (°C, facoltativa)" id="min"><input id="min" className="input" inputMode="decimal" value={form.min} onChange={set('min')} /></Field>
             <Field label="Allerta sopra (°C, facoltativa)" id="max"><input id="max" className="input" inputMode="decimal" value={form.max} onChange={set('max')} /></Field>
