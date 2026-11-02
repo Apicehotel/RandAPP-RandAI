@@ -57,7 +57,10 @@ Se mancano le variabili `VITE_*`, l'app mostra la schermata "Configurazione manc
   - **Magazzino** (`inventory_items`, `inventory_movements`, migrazione `0006`): articoli con categoria, unità, scorta minima, ubicazione; filtri Tutti / Sotto scorta / Esauriti e ricerca. La giacenza cambia **solo** con la funzione server `inventory_move` (Carico, Scarico, Rettifica), che lascia sempre un movimento e impedisce giacenze negative. Permessi `warehouse.view/create/move/manage`.
   - **Rifornimento** (`supply_products`, `supply_requests`, `supply_request_items`, migrazione `0007`): la governante chiede prodotti (Minibar / Consumo), il manutentore li segna Consegnato o Manca. Catalogo prodotti vuoto per struttura, gestito da chi ha `supplies.manage`. Richieste e righe si scrivono solo con `supply_create_request` e `supply_resolve_item`. Permessi `supplies.view/create/complete/manage`.
   - **Housekeeping** (`hk_rooms`, migrazione `0008`): camere per piano con stato Da fare · In corso · Fatta e nota. Camere aggiunte a mano (`housekeeping.manage`); "Riparti da zero" rimette tutto da fare. **Non c'è ancora l'import da Slope.** Permessi `housekeeping.view/update/manage`.
-  - **Sensori e impianti** (`sensors`, migrazione `0009`): sensori di temperatura/umidità con soglie di allerta e relay (acceso/spento/misto); stati Regolare · In allerta · Non aggiornato (nessun dato da più di 30 minuti). Le misure le scriverà un servizio di sincronizzazione col service role (eWeLink): **non ancora attivo**, dal browser si gestisce solo l'anagrafica. Permessi `sensors.view/manage`.
+  - **Sensori e impianti** (`sensors`, `sensor_settings`, migrazioni `0009` e `0010`): la schermata ha una **stagione Inverno/Estate** (per struttura, la cambia chi ha `sensors.manage`) e due sezioni.
+    - **Temperature**: stati Regolare · In allerta · Non aggiornato (nessun dato da più di 30 minuti). Ruolo del sensore: *Ambiente* (soglie scritte a mano), *Motore/impianto* (inverno: allerta sotto 20 °C; estate: allerta sopra 18 °C) e *Frigo/cella* (allerta sopra 0 °C). I valori 20 / 18 / 0 sono quelli della vecchia app e stanno in `sensor_settings`.
+    - **Interruttori** (relay) raggruppati in **Accesi · Spenti · Misti · Non raggiungibili** (offline o dato vecchio).
+    - Le misure le scrive il lettore eWeLink (vedi sotto, non ancora attivo): dal browser si gestisce solo l'anagrafica e la stagione.
   - Come per il resto: niente DELETE dal browser, RLS su ogni tabella, `hotel_id` sempre filtrato. Le matrici dei ruoli sono scelte mie da confermare.
 - **Stati segnalazione**: Da fare · Tecnico · Attesa pezzo · Completata.
 - **Stile**: tema Sistema/Chiaro/Scuro e dimensione Piccolo/Normale/Grande, scelti dal **menu laterale** (sezione Aspetto). La dimensione NON è uno zoom: ogni livello ridefinisce font, spazi, altezza di pulsanti/campi/barra, icone, loghi e colonne dei riquadri (Piccolo 3 per riga, Normale 2, Grande 1, con filtri a capo). Colori e misure sono solo in `src/ui/tokens.css`; `base.css` usa solo quei valori.
@@ -80,7 +83,7 @@ Presi dalla vecchia app `Apicehotel-Manutenzione`.
 
 ## Messa in funzione del database (nuovo progetto Supabase)
 1. Crea un progetto Supabase **nuovo e separato** da quelli esistenti.
-2. Applica in ordine `supabase/migrations/0001_base.sql`, `0002_interventions.sql`, `0003_planning.sql`, `0004_task.sql`, `0005_presence.sql`, `0006_warehouse.sql`, `0007_supplies.sql`, `0008_housekeeping.sql` e `0009_sensors.sql`.
+2. Applica in ordine `supabase/migrations/0001_base.sql`, `0002_interventions.sql`, `0003_planning.sql`, `0004_task.sql`, `0005_presence.sql`, `0006_warehouse.sql`, `0007_supplies.sql`, `0008_housekeeping.sql`, `0009_sensors.sql` e `0010_sensor_seasons.sql`.
 3. Pubblica la funzione `pin-auth` (`supabase/functions/pin-auth`).
 4. Crea i primi utenti dal tuo terminale:
    ```bash
