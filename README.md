@@ -64,6 +64,14 @@ Se mancano le variabili `VITE_*`, l'app mostra la schermata "Configurazione manc
 - **Attenzione agli stili**: le classi generiche (es. `.center`) valgono per tutta l'app; per i componenti della barra usare nomi specifici (`nav-*`).
 - **Velocità**: ogni schermata si scarica solo quando la apri (`React.lazy`). `npm run check:bundle` fa fallire il controllo se l'avvio supera 160 KB compressi.
 
+## Lettore eWeLink (sensori e relay)
+Funzione server `supabase/functions/ewelink-sync` (logica in `supabase/functions/_shared/ewelink.js`, testata). Legge i dispositivi dell'account eWeLink e aggiorna la tabella `sensors` **di una sola struttura**; i dispositivi si abbinano per `device_key` = id del dispositivo eWeLink.
+- **Stato**: scritto dalla documentazione dell'API v2 **senza poterla provare dal vivo**. Prima di fidarsi usa la modalità prova.
+- **Segreti** (si impostano nel pannello Supabase, mai nel repo, nei commit o in chat): `EWELINK_APP_ID`, `EWELINK_APP_SECRET` (dal portale sviluppatori eWeLink), `EWELINK_EMAIL`, `EWELINK_PASSWORD` (meglio un account eWeLink dedicato), `EWELINK_REGION` (default `eu`), `EWELINK_COUNTRY_CODE` (default `+39`), `EWELINK_HOTEL_ID` (es. `hotelgio`), `SYNC_SECRET` (una stringa lunga a caso, serve a chi chiama la funzione).
+- **Prova**: `POST <url funzione>/ewelink-sync?dry=1` con l'intestazione `x-sync-secret`. Non scrive nulla: risponde con i dispositivi trovati, quelli già abbinati (`preview`) e quelli **senza sensore nell'app** (`unmatched`, con id e nome: l'id è il "codice dispositivo" da scrivere in *Nuovo sensore*).
+- **Uso**: crea in app i sensori con il codice giusto, poi chiama la funzione ogni 5 minuti (pg_cron + pg_net dal pannello Supabase, con `SYNC_SECRET` nell'intestazione). Aggiorna temperatura, umidità, relay, online e ultimo aggiornamento; un relay non tocca la temperatura. Dopo 30 minuti senza aggiornamenti l'app mostra "Non aggiornato".
+- **Non c'è** il comando dei relay dall'app (solo lettura). Elenco dispositivi senza paginazione: con molti dispositivi va verificato.
+
 ## Loghi e icona dell'app
 Presi dalla vecchia app `Apicehotel-Manutenzione`.
 - `src/assets/logos/`: mascotte **ApiceHotel** (login) e loghi di **Hotel Giò, Choco Hotel, Il Brigantino** (scelta struttura e intestazione). Sono importati dal codice (`src/lib/hotels.js`), quindi vengono pubblicati con nome a prova di cache.
@@ -99,7 +107,7 @@ src/assets/logos/      loghi (ApiceHotel e strutture)
 src/ui/                tokens.css (colori/dimensioni), base.css, Shell (barra + header), Drawer (menu), componenti
 src/randai/            RandAI (predisposto, spento)
 supabase/migrations/   schema database con RLS
-supabase/functions/    pin-auth (login con PIN lato server)
+supabase/functions/    pin-auth (login con PIN lato server), ewelink-sync (lettore eWeLink), _shared (logica comune)
 scripts/               create-user, check-bundle
 test/                  test automatici (permessi, coda, schema RLS, niente segreti)
 ```

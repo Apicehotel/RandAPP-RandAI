@@ -6,6 +6,10 @@ File di passaggio di consegne tra Claude, Cursor e Codex. Aggiornalo a ogni sess
 _Nessun lavoro in corso._ (Scrivi qui: strumento, branch, cosa stai facendo.)
 
 ## Fatto
+- 2026-11-02 — Claude (branch `claude/lettore-ewelink`): lettore eWeLink per i sensori.
+  - Funzione `ewelink-sync` + `_shared/ewelink.js` (login firmato, elenco dispositivi, lettura temperatura/umidità/relay, modalità prova `?dry=1`, elenco dispositivi senza sensore). Test `ewelink.test.js` (97 in totale).
+  - **Non provato contro l'API eWeLink vera**: formato delle risposte scritto dalla documentazione v2; da verificare con la modalità prova appena ci sono app id/secret. Da verificare anche paginazione dell'elenco e limiti di login.
+  - Mancano: progetto Supabase (segreti e pianificazione ogni 5 minuti), comando relay dall'app. Alternativa se eWeLink dà problemi: Home Assistant.
 - 2026-10-31 — Claude (branch `claude/moduli-operativi`): moduli di gestione dalla vecchia app, in versione "vuota" (struttura completa, nessun dato importato). Impianti = sensori e relay.
   - Migrazioni `0006` Magazzino, `0007` Rifornimento, `0008` Housekeeping, `0009` Sensori. Menu laterale: gruppo **Gestione**. Test `management.test.js` (87 in totale), avvio 138,3 KB.
   - Scritture sensibili solo da funzioni server: giacenza (`inventory_move`), richieste (`supply_create_request`/`supply_resolve_item`), struttura camere (`hk_set_room_active`, `hk_reset_day`); misure dei sensori non scrivibili dal browser.
