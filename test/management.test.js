@@ -253,3 +253,88 @@ test('sensori: le misure non sono scrivibili dal browser', () => {
     assert.doesNotMatch(sql, new RegExp(`grant\\s+(insert|update)\\s*\\([^)]*\\b${col}\\b[^)]*\\)\\s+on public\\.sensors`, 'i'), col)
   }
 })
+
+// ---- Moduli di inserimento (0011)
+import * as F from '../src/lib/forms.js'
+
+const LOCS = [
+  { kind: 'room', name: '101', group_name: 'Wine P1', sort_order: 1, active: true },
+  { kind: 'room', name: '102', group_name: 'Wine P1', sort_order: 2, active: true },
+  { kind: 'room', name: '201', group_name: 'Wine P2', sort_order: 3, active: true },
+  { kind: 'zone', name: 'Hall Jazz', aliases: ['ingresso jazz', 'hall'], sort_order: 10, active: true },
+  { kind: 'zone', name: 'Cucina', aliases: [], sort_order: 11, active: false },
+]
+
+test('moduli: suggerimenti camere per inizio numero e zone per sinonimo', () => {
+  assert.deepEqual(F.suggestLocations(LOCS, '10'), ['101', '102'])
+  assert.deepEqual(F.suggestLocations(LOCS, 'ingresso'), ['Hall Jazz'])
+  assert.deepEqual(F.suggestLocations(LOCS, 'cucina'), []) // disattivata
+  assert.deepEqual(F.suggestLocations(LOCS, ''), [])
+})
+
+test('moduli: il luogo deve esistere, ma senza catalogo il testo è libero', () => {
+  assert.equal(F.locationOk(LOCS, '101'), true)
+  assert.equal(F.locationOk(LOCS, '999'), false)
+  assert.equal(F.locationOk([], 'qualsiasi'), true)
+  assert.equal(F.locationOk(LOCS, ''), false)
+})
+
+test('moduli: camere a piani, selezione di un intero piano e testo del luogo', () => {
+  assert.deepEqual(F.roomGroups(LOCS).map((g) => g.name), ['Wine P1', 'Wine P2'])
+  assert.deepEqual(F.togglePlan([], ['101', '102']), ['101', '102'])
+  assert.deepEqual(F.togglePlan(['101', '102', '201'], ['101', '102']), ['201'])
+  assert.equal(F.locationLabel(['101', '102'], 'Hall'), '101, 102, Hall')
+  const long = Array.from({ length: 20 }, (_, i) => String(1000 + i))
+  assert.ok(F.locationLabel(long).length <= 40)
+  assert.equal(F.locationLabel(long), '1000 +19')
+})
+
+test('moduli: periodo, preparazione sala e PAX', () => {
+  assert.equal(F.rangeOk('2026-11-02T10:00', '2026-11-02T09:00'), false)
+  assert.equal(F.rangeOk('2026-11-02T10:00', ''), true)
+  assert.equal(F.prepOk('2026-11-01', '2026-11-02'), true)
+  assert.equal(F.prepOk('2026-11-03', '2026-11-02'), false)
+  assert.equal(F.prepOk('', '2026-11-02'), false)
+  assert.equal(F.clampPax('0', 0), 1)
+  assert.equal(F.clampPax('5000', 1), 5000)
+  assert.equal(F.clampPax('10', 1), 11)
+})
+
+test('moduli: colleghi assegnabili e richiamo cliente', () => {
+  const staff = [
+    { user_id: 'a', display_name: 'Ada', role: 'manutentore' },
+    { user_id: 'b', display_name: 'Bea', role: 'reception' },
+  ]
+  assert.deepEqual(F.assignable(staff).map((p) => p.user_id), ['a'])
+  assert.deepEqual(F.staffNames(staff, ['b', 'x', 'a']), ['Bea', 'Ada'])
+  const c = F.findClient([{ name: 'ACME Spa', preferred_room: 'Sala 1', preferred_layout: 'Teatro', preferred_pax: 80, notes: 'Caffè' }], ' acme spa ')
+  assert.equal(c.preferred_room, 'Sala 1')
+  const f = F.applyRecall({ client: 'acme', room: '', layout: '', pax: '1', notes: '' }, c)
+  assert.deepEqual([f.client, f.room, f.layout, f.pax, f.notes], ['ACME Spa', 'Sala 1', 'Teatro', '80', 'Caffè'])
+})
+
+test('moduli: la bozza si salva, si riprende e non rompe senza storage', () => {
+  const mem = new Map()
+  const st = { getItem: (k) => mem.get(k) ?? null, setItem: (k, v) => mem.set(k, v), removeItem: (k) => mem.delete(k) }
+  F.saveDraft('issue', 'h1', 'u1', { title: 'Perde' }, st)
+  assert.deepEqual(F.loadDraft('issue', 'h1', 'u1', st), { title: 'Perde' })
+  assert.equal(F.loadDraft('issue', 'h2', 'u1', st), null) // altra struttura: altra bozza
+  F.clearDraft('issue', 'h1', 'u1', st)
+  assert.equal(F.loadDraft('issue', 'h1', 'u1', st), null)
+  const broken = { getItem() { throw new Error('x') }, setItem() { throw new Error('x') }, removeItem() { throw new Error('x') } }
+  assert.equal(F.loadDraft('issue', 'h1', 'u1', broken), null)
+  F.saveDraft('issue', 'h1', 'u1', {}, broken)
+})
+
+test('0011: tabelle nuove con hotel_id e RLS, niente DELETE, colleghi solo via funzione', () => {
+  const sql = readFileSync(join(import.meta.dirname, '../supabase/migrations/0011_forms.sql'), 'utf8')
+  for (const t of ['hotel_locations', 'sale_rooms', 'sale_layouts', 'sale_clients']) {
+    assert.match(sql, new RegExp(`create table public\\.${t}[\\s\\S]*?hotel_id\\s+text not null references public\\.hotels`), `${t}: hotel_id`)
+    assert.match(sql, new RegExp(`alter table public\\.${t}\\s+enable row level security`), `${t}: RLS`)
+  }
+  assert.doesNotMatch(sql, /for delete|grant[^;]*delete/i)
+  assert.match(sql, /function public\.hotel_staff[\s\S]*is_hotel_member\(p_hotel\)/)
+  assert.match(sql, /planning_sale\.manage/)
+  // il browser non può scrivere il catalogo luoghi senza locations.manage
+  assert.match(sql, /hotel_locations_insert[\s\S]*locations\.manage/)
+})

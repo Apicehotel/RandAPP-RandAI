@@ -74,8 +74,14 @@ _Nessun lavoro in corso._ (Scrivi qui: strumento, branch, cosa stai facendo.)
   - Se l'utente ha una sola struttura il selettore lo dice e offre "Entra con un altro utente" (vecchio comportamento: torna al login).
   - **Da provare sul Supabase vero**: il cambio al volo funziona se lo stesso utente ha l'iscrizione in più strutture (`npm run user:create --hotels hotelgio,chocohotel`).
 
+- 2026-11-02 — Claude (branch `claude/moduli-inserimento`): moduli di inserimento migliorati (migrazione `0011_forms.sql`).
+  - Nuova segnalazione/intervento/lavoro/sala: luoghi con suggerimenti (`hotel_locations`), bozze sul telefono, assegnatari multipli (`hotel_staff()`), più camere per intervento, collegamento segnalazione → intervento (`issue_id`), sale/allestimenti/clienti (`sale_rooms`, `sale_layouts`, `sale_clients`), "Da preparare il", audio/video. Logica pura in `src/lib/forms.js` (test in `test/management.test.js`, 108 test).
+  - Nuovi permessi `planning_sale.manage`, `locations.manage` (admin/direzione/responsabile). Schermata `/planning/sale/config`.
+  - **Seed dei luoghi** fuori dal repo (pubblico): va eseguito dopo `0011`. Non portati: foto, ricambi, avviso→segnalazione, gestione luoghi da app, "da preparare il" nella lista lavori del manutentore.
+  - **Decisione utente (2026-11-02)**: niente nuovo progetto Supabase; ci si aggancia al Supabase esistente più avanti. Prima di applicare le migrazioni lì va controllato che i nomi delle tabelle (`issues`, `interventions`, `sale_bookings`…) non collidano con quelle della vecchia app.
+
 ## Da fare (in ordine)
-1. Creare il progetto Supabase nuovo, applicare `0001`…`0010` in ordine, pubblicare `pin-auth`, creare i primi utenti (vedi README).
+1. Agganciare il Supabase **esistente** (scelta dell'utente): verificare collisioni di nomi, applicare `0001`…`0011` in ordine, pubblicare `pin-auth` e `ewelink-sync`, creare i primi utenti, eseguire i seed (sensori, luoghi).
 2. **Provare il login e le segnalazioni su un telefono vero** (vedi note sotto).
 3. Notifiche WhatsApp (API Meta) sulle segnalazioni.
 4. Coda offline (Dexie) che conserva l'hotel di origine dell'operazione.
@@ -88,5 +94,5 @@ _Nessun lavoro in corso._ (Scrivi qui: strumento, branch, cosa stai facendo.)
 - **Il login non è mai stato provato end-to-end**: non esisteva ancora un progetto Supabase. Build e test passano; le schermate sono state viste renderizzate solo con dati demo (mock), non su Supabase vero: manca ancora la prova PIN → sessione → segnalazioni reale. È il primo controllo da fare.
 - Tutte le sezioni della barra (Operatività, Planning, Home, Task) hanno ormai i loro permessi nel database; non resta nessuna voce con `perm: null` tranne Profilo e il menu "Altro".
 - Il PIN è di 4 cifre (come nella vecchia app): la protezione è nel blocco dopo 5 errori (10 minuti) e nel limite sulla ricerca nomi.
-- Non usare mai il database delle app vecchie: lo schema qui è pensato per un progetto Supabase separato.
+- Database: l'utente ha deciso di agganciarsi al Supabase esistente (2026-11-02). Lo schema è nato per un progetto separato: prima di applicare le migrazioni controllare collisioni con le tabelle della vecchia app e non toccare i dati esistenti senza il suo ok.
 - Non aggiungere dipendenze o fogli CSS di override senza un motivo concreto; il budget del bundle è controllato da `npm run check:bundle`.

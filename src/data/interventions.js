@@ -1,7 +1,7 @@
 import { supabase } from '../lib/supabase.js'
 
 const COLUMNS =
-  'id,hotel_id,title,location,notes,status,scheduled_at,issue_id,created_by,assigned_to,created_at,updated_at,completed_at'
+  'id,hotel_id,title,location,notes,status,scheduled_at,scheduled_until,category,rooms,assignee_ids,issue_id,created_by,assigned_to,created_at,updated_at,completed_at'
 
 // Sempre filtrato per hotel_id (la RLS lo impone comunque).
 export async function listInterventions(hotelId, { limit = 200 } = {}) {
@@ -34,6 +34,12 @@ export async function createIntervention(hotelId, userId, input) {
     location: (input.location || '').trim() || null,
     notes: (input.notes || '').trim() || null,
     scheduled_at: input.scheduled_at || null,
+    scheduled_until: input.scheduled_until || null,
+    category: input.category || null,
+    rooms: input.rooms || [],
+    assignee_ids: input.assignee_ids || [],
+    assigned_to: (input.assignee_ids || [])[0] || null,
+    issue_id: input.issue_id || null,
   }
   const { data, error } = await supabase.from('interventions').insert(row).select(COLUMNS).single()
   if (error) throw new Error("Impossibile creare l'intervento")
@@ -50,4 +56,17 @@ export async function updateInterventionStatus(hotelId, id, status) {
     .single()
   if (error) throw new Error('Impossibile aggiornare lo stato')
   return data
+}
+
+// Interventi nati da una segnalazione.
+export async function listInterventionsForIssue(hotelId, issueId) {
+  const { data, error } = await supabase
+    .from('interventions')
+    .select('id,title,status')
+    .eq('hotel_id', hotelId)
+    .eq('issue_id', issueId)
+    .order('created_at', { ascending: false })
+    .limit(20)
+  if (error) throw new Error('Impossibile caricare gli interventi collegati')
+  return data || []
 }

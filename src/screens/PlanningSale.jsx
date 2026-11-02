@@ -93,6 +93,11 @@ export function SaleDetail({ ctx, id }) {
         <div className="muted">
           {item.date_from === item.date_to ? dayLabel(item.date_from) : `${dayLabel(item.date_from)} → ${dayLabel(item.date_to)}`}
         </div>
+        {item.layout && <div className="muted">Allestimento: {item.layout}</div>}
+        {item.prep_date && <div className="muted">Da preparare il {dayLabel(item.prep_date)}</div>}
+        {(item.audio_required || item.video_required) && (
+          <div className="muted">Controlli: {[item.audio_required && 'audio', item.video_required && 'video'].filter(Boolean).join(' + ')}</div>
+        )}
         {item.notes && <p>{item.notes}</p>}
       </div>
       {canUpdate && (

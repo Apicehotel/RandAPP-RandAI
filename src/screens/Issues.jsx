@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { listIssues, getIssue, updateIssueStatus } from '../data/issues.js'
+import { listInterventionsForIssue } from '../data/interventions.js'
 import { useAsync, go } from '../lib/hooks.js'
 import { can, PERM } from '../lib/permissions.js'
 import { STATUSES, filterByStatus, sortByPriority } from '../lib/queue.js'
@@ -56,6 +57,8 @@ export function IssueDetail({ ctx, id }) {
   const [busy, setBusy] = useState(false)
   const [actionError, setActionError] = useState('')
   const canUpdate = can(ctx.permissions, PERM.ISSUES_UPDATE)
+  const canMakeIntervention = can(ctx.permissions, PERM.INTERVENTIONS_CREATE)
+  const { data: linked } = useAsync(() => listInterventionsForIssue(ctx.hotelId, id), [ctx.hotelId, id])
 
   const change = async (status) => {
     setBusy(true)
@@ -88,6 +91,18 @@ export function IssueDetail({ ctx, id }) {
         {issue.description && <p>{issue.description}</p>}
         <div><StatusBadge status={issue.status} /></div>
       </div>
+
+      {((linked && linked.length > 0) || (canMakeIntervention && issue.status !== 'completata')) && (
+        <div className="card stack">
+          <h2>Interventi collegati</h2>
+          {(linked || []).map((i) => (
+            <a key={i.id} href={`#/interventions/${i.id}`}>{i.title} · {i.status.replace('_', ' ')}</a>
+          ))}
+          {canMakeIntervention && issue.status !== 'completata' && (
+            <Button onClick={() => go(`/interventions/new/${issue.id}`)}>+ Crea intervento da questa segnalazione</Button>
+          )}
+        </div>
+      )}
 
       {canUpdate && (
         <div className="card stack">

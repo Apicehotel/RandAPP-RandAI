@@ -23,6 +23,7 @@ const WorkDetail = lazyWithRetry(() => import('../screens/PlanningWork.jsx').the
 const WorkNew = lazyWithRetry(() => import('../screens/PlanningWorkNew.jsx'))
 const SaleList = lazyWithRetry(() => import('../screens/PlanningSale.jsx').then((m) => ({ default: m.SaleList })))
 const SaleDetail = lazyWithRetry(() => import('../screens/PlanningSale.jsx').then((m) => ({ default: m.SaleDetail })))
+const SaleConfig = lazyWithRetry(() => import('../screens/PlanningSaleConfig.jsx'))
 const SaleNew = lazyWithRetry(() => import('../screens/PlanningSaleNew.jsx'))
 const Task = lazyWithRetry(() => import('../screens/Task.jsx'))
 const AlertList = lazyWithRetry(() => import('../screens/TaskUrgent.jsx').then((m) => ({ default: m.AlertList })))
@@ -85,6 +86,9 @@ function PlanningScreen({ route, ctx }) {
     if (!has(PERM.PLANNING_SALE_VIEW)) return <NoAccess text="Non hai i permessi per il Planning Sale." />
     if (third === 'new') {
       return has(PERM.PLANNING_SALE_CREATE) ? <SaleNew ctx={ctx} /> : <NoAccess text="Non puoi prenotare le sale." />
+    }
+    if (third === 'config') {
+      return has(PERM.PLANNING_SALE_MANAGE) ? <SaleConfig ctx={ctx} /> : <NoAccess text="Non puoi configurare le sale." />
     }
     return third ? <SaleDetail ctx={ctx} id={third} /> : <SaleList ctx={ctx} />
   }
@@ -158,9 +162,10 @@ function Screen({ route, ctx, onLogout, onSwitchHotel }) {
   if (route.startsWith('/task')) return <TaskScreen route={route} ctx={ctx} />
   if (route.startsWith('/interventions')) {
     if (!can(ctx.permissions, PERM.INTERVENTIONS_VIEW)) return <NoAccess text="Non hai i permessi per vedere gli interventi." />
-    if (route === '/interventions/new') {
+    // /interventions/new oppure /interventions/new/<id segnalazione>
+    if (route === '/interventions/new' || route.startsWith('/interventions/new/')) {
       return can(ctx.permissions, PERM.INTERVENTIONS_CREATE)
-        ? <InterventionNew ctx={ctx} />
+        ? <InterventionNew ctx={ctx} issueId={route.split('/')[3] || null} />
         : <NoAccess text="Non puoi creare interventi." />
     }
     if (route.startsWith('/interventions/')) return <InterventionDetail ctx={ctx} id={route.split('/')[2]} />
