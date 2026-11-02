@@ -1,3 +1,5 @@
+import { listStaff } from '../data/forms.js'
+import { staffNames } from '../lib/forms.js'
 import { useState } from 'react'
 import { listWorks, getWork, updateWorkStatus } from '../data/planning.js'
 import { useAsync, go } from '../lib/hooks.js'
@@ -75,6 +77,7 @@ export function WorkDetail({ ctx, id }) {
   const [busy, setBusy] = useState(false)
   const [actionError, setActionError] = useState('')
   const canUpdate = can(ctx.permissions, PERM.PLANNING_WORK_UPDATE)
+  const { data: staff } = useAsync(() => listStaff(ctx.hotelId), [ctx.hotelId])
 
   const change = async (status) => {
     setBusy(true)
@@ -102,6 +105,8 @@ export function WorkDetail({ ctx, id }) {
           <Badge kind={item.status}>{workStatusLabel(item.status)}</Badge>
         </div>
         <div className="muted">Giorni: {item.days.map(dayLabel).join(' · ')}</div>
+        {item.category && <div><Badge>{item.category}</Badge></div>}
+        {item.assignee_ids?.length > 0 && <div className="muted">Assegnato a: {staffNames(staff, item.assignee_ids).join(', ') || `${item.assignee_ids.length} persone`}</div>}
       </div>
       {canUpdate && (
         <div className="card stack">

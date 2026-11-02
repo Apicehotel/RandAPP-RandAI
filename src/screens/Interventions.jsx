@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { listStaff } from '../data/forms.js'
+import { staffNames } from '../lib/forms.js'
 import { listInterventions, getIntervention, updateInterventionStatus } from '../data/interventions.js'
 import { useAsync, go } from '../lib/hooks.js'
 import { can, PERM } from '../lib/permissions.js'
@@ -71,6 +73,7 @@ export function InterventionDetail({ ctx, id }) {
   const [busy, setBusy] = useState(false)
   const [actionError, setActionError] = useState('')
   const canUpdate = can(ctx.permissions, PERM.INTERVENTIONS_UPDATE)
+  const { data: staff } = useAsync(() => listStaff(ctx.hotelId), [ctx.hotelId])
 
   const change = async (status) => {
     setBusy(true)
@@ -101,6 +104,11 @@ export function InterventionDetail({ ctx, id }) {
           {item.location ? `${item.location} · ` : ''}
           {item.scheduled_at ? `programmato ${formatDate(item.scheduled_at)}` : `creato ${formatDate(item.created_at)}`}
         </div>
+        {item.category && <div><Badge>{item.category}</Badge></div>}
+        {item.scheduled_until && <div className="muted">fino a {formatDate(item.scheduled_until)}</div>}
+        {item.rooms?.length > 0 && <div className="muted">Camere: {item.rooms.join(', ')}</div>}
+        {item.assignee_ids?.length > 0 && <div className="muted">Assegnato a: {staffNames(staff, item.assignee_ids).join(', ') || `${item.assignee_ids.length} persone`}</div>}
+        {item.issue_id && <a href={`#/issues/${item.issue_id}`}>Vai alla segnalazione</a>}
         {item.notes && <p>{item.notes}</p>}
         {item.completed_at && <div className="muted">Fatto il {formatDate(item.completed_at)}</div>}
       </div>

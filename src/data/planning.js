@@ -1,9 +1,9 @@
 import { supabase } from '../lib/supabase.js'
 import { bookingConflicts, shiftLabel, shortDate } from '../lib/planning.js'
 
-const WORK_COLUMNS = 'id,hotel_id,description,days,status,created_by,created_at,updated_at,completed_at'
+const WORK_COLUMNS = 'id,hotel_id,description,days,category,assignee_ids,status,created_by,created_at,updated_at,completed_at'
 const BOOKING_COLUMNS =
-  'id,hotel_id,room,client,date_from,date_to,shift,pax,notes,status,created_by,created_at,updated_at'
+  'id,hotel_id,room,client,date_from,date_to,shift,pax,notes,layout,prep_date,audio_required,video_required,status,created_by,created_at,updated_at'
 
 // ---- Planning Lavori (sempre filtrato per hotel_id)
 export async function listWorks(hotelId, { limit = 300 } = {}) {
@@ -34,6 +34,8 @@ export async function createWork(hotelId, userId, input) {
     created_by: userId,
     description: input.description.trim(),
     days: [...new Set(input.days)].sort(),
+    category: input.category || null,
+    assignee_ids: input.assignee_ids || [],
   }
   const { data, error } = await supabase.from('planning_works').insert(row).select(WORK_COLUMNS).single()
   if (error) throw new Error('Impossibile creare il lavoro')
@@ -88,6 +90,10 @@ export async function createBooking(hotelId, userId, input) {
     shift: input.shift,
     pax: input.pax ? Number(input.pax) : null,
     notes: (input.notes || '').trim() || null,
+    layout: input.layout || null,
+    prep_date: input.prep_date || null,
+    audio_required: Boolean(input.audio_required),
+    video_required: Boolean(input.video_required),
   }
   // Ricontrollo con i dati freschi: riduce il rischio di doppia prenotazione.
   const fresh = await listBookings(hotelId, row.date_from)

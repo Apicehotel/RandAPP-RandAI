@@ -67,6 +67,17 @@ Se mancano le variabili `VITE_*`, l'app mostra la schermata "Configurazione manc
 - **Attenzione agli stili**: le classi generiche (es. `.center`) valgono per tutta l'app; per i componenti della barra usare nomi specifici (`nav-*`).
 - **Velocità**: ogni schermata si scarica solo quando la apri (`React.lazy`). `npm run check:bundle` fa fallire il controllo se l'avvio supera 160 KB compressi.
 
+
+### Moduli di inserimento (migrazione `0011`)
+Le quattro schermate "nuovo" sono state riprese dalla vecchia app e migliorate:
+- **Nuova segnalazione**: categoria e urgenza a chip con icone, camera/zona con suggerimenti dal catalogo della struttura (`hotel_locations`; senza catalogo il testo è libero), **bozza salvata sul telefono** mentre scrivi.
+- **Nuovo intervento**: categoria, **più camere** a piani (tocca il piano per sceglierle tutte), zona, periodo dal/al, **più assegnatari** (`hotel_staff()` restituisce solo nome e ruolo dei colleghi della stessa struttura). Dal dettaglio di una segnalazione "Crea intervento" precompila tutto, collega `issue_id` e porta la segnalazione a *Tecnico*; la segnalazione elenca gli interventi collegati.
+- **Nuovo lavoro** (Planning Lavori): categoria e assegnatari oltre a descrizione e giorni.
+- **Nuova prenotazione sala**: sale configurate (occupate = disattivate nel periodo), allestimenti (se ne può aggiungere uno al volo), **"Da preparare il"** (stesso giorno / giorno prima, mai dopo l'evento), controlli Audio/Video, PAX con contatore, **richiamo cliente** (sala, allestimento, PAX, note). Chi ha `planning_sale.manage` configura le sale da *Planning Sale → Configura*.
+- Permessi nuovi: `planning_sale.manage` e `locations.manage` (admin, direzione, responsabile). Nessuna policy di DELETE.
+- Il catalogo camere/zone si carica con un seed (non è nel repo pubblico).
+- **Non ancora portato**: foto (serve lo storage), ricambi/magazzino negli interventi, trasformare un avviso urgente in segnalazione, gestione del catalogo luoghi da app.
+
 ## Lettore eWeLink (sensori e relay)
 Funzione server `supabase/functions/ewelink-sync` (logica in `supabase/functions/_shared/ewelink.js`, testata). Legge i dispositivi dell'account eWeLink e aggiorna la tabella `sensors` **di una sola struttura**; i dispositivi si abbinano per `device_key` = id del dispositivo eWeLink.
 - **Stato**: scritto dalla documentazione dell'API v2 **senza poterla provare dal vivo**. Prima di fidarsi usa la modalità prova.
@@ -83,7 +94,7 @@ Presi dalla vecchia app `Apicehotel-Manutenzione`.
 
 ## Messa in funzione del database (nuovo progetto Supabase)
 1. Crea un progetto Supabase **nuovo e separato** da quelli esistenti.
-2. Applica in ordine `supabase/migrations/0001_base.sql`, `0002_interventions.sql`, `0003_planning.sql`, `0004_task.sql`, `0005_presence.sql`, `0006_warehouse.sql`, `0007_supplies.sql`, `0008_housekeeping.sql`, `0009_sensors.sql` e `0010_sensor_seasons.sql`.
+2. Applica in ordine `supabase/migrations/0001_base.sql`, `0002_interventions.sql`, `0003_planning.sql`, `0004_task.sql`, `0005_presence.sql`, `0006_warehouse.sql`, `0007_supplies.sql`, `0008_housekeeping.sql`, `0009_sensors.sql`, `0010_sensor_seasons.sql` e `0011_forms.sql`.
 3. Pubblica la funzione `pin-auth` (`supabase/functions/pin-auth`).
 4. Crea i primi utenti dal tuo terminale:
    ```bash
