@@ -98,7 +98,7 @@ export function WorkList({ ctx }) {
       <div className="row">
         <h1>Planning Lavori</h1>
         {can(ctx.permissions, PERM.PLANNING_WORK_CREATE) && (
-          <Button variant="primary" onClick={() => go('/planning/work/new')}>+ Lavoro</Button>
+          <Button variant="primary" onClick={() => go('/planning/work/new')}>+ Nuovo</Button>
         )}
       </div>
 

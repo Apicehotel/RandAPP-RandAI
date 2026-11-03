@@ -87,6 +87,8 @@ _Nessun lavoro in corso._ (Scrivi qui: strumento, branch, cosa stai facendo.)
   - Logica in `src/lib/planning.js` (test in `test/planning.test.js`, 116 test totali). Anteprima: `dayStats`, `prepStats`, `roomAvailability`.
   - Non portato: sensori/audio-video automatici (test con microfono/telecamera: nel vecchio erano solo segnaposto), notifiche di assegnazione, eliminazione di un giorno (qui "annulla"), ruolo "Direttore Centro Congressi" (qui: `planning_sale.manage/update` a direzione e responsabile; da confermare).
 
+- 2026-11-03 — Claude (branch `claude/planning-tasto-nuovo`): tasto **+ Nuovo** anche nel riepilogo Planning (sotto Lavori e Sale) e rinominato "+ Nuovo" nelle due liste. Compare solo con il permesso `create` del ruolo: la reception non vede "Nuovo lavoro", il manutentore non vede "Nuova prenotazione" (come nella vecchia app).
+
 ## Da fare (in ordine)
 1. Agganciare il Supabase **esistente** (scelta dell'utente): verificare collisioni di nomi, applicare `0001`…`0012` in ordine, pubblicare `pin-auth` e `ewelink-sync`, creare i primi utenti, eseguire i seed (sensori, luoghi).
 2. **Provare il login e le segnalazioni su un telefono vero** (vedi note sotto).

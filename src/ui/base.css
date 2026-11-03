@@ -313,3 +313,5 @@ button { cursor: pointer; }
 .stats3.mini b { font-size: var(--fs-key); line-height: 1.1; }
 .stats3.mini small { color: var(--text-2); font-size: var(--fs-xs); }
 .accent-text { color: var(--accent); }
+.hub-link { display: grid; gap: var(--gap-list); text-decoration: none; color: inherit; }
+a.btn { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }

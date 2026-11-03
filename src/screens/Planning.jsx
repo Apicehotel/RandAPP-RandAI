@@ -8,9 +8,10 @@ import {
 } from '../lib/planning.js'
 import { Icon, Spinner, ErrorText } from '../ui/kit.jsx'
 
-function Choice({ href, icon, title, stats }) {
+function Choice({ href, icon, title, stats, newHref, newLabel }) {
   return (
-    <a className="card hub-choice" href={href}>
+    <div className="card hub-choice">
+      <a className="hub-link" href={href}>
       <span className="icon"><Icon name={icon} /></span>
       <strong>{title}</strong>
       <span className="stats3 mini">
@@ -18,7 +19,9 @@ function Choice({ href, icon, title, stats }) {
         <span><b className="warn-text">{stats.finish}</b><small>Da finire</small></span>
         <span><b className="ok-text">{stats.done}</b><small>Fatti</small></span>
       </span>
-    </a>
+      </a>
+      {newHref && <a className="btn primary block" href={newHref}>{newLabel}</a>}
+    </div>
   )
 }
 
@@ -87,8 +90,10 @@ export default function Planning({ ctx }) {
       </div>
 
       <div className="hub-grid">
-        {showWork && <Choice href="#/planning/work" icon="wrench" title="Planning Lavori" stats={dayStats(days, today)} />}
-        {showSale && <Choice href="#/planning/sale" icon="building" title="Planning Sale" stats={prepStats(bookings, today)} />}
+        {showWork && <Choice href="#/planning/work" icon="wrench" title="Planning Lavori" stats={dayStats(days, today)}
+          newHref={can(ctx.permissions, PERM.PLANNING_WORK_CREATE) ? '#/planning/work/new' : null} newLabel="+ Nuovo lavoro" />}
+        {showSale && <Choice href="#/planning/sale" icon="building" title="Planning Sale" stats={prepStats(bookings, today)}
+          newHref={can(ctx.permissions, PERM.PLANNING_SALE_CREATE) ? '#/planning/sale/new' : null} newLabel="+ Nuova prenotazione" />}
       </div>
 
       {(workToday.length > 0 || saleToday.length > 0) && (
