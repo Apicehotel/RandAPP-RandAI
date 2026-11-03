@@ -107,7 +107,7 @@ export function SaleList({ ctx }) {
       <div className="row">
         <h1>Planning Sale</h1>
         {can(ctx.permissions, PERM.PLANNING_SALE_CREATE) && (
-          <Button variant="primary" onClick={() => go('/planning/sale/new')}>+ Prenotazione</Button>
+          <Button variant="primary" onClick={() => go('/planning/sale/new')}>+ Nuovo</Button>
         )}
       </div>
       <p className="banner">Qui le sale compaiono nel giorno di <strong>preparazione</strong>. Le date dell'evento sono nel calendario del riepilogo Planning.</p>
