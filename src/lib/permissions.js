@@ -39,6 +39,7 @@ export const PERM = {
   HOUSEKEEPING_MANAGE: 'housekeeping.manage',
   SENSORS_VIEW: 'sensors.view',
   SENSORS_MANAGE: 'sensors.manage',
+  NOTIFICATIONS_MANAGE: 'notifications.manage',
   ADMIN: 'admin.access',
 }
 

@@ -44,3 +44,26 @@ export function useRoute() {
 export const go = (path) => {
   window.location.hash = path
 }
+
+// Numero di notifiche non lette (campanella): si aggiorna ogni minuto, quando si torna sull'app
+// e quando una schermata dice che qualcosa è cambiato (evento "notifications:changed").
+export function useUnread(loader, deps = []) {
+  const [count, setCount] = useState(0)
+  useEffect(() => {
+    let alive = true
+    const run = () => Promise.resolve().then(loader).then((n) => alive && setCount(n)).catch(() => {})
+    run()
+    const timer = setInterval(run, 60000)
+    const onVisible = () => document.visibilityState === 'visible' && run()
+    document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('notifications:changed', run)
+    return () => {
+      alive = false
+      clearInterval(timer)
+      document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('notifications:changed', run)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, deps)
+  return count
+}

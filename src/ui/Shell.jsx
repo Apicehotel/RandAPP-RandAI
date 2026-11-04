@@ -5,6 +5,9 @@ import { FEATURES } from '../app/features.js'
 import { logout } from '../lib/auth.js'
 import Drawer from './Drawer.jsx'
 import HotelPicker from './HotelPicker.jsx'
+import { countUnread } from '../data/notifications.js'
+import { useUnread } from '../lib/hooks.js'
+import { badgeText } from '../lib/notifications.js'
 import { Icon } from './kit.jsx'
 
 // Unica fonte del "chrome" dell'app: nessuna schermata costruisce la propria barra.
@@ -15,6 +18,7 @@ export default function Shell({ route, ctx, onLogout, onSwitchHotel, onChangeHot
   const items = bottomNavFor(ctx.permissions, { randai: FEATURES.randai })
   const hotel = hotelById(ctx.hotelId)
   const hotelName = hotel?.name || ctx.hotelId
+  const unread = useUnread(() => countUnread(ctx.hotelId, ctx.userId), [ctx.hotelId, ctx.userId])
 
   return (
     <div className="shell">
@@ -30,6 +34,11 @@ export default function Shell({ route, ctx, onLogout, onSwitchHotel, onChangeHot
           <span>{hotelName}</span>
           <Icon name="chevron" size={16} />
         </button>
+        <div className="top-right">
+        <a href="#/notifications" className="bellbtn" aria-label={unread ? `Notifiche: ${unread} non lette` : 'Notifiche'}>
+          <Icon name="bell" size={20} />
+          {unread > 0 && <span className="bell-badge">{badgeText(unread)}</span>}
+        </a>
         <button
           type="button"
           className="avatar"
@@ -38,6 +47,7 @@ export default function Shell({ route, ctx, onLogout, onSwitchHotel, onChangeHot
         >
           {initialsFor(ctx.name)}
         </button>
+        </div>
       </header>
 
       <main className="shell-stage">{children}</main>
