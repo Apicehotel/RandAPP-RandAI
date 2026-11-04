@@ -92,3 +92,16 @@ export function agoLabel(iso, now = Date.now()) {
   if (h < 48) return `${h} h fa`
   return `${Math.round(h / 24)} g fa`
 }
+
+// Tre numeri per hub e liste (stesso schema di Planning e Operatività).
+const dayOf = (v) => { const d = new Date(v); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` }
+export const alertStats = (items, iso) => ({
+  waiting: items.filter((a) => a.status === 'aperto').length,
+  taken: items.filter((a) => a.status === 'in_carico').length,
+  done: items.filter((a) => a.status === 'risolto' && a.resolved_at && dayOf(a.resolved_at) === iso).length,
+})
+export const reminderStats = (items, role, iso) => ({
+  mine: items.filter((r) => isForRole(r, role)).length,
+  active: items.filter((r) => r.active).length,
+  today: items.filter((r) => isReminderCurrent(r, iso)).length,
+})

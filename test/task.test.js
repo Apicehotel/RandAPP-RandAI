@@ -73,3 +73,19 @@ test('"quanto tempo fa"', () => {
   assert.equal(agoLabel('2026-10-31T09:00:00Z', now), '3 h fa')
   assert.equal(agoLabel('2026-10-28T12:00:00Z', now), '3 g fa')
 })
+
+import { alertStats, reminderStats } from '../src/lib/task.js'
+test('statistiche Task: avvisi e promemoria', () => {
+  const at = (d) => new Date(`${d}T10:00:00`).toISOString()
+  const alerts = [
+    { status: 'aperto' }, { status: 'in_carico' },
+    { status: 'risolto', resolved_at: at('2026-11-04') }, { status: 'risolto', resolved_at: at('2026-11-02') },
+  ]
+  assert.deepEqual(alertStats(alerts, '2026-11-04'), { waiting: 1, taken: 1, done: 1 })
+  const rem = [
+    { active: true, target_roles: [], start_date: '2026-11-01', end_date: null },
+    { active: true, target_roles: ['governante'], start_date: '2026-12-01', end_date: null },
+    { active: false, target_roles: [], start_date: '2026-11-01', end_date: null },
+  ]
+  assert.deepEqual(reminderStats(rem, 'reception', '2026-11-04'), { mine: 1, active: 2, today: 1 })
+})
