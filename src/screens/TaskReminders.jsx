@@ -4,6 +4,9 @@ import { useAsync, go } from '../lib/hooks.js'
 import { can, roleLabel, PERM } from '../lib/permissions.js'
 import { describeSchedule, isForRole } from '../lib/task.js'
 import { shortDate } from '../lib/planning.js'
+import { StatRow } from '../ui/hub.jsx'
+import { reminderStats } from '../lib/task.js'
+import { todayIso } from '../lib/planning.js'
 import { Badge, Button, ErrorText, Spinner } from '../ui/kit.jsx'
 
 export const rolesText = (r) => (r.target_roles.length ? r.target_roles.map(roleLabel).join(', ') : 'Tutti i ruoli')
@@ -34,9 +37,11 @@ export function ReminderList({ ctx }) {
       <a href="#/task">← Task</a>
       <div className="row">
         <h1>Promemoria</h1>
-        {manager && <Button variant="primary" onClick={() => go('/task/reminders/new')}>+ Promemoria</Button>}
+        {manager && <Button variant="primary" onClick={() => go('/task/reminders/new')}>+ Nuovo</Button>}
       </div>
       <p className="muted">L'invio automatico delle notifiche non è ancora attivo: per ora i promemoria si consultano qui.</p>
+
+      {data && (() => { const st = reminderStats(data, ctx.role, todayIso()); return <StatRow stats={[{ value: st.mine, label: 'Per me' }, { value: st.active, label: 'Attivi' }, { value: st.today, label: 'Vigenti oggi', tone: 'ok' }]} /> })()}
 
       {manager && (
         <div className="chips" role="group" aria-label="Filtro promemoria">

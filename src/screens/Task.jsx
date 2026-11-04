@@ -1,8 +1,10 @@
 import { listAlerts, listReminders } from '../data/task.js'
 import { useAsync } from '../lib/hooks.js'
 import { can, PERM } from '../lib/permissions.js'
-import { filterAlerts, isForRole, sortAlerts, summarizeAlerts } from '../lib/task.js'
-import { Icon, Spinner, ErrorText } from '../ui/kit.jsx'
+import { alertStats, filterAlerts, isForRole, reminderStats, sortAlerts } from '../lib/task.js'
+import { todayIso } from '../lib/planning.js'
+import { Spinner, ErrorText } from '../ui/kit.jsx'
+import { HubChoice } from '../ui/hub.jsx'
 import { AlertCard } from './TaskUrgent.jsx'
 import { ReminderCard } from './TaskReminders.jsx'
 
@@ -22,10 +24,11 @@ export default function Task({ ctx }) {
   if (error) return <div className="page"><ErrorText>{error}</ErrorText></div>
 
   const { alerts, reminders } = data
-  const aStats = summarizeAlerts(alerts)
+  const today = todayIso()
+  const aStats = alertStats(alerts, today)
+  const rStats = reminderStats(reminders, ctx.role, today)
   const openAlerts = sortAlerts(filterAlerts(alerts, 'aperti'))
   const mine = reminders.filter((r) => isForRole(r, ctx.role))
-  const activeCount = reminders.filter((r) => r.active).length
 
   return (
     <div className="page">
@@ -36,24 +39,14 @@ export default function Task({ ctx }) {
 
       <div className="hub-grid">
         {showUrgent && (
-          <a className="card hub-choice" href="#/task/urgent">
-            <span className="icon"><Icon name="alert" /></span>
-            <strong>Avvisi Urgenti</strong>
-            <span className="metrics">
-              <span>{aStats.waiting} da prendere</span>
-              <span>{aStats.taken} in carico</span>
-            </span>
-          </a>
+          <HubChoice href="#/task/urgent" icon="alert" title="Avvisi Urgenti"
+            stats={[{ value: aStats.waiting, label: 'Da prendere', tone: 'warn' }, { value: aStats.taken, label: 'In carico' }, { value: aStats.done, label: 'Risolti oggi', tone: 'ok' }]}
+            newHref={can(ctx.permissions, PERM.URGENT_CREATE) ? '#/task/urgent/new' : null} newLabel="+ Nuovo avviso" />
         )}
         {showReminders && (
-          <a className="card hub-choice" href="#/task/reminders">
-            <span className="icon"><Icon name="clock" /></span>
-            <strong>Promemoria</strong>
-            <span className="metrics">
-              <span>{mine.length} per me</span>
-              <span>{activeCount} attivi</span>
-            </span>
-          </a>
+          <HubChoice href="#/task/reminders" icon="clock" title="Promemoria"
+            stats={[{ value: rStats.mine, label: 'Per me' }, { value: rStats.active, label: 'Attivi' }, { value: rStats.today, label: 'Vigenti oggi', tone: 'ok' }]}
+            newHref={can(ctx.permissions, PERM.REMINDERS_CREATE) ? '#/task/reminders/new' : null} newLabel="+ Nuovo promemoria" />
         )}
       </div>
 

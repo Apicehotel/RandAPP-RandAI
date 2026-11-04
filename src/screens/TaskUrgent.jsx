@@ -3,6 +3,9 @@ import { listAlerts, getAlert, updateAlertStatus } from '../data/task.js'
 import { useAsync, go } from '../lib/hooks.js'
 import { can, PERM } from '../lib/permissions.js'
 import { ALERT_STATUSES, agoLabel, alertStatusLabel, filterAlerts, sortAlerts } from '../lib/task.js'
+import { StatRow } from '../ui/hub.jsx'
+import { alertStats } from '../lib/task.js'
+import { todayIso } from '../lib/planning.js'
 import { Badge, Button, ErrorText, Spinner, formatDate } from '../ui/kit.jsx'
 
 const FILTERS = [
@@ -37,9 +40,11 @@ export function AlertList({ ctx }) {
       <div className="row">
         <h1>Avvisi Urgenti</h1>
         {can(ctx.permissions, PERM.URGENT_CREATE) && (
-          <Button variant="primary" onClick={() => go('/task/urgent/new')}>+ Avviso</Button>
+          <Button variant="primary" onClick={() => go('/task/urgent/new')}>+ Nuovo</Button>
         )}
       </div>
+
+      {data && (() => { const st = alertStats(data, todayIso()); return <StatRow stats={[{ value: st.waiting, label: 'Da prendere', tone: 'warn' }, { value: st.taken, label: 'In carico' }, { value: st.done, label: 'Risolti oggi', tone: 'ok' }]} /> })()}
 
       <div className="chips" role="group" aria-label="Filtro avvisi">
         {FILTERS.map((f) => (
