@@ -89,6 +89,8 @@ _Nessun lavoro in corso._ (Scrivi qui: strumento, branch, cosa stai facendo.)
 
 - 2026-11-03 — Claude (branch `claude/planning-tasto-nuovo`): tasto **+ Nuovo** anche nel riepilogo Planning (sotto Lavori e Sale) e rinominato "+ Nuovo" nelle due liste. Compare solo con il permesso `create` del ruolo: la reception non vede "Nuovo lavoro", il manutentore non vede "Nuova prenotazione" (come nella vecchia app).
 
+- 2026-11-04 — Claude (branch `claude/menu-nuovo-planning`): menu laterale con **Nuovo planning lavori** e **Nuovo planning sale** (permessi `planning_work.create` / `planning_sale.create`).
+
 ## Da fare (in ordine)
 1. Agganciare il Supabase **esistente** (scelta dell'utente): verificare collisioni di nomi, applicare `0001`…`0012` in ordine, pubblicare `pin-auth` e `ewelink-sync`, creare i primi utenti, eseguire i seed (sensori, luoghi).
 2. **Provare il login e le segnalazioni su un telefono vero** (vedi note sotto).
