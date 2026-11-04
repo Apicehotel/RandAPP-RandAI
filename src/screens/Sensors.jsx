@@ -7,7 +7,7 @@ import {
   agoText, missingSensors, seasonLabel, sensorKindLabel, syncHealth, sensorState, sortSensors, summarizeSensors, switchLabel, temperatureSensors, thresholdsFor,
 } from '../lib/sensors.js'
 import { StatRow } from '../ui/hub.jsx'
-import { Badge, Button, ErrorText, Spinner, formatDate } from '../ui/kit.jsx'
+import { Badge, Button, ErrorText, Icon, Spinner, formatDate } from '../ui/kit.jsx'
 
 const BADGE = { ok: 'fatto', allerta: 'aperto', offline: 'alta' }
 const GROUP_BADGE = { on: 'fatto', off: '', mixed: 'alta', unreachable: 'alta' }
@@ -79,11 +79,6 @@ export default function Sensors({ ctx }) {
         ]} />
       )}
 
-      <div className="row refreshbar">
-        <span className="muted">{refreshNote || (newest ? `Ultimo dato ${formatDate(newest)}` : 'Nessun dato ancora')}</span>
-        <Button onClick={refresh} disabled={refreshing || loading}>{refreshing ? 'Aggiorno…' : 'Aggiorna'}</Button>
-      </div>
-
       <div className="sensbar">
         <div className="chips seg" role="group" aria-label="Sezione">
           <button className="chip" aria-pressed={tab === 'temperature'} onClick={() => setTab('temperature')}><span className="full">Temperature</span><span className="abbr">Temp.</span> {temps.length}</button>
@@ -96,10 +91,13 @@ export default function Sensors({ ctx }) {
             ))}
           </div>
         ) : <Badge kind={settings.season === 'estate' ? 'alta' : 'in_corso'}>{seasonLabel(settings.season)}</Badge>}
+        <button type="button" className={`iconbtn${refreshing ? ' spin' : ''}`} onClick={refresh} disabled={refreshing || loading}
+          aria-label={refreshing ? 'Aggiorno…' : 'Aggiorna i sensori'} title="Aggiorna"><Icon name="refresh" size={18} /></button>
       </div>
       <p className="muted season-note">
         {settings.season === 'estate' ? `Motori e impianti: sopra ${settings.summer_max}°C` : `Motori e impianti: sotto ${settings.winter_min}°C`}
         {' · '}Frigo e celle: sopra {settings.fridge_max}°C
+        {' · '}{refreshing ? 'Aggiorno…' : refreshNote || (newest ? `dati ${formatDate(newest)}` : 'nessun dato')}
       </p>
 
       {loading && !data && <Spinner />}

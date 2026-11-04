@@ -378,5 +378,9 @@ a.btn, .hub-link, .card.issue, a.card, .drawer a, nav a { color: inherit; }
   :root[data-size='large'] .sensbar .full { display: inline; }
   :root[data-size='large'] .sensbar .abbr { display: none; }
 }
-.refreshbar { font-size: var(--fs-xs); }
-.refreshbar .btn { white-space: nowrap; min-height: 34px; padding: 0 14px; }
+
+/* Tasto Aggiorna: icona nella barra Temperature/Interruttori/Stagione, senza righe in più. */
+.iconbtn { display: inline-grid; place-items: center; width: 30px; height: 30px; flex-shrink: 0; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); color: var(--accent); cursor: pointer; }
+.iconbtn:disabled { opacity: .6; cursor: default; }
+.iconbtn.spin svg { animation: spin .8s linear infinite; }
+@media (prefers-reduced-motion: reduce) { .iconbtn.spin svg { animation-duration: 3s; } }
