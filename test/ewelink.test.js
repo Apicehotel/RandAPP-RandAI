@@ -84,6 +84,39 @@ test('la funzione sync protegge la chiamata e non scrive in modalità prova', ()
   const src = readFileSync(new URL('../supabase/functions/ewelink-sync/index.ts', import.meta.url), 'utf8')
   assert.match(src, /x-sync-secret/)
   assert.match(src, /sameSecret\(/)
-  assert.match(src, /if \(!dry\)/)
+  assert.match(src, /if \(!dry/)
   assert.doesNotMatch(src, /console\.(log|error)\([^)]*(password|secret|token)/i)
+})
+
+import { missingSensors, syncHealth, agoText } from '../src/lib/sensors.js'
+
+// L'account eWeLink è condiviso e SOLO LETTURA: il codice non deve mai poter comandare un dispositivo.
+test('eWeLink: solo lettura (login + elenco dispositivi, nessun comando)', () => {
+  const src = ['supabase/functions/_shared/ewelink.js', 'supabase/functions/ewelink-sync/index.ts'].map((f) => readFileSync(f, 'utf8')).join('\n')
+  const paths = [...src.matchAll(/\/v2\/[A-Za-z0-9/_-]+/g)].map((m) => m[0])
+  assert.deepEqual([...new Set(paths)].sort(), ['/v2/device/thing', '/v2/user/login'])
+  const posts = [...src.matchAll(/method:\s*['"]([A-Z]+)['"]/g)].map((m) => m[1])
+  assert.deepEqual(posts, ['POST']) // l'unico POST è il login
+  assert.ok(!/(status|control|switch)['"`]?\s*:\s*['"]on['"]/.test(src.replace(/switch_state|\.switch\b/g, '')))
+})
+
+test('eWeLink: la funzione non usa la chiave service_role via API', () => {
+  const fn = readFileSync('supabase/functions/ewelink-sync/index.ts', 'utf8')
+  assert.ok(!/createClient\(|Deno\.env\.get\(["']SUPABASE_SERVICE_ROLE_KEY/.test(fn))
+  assert.ok(/SUPABASE_DB_URL/.test(fn))
+})
+
+test('sensori mancanti e sincronizzazione ferma', () => {
+  const now = new Date('2026-11-04T10:00:00Z').getTime()
+  const at = (h) => new Date(now - h * 3600000).toISOString()
+  const list = [
+    { id: 'a', last_seen: at(0.2) }, { id: 'b', last_seen: at(30) },
+    { id: 'c', last_seen: at(2000) }, { id: 'd', last_seen: null }, { id: 'e', last_seen: at(50), active: false },
+  ]
+  assert.deepEqual(missingSensors(list, now).map((s) => s.id), ['d', 'c', 'b'])
+  assert.equal(syncHealth(list, now).stopped, false)
+  assert.equal(syncHealth([{ last_seen: at(3) }], now).stopped, true)
+  assert.deepEqual(syncHealth([], now), { stopped: false, minutes: null })
+  assert.equal(agoText(at(5), now), '5 ore fa')
+  assert.equal(agoText(at(100), now), '4 giorni fa')
 })

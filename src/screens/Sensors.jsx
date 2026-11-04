@@ -4,7 +4,7 @@ import { useAsync, go } from '../lib/hooks.js'
 import { can, PERM } from '../lib/permissions.js'
 import {
   DEFAULT_SETTINGS, SEASONS, STATE_LABELS, SWITCH_GROUPS, formatHumidity, formatTemp, groupSwitches, hiddenSensors,
-  seasonLabel, sensorKindLabel, sensorState, sortSensors, summarizeSensors, switchLabel, temperatureSensors, thresholdsFor,
+  agoText, missingSensors, seasonLabel, sensorKindLabel, syncHealth, sensorState, sortSensors, summarizeSensors, switchLabel, temperatureSensors, thresholdsFor,
 } from '../lib/sensors.js'
 import { StatRow } from '../ui/hub.jsx'
 import { Badge, Button, ErrorText, Spinner, formatDate } from '../ui/kit.jsx'
@@ -24,6 +24,7 @@ export default function Sensors({ ctx }) {
   const settingsState = useAsync(() => getSettings(ctx.hotelId), [ctx.hotelId])
   const [tab, setTab] = useState('temperature')
   const [showHidden, setShowHidden] = useState(false)
+  const [showMissing, setShowMissing] = useState(false)
   const [busy, setBusy] = useState(false)
   const [actionError, setActionError] = useState('')
   const canManage = can(ctx.permissions, PERM.SENSORS_MANAGE)
@@ -35,6 +36,8 @@ export default function Sensors({ ctx }) {
   const switchCount = groups.reduce((n, g) => n + g.items.length, 0)
   const sum = summarizeSensors(temperatureSensors(all), now, settings)
   const hidden = hiddenSensors(all)
+  const missing = missingSensors(all.filter((x) => x.active !== false), now)
+  const health = syncHealth(all, now)
 
   const run = async (fn) => {
     setBusy(true); setActionError('')
@@ -49,6 +52,10 @@ export default function Sensors({ ctx }) {
         <h1>Sensori e impianti</h1>
         {canManage && <Button variant="primary" onClick={() => go('/sensors/new')}>+ Nuovo</Button>}
       </div>
+
+      {data && health.stopped && (
+        <div className="banner" role="alert">Nessun sensore si aggiorna da {agoText(new Date(now - health.minutes * 60000).toISOString(), now).replace(' fa', '')}: la sincronizzazione sembra ferma.</div>
+      )}
 
       {data && (
         <StatRow stats={[
@@ -126,6 +133,22 @@ export default function Sensors({ ctx }) {
             </div>
           ))}
           {data && switchCount === 0 && <div className="card muted">Nessun interruttore{canManage ? ': aggiungi il primo.' : '.'}</div>}
+        </div>
+      )}
+
+      {missing.length > 0 && (
+        <div className="list">
+          <button className="chip" aria-pressed={showMissing} onClick={() => setShowMissing((v) => !v)}>Non arrivano più ({missing.length})</button>
+          {showMissing && (
+            <div className="card stack">
+              <p className="muted">Nessun dato da più di 24 ore: probabilmente non sono più nell'account eWeLink. Passa questo elenco a chi gestisce l'account.</p>
+              <ul className="people">
+                {missing.map((x) => (
+                  <li key={x.id}><span>{x.name}</span><span className="muted">{agoText(x.last_seen, now)}</span></li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       )}
 

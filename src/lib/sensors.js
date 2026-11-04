@@ -103,3 +103,36 @@ export function optionalNumber(value) {
 // Sensori nascosti (si possono rimostrare).
 export const hiddenSensors = (sensors) =>
   sensors.filter((s) => s.active === false).sort((a, b) => a.name.localeCompare(b.name, 'it'))
+
+// ---- Guardie: cosa non arriva più dall'impianto
+export const MISSING_HOURS = 24
+export const SYNC_STOP_MINUTES = 60
+
+// Sensori attivi che non si aggiornano da più di 24 ore: con ogni probabilità eWeLink non li restituisce più
+// (tolti dall'account, condivisione revocata, dispositivo spento da tempo). Il più vecchio per primo.
+export function missingSensors(sensors, now = Date.now(), hours = MISSING_HOURS) {
+  const limit = hours * 60 * 60 * 1000
+  return sensors
+    .filter((s) => s.active !== false)
+    .filter((s) => !s.last_seen || now - new Date(s.last_seen).getTime() > limit)
+    .sort((a, b) => new Date(a.last_seen || 0).getTime() - new Date(b.last_seen || 0).getTime())
+}
+
+// La sincronizzazione è ferma? Se NESSUN sensore si è aggiornato da più di un'ora, sì.
+// Se non ci sono sensori non si può dire: nessun allarme.
+export function syncHealth(sensors, now = Date.now(), minutes = SYNC_STOP_MINUTES) {
+  const times = sensors.filter((s) => s.active !== false && s.last_seen).map((s) => new Date(s.last_seen).getTime())
+  if (times.length === 0) return { stopped: false, minutes: null }
+  const ago = Math.round((now - Math.max(...times)) / 60000)
+  return { stopped: ago > minutes, minutes: ago }
+}
+
+// "2 ore", "3 giorni"… per dire da quanto tempo manca un dato.
+export function agoText(iso, now = Date.now()) {
+  if (!iso) return 'mai aggiornato'
+  const min = Math.max(0, Math.round((now - new Date(iso).getTime()) / 60000))
+  if (min < 90) return `${min} min fa`
+  const h = Math.round(min / 60)
+  if (h < 48) return `${h} ore fa`
+  return `${Math.round(h / 24)} giorni fa`
+}
