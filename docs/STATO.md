@@ -6,6 +6,7 @@ File di passaggio di consegne tra Claude, Cursor e Codex. Aggiornalo a ogni sess
 _Nessun lavoro in corso._ (Scrivi qui: strumento, branch, cosa stai facendo.)
 
 ## Fatto
+- 2026-11-04 — Claude (branch `claude/sensori-layout`): layout di Sensori e impianti compatto: riga dei 3 numeri, stagione su una riga, temperature in riquadri a griglia con bordo per stato, "Nascondi" più piccolo, tasto "+ Nuovo". Solo grafica (`Sensors.jsx`, `base.css`), nessuna migrazione.
 - 2026-11-04 — Claude (branch `claude/task-pattern`): Task con lo stesso schema (hub e liste con 3 numeri, tasti "+ Nuovo avviso"/"+ Nuovo promemoria" solo con permesso). `alertStats`, `reminderStats` in `src/lib/task.js`; riuso di `src/ui/hub.jsx`. Nessuna migrazione. Test 119.
 - 2026-11-04 — Claude (branch `claude/operativita-pattern`): Operatività con lo stesso schema del Planning.
   - Hub: riquadri Segnalazioni/Interventi con 3 numeri (`issueStats`, `interventionStats`: fatte/fatti = completati oggi) e tasto "+ Nuova segnalazione"/"+ Nuovo intervento" solo con il permesso di creare. Componenti condivisi in `src/ui/hub.jsx` (`HubChoice`, `StatRow`). Liste: riga dei 3 numeri e tasto "+ Nuova"/"+ Nuovo". Nessuna migrazione. Test 118.

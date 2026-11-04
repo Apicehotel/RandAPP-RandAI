@@ -321,3 +321,21 @@ a { color: var(--accent); }
 a.btn, .hub-link, .card.issue, a.card, .drawer a, nav a { color: inherit; }
 .checkpill { align-self: start; }
 .two { align-items: start; }
+
+/* Sensori e impianti: riquadri compatti in griglia (2 colonne su telefono, 3 su schermi larghi). */
+.season { display: grid; gap: 4px; padding: var(--gap-tight) var(--gap); }
+.season .chips { flex-wrap: nowrap; }
+.season p { margin: 0; font-size: var(--fs-xs); }
+.sgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--gap-tight); }
+@media (min-width: 900px) { .sgrid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.stile { display: grid; gap: 4px; padding: var(--gap-tight) var(--gap); align-content: start; border-left: 4px solid transparent; }
+.stile.allerta { border-left-color: var(--danger, #d92d20); }
+.stile.offline { border-left-color: var(--warn); }
+.stile.ok { border-left-color: var(--ok); }
+.stile-name { font-weight: 650; font-size: var(--fs-sm, 0.9rem); line-height: 1.2; overflow-wrap: anywhere; }
+.stile-temp { font-size: var(--fs-num); font-weight: 750; line-height: 1.1; }
+.stile-meta { display: grid; gap: 2px; justify-items: start; font-size: var(--fs-xs); }
+.stile-small { font-size: var(--fs-xs); }
+.stile-foot { display: flex; justify-content: space-between; gap: 6px; font-size: var(--fs-xs); align-items: center; }
+.stile .link-btn { font-size: var(--fs-xs); min-height: 0; padding: 2px 0; }
+.people .link-btn { font-size: var(--fs-xs); min-height: 0; padding: 2px 0; }
