@@ -2,9 +2,11 @@ import { listIssues } from '../data/issues.js'
 import { listInterventions } from '../data/interventions.js'
 import { useAsync } from '../lib/hooks.js'
 import { can, PERM } from '../lib/permissions.js'
-import { summarize, workQueue } from '../lib/queue.js'
-import { summarizeInterventions, filterInterventions, sortInterventions } from '../lib/interventions.js'
-import { Icon, Spinner, ErrorText, UrgencyBadge, StatusBadge, formatDate } from '../ui/kit.jsx'
+import { issueStats, workQueue } from '../lib/queue.js'
+import { todayIso } from '../lib/planning.js'
+import { interventionStats, filterInterventions, sortInterventions } from '../lib/interventions.js'
+import { Spinner, ErrorText, UrgencyBadge, StatusBadge, formatDate } from '../ui/kit.jsx'
+import { HubChoice } from '../ui/hub.jsx'
 import { InterventionCard } from './Interventions.jsx'
 
 // Hub "Operatività": due sezioni interne, Segnalazioni e Interventi, con le 3 più importanti di ciascuna.
@@ -23,9 +25,10 @@ export default function Operations({ ctx }) {
   if (error) return <div className="page"><ErrorText>{error}</ErrorText></div>
 
   const { issues, interventions } = data
-  const stats = summarize(issues)
+  const today = todayIso()
+  const stats = issueStats(issues, today)
   const topIssues = workQueue(issues, 3)
-  const iStats = summarizeInterventions(interventions)
+  const iStats = interventionStats(interventions, today)
   const topInterventions = sortInterventions(filterInterventions(interventions, 'aperti')).slice(0, 3)
 
   return (
@@ -37,25 +40,15 @@ export default function Operations({ ctx }) {
 
       <div className="hub-grid">
         {showIssues && (
-          <a className="card hub-choice" href="#/issues">
-            <span className="icon"><Icon name="alert" /></span>
-            <strong>Segnalazioni</strong>
-            <span className="metrics">
-              <span>{stats.open} aperte</span>
-              <span>{stats.urgent} urgenti</span>
-            </span>
-          </a>
+          <HubChoice href="#/issues" icon="alert" title="Segnalazioni"
+            stats={[{ value: stats.open, label: 'Aperte' }, { value: stats.urgent, label: 'Urgenti', tone: 'warn' }, { value: stats.done, label: 'Fatte oggi', tone: 'ok' }]}
+            newHref={can(ctx.permissions, PERM.ISSUES_CREATE) ? '#/issues/new' : null} newLabel="+ Nuova segnalazione" />
         )}
 
         {showInterventions && (
-          <a className="card hub-choice" href="#/interventions">
-            <span className="icon"><Icon name="wrench" /></span>
-            <strong>Interventi</strong>
-            <span className="metrics">
-              <span>{iStats.open} aperti</span>
-              <span>{iStats.running} in corso</span>
-            </span>
-          </a>
+          <HubChoice href="#/interventions" icon="wrench" title="Interventi"
+            stats={[{ value: iStats.open, label: 'Aperti' }, { value: iStats.running, label: 'In corso', tone: 'warn' }, { value: iStats.done, label: 'Fatti oggi', tone: 'ok' }]}
+            newHref={can(ctx.permissions, PERM.INTERVENTIONS_CREATE) ? '#/interventions/new' : null} newLabel="+ Nuovo intervento" />
         )}
       </div>
 

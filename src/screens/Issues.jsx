@@ -4,6 +4,9 @@ import { listInterventionsForIssue } from '../data/interventions.js'
 import { useAsync, go } from '../lib/hooks.js'
 import { can, PERM } from '../lib/permissions.js'
 import { STATUSES, filterByStatus, sortByPriority } from '../lib/queue.js'
+import { StatRow } from '../ui/hub.jsx'
+import { issueStats } from '../lib/queue.js'
+import { todayIso } from '../lib/planning.js'
 import { Button, ErrorText, Spinner, UrgencyBadge, StatusBadge, formatDate } from '../ui/kit.jsx'
 
 export function IssueList({ ctx }) {
@@ -17,9 +20,11 @@ export function IssueList({ ctx }) {
       <div className="row">
         <h1>Segnalazioni</h1>
         {can(ctx.permissions, PERM.ISSUES_CREATE) && (
-          <Button variant="primary" onClick={() => go('/issues/new')}>+ Segnalazione</Button>
+          <Button variant="primary" onClick={() => go('/issues/new')}>+ Nuova</Button>
         )}
       </div>
+
+      {data && (() => { const st = issueStats(data, todayIso()); return <StatRow stats={[{ value: st.open, label: 'Aperte' }, { value: st.urgent, label: 'Urgenti', tone: 'warn' }, { value: st.done, label: 'Fatte oggi', tone: 'ok' }]} /> })()}
 
       <div className="chips" role="group" aria-label="Filtro stato">
         {[...STATUSES, { id: 'tutte', label: 'Tutte' }].map((s) => (

@@ -38,6 +38,16 @@ export const summarizeInterventions = (items) => ({
   running: items.filter((i) => i.status === 'in_corso').length,
 })
 
+// Aperti · in corso · fatti oggi (data locale), come le statistiche del Planning.
+export function interventionStats(items, iso) {
+  const day = (v) => { const d = new Date(v); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` }
+  return {
+    open: items.filter(isInterventionOpen).length,
+    running: items.filter((i) => i.status === 'in_corso').length,
+    done: items.filter((i) => i.status === 'fatto' && i.completed_at && day(i.completed_at) === iso).length,
+  }
+}
+
 // Da <input type="datetime-local"> (ora locale) a ISO, oppure null se vuoto/non valido.
 export function localInputToIso(value) {
   if (!value) return null

@@ -7,6 +7,9 @@ import { can, PERM } from '../lib/permissions.js'
 import {
   INTERVENTION_STATUSES, filterInterventions, sortInterventions, interventionStatusLabel,
 } from '../lib/interventions.js'
+import { StatRow } from '../ui/hub.jsx'
+import { interventionStats } from '../lib/interventions.js'
+import { todayIso } from '../lib/planning.js'
 import { Badge, Button, ErrorText, Spinner, formatDate } from '../ui/kit.jsx'
 
 const FILTERS = [
@@ -44,9 +47,11 @@ export function InterventionList({ ctx }) {
       <div className="row">
         <h1>Interventi</h1>
         {can(ctx.permissions, PERM.INTERVENTIONS_CREATE) && (
-          <Button variant="primary" onClick={() => go('/interventions/new')}>+ Intervento</Button>
+          <Button variant="primary" onClick={() => go('/interventions/new')}>+ Nuovo</Button>
         )}
       </div>
+
+      {data && (() => { const st = interventionStats(data, todayIso()); return <StatRow stats={[{ value: st.open, label: 'Aperti' }, { value: st.running, label: 'In corso', tone: 'warn' }, { value: st.done, label: 'Fatti oggi', tone: 'ok' }]} /> })()}
 
       <div className="chips" role="group" aria-label="Filtro interventi">
         {FILTERS.map((f) => (
