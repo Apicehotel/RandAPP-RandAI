@@ -96,10 +96,19 @@ Presi dalla vecchia app `Apicehotel-Manutenzione`.
 - `public/icons/` + `public/manifest.webmanifest`: icona **RandApp** (192, 512, maskable, Apple) per aggiungere l'app alla schermata Home del telefono. Per ora c'è solo il manifest: il servizio di funzionamento offline arriva con la PWA completa.
 - Non ancora presi: le "card" grandi delle strutture, il gatto di RandAI (quando lo riattiviamo), l'icona degli avvisi urgenti.
 
+## Notifiche
+Campanella in alto (con numero di non lette) → `/notifications`; impostazioni in `/notifications/settings`. Migrazione `0013_notifications.sql`, logica in `src/lib/notifications.js` (test), invio in `supabase/functions/notify-dispatch` (adattatori in `_shared/notify.js`, test).
+- **Sempre in app**: ogni notifica finisce nella casella dell'utente (`notifications`, RLS: ognuno vede solo le sue). Fuori dall'app dipende dai canali.
+- **Eventi** (tutti generati dal database, nessun invio dal browser): nuovo **avviso urgente** e promemoria "ancora da prendere in carico"; **segnalazione/intervento/lavoro assegnato** o urgente; **sensori in allerta**, **sensori che non arrivano più** (24 ore) e **sincronizzazione ferma** (1 ora); **promemoria** all'ora impostata. Il controllo periodico è `notify_run()`.
+- **Canali per struttura** (`notification_channels`, li accende chi ha `notifications.manage`): **web push** (telefono/PC; su iPhone solo con l'app aggiunta alla Home), **ntfy** (topic personale lungo e casuale), **WhatsApp** (Meta Cloud API, modello approvato con 2 variabili). Ognuno sceglie per tipo di notifica quali canali usare (`notification_prefs`). **App Android/iOS (apk e Apple, in futuro)**: la tabella `notification_devices` ha già `android`/`ios`; il dispatcher li segna "non configurato" finché non si aggiunge FCM/APNs.
+- **Segreti** del dispatcher (variabili della funzione o `edge_function_secrets`, mai nel repo): `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, `NTFY_BASE` (default `https://ntfy.sh`), `NTFY_TOKEN`, `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_ID`, `APP_URL`, `NOTIFY_SYNC_SECRET` (se manca usa `sensor_sync_secret`). Chiave pubblica anche nel sito: `VITE_VAPID_PUBLIC_KEY`.
+- **Pianificazione** (pg_cron + pg_net dal pannello Supabase), ogni minuto: `select public.notify_run();` e una chiamata `POST <url funzione>/notify-dispatch` con l'intestazione `x-sync-secret`.
+- **Prova**: in Impostazioni notifiche il tasto di prova crea una notifica per te (`notify_test`). Non provato dal vivo: nessuna migrazione né funzione è ancora su un Supabase vero (le migrazioni sono validate in PGlite, Postgres reale).
+
 ## Messa in funzione del database (nuovo progetto Supabase)
 1. Crea un progetto Supabase **nuovo e separato** da quelli esistenti.
-2. Applica in ordine `supabase/migrations/0001_base.sql`, `0002_interventions.sql`, `0003_planning.sql`, `0004_task.sql`, `0005_presence.sql`, `0006_warehouse.sql`, `0007_supplies.sql`, `0008_housekeeping.sql`, `0009_sensors.sql`, `0010_sensor_seasons.sql`, `0011_forms.sql` e `0012_planning_ops.sql`.
-3. Pubblica la funzione `pin-auth` (`supabase/functions/pin-auth`).
+2. Applica in ordine `supabase/migrations/0001_base.sql`, `0002_interventions.sql`, `0003_planning.sql`, `0004_task.sql`, `0005_presence.sql`, `0006_warehouse.sql`, `0007_supplies.sql`, `0008_housekeeping.sql`, `0009_sensors.sql`, `0010_sensor_seasons.sql`, `0011_forms.sql`, `0012_planning_ops.sql` e `0013_notifications.sql`.
+3. Pubblica le funzioni `pin-auth`, `ewelink-sync` e `notify-dispatch` (`supabase/functions/`).
 4. Crea i primi utenti dal tuo terminale:
    ```bash
    SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... \
@@ -125,7 +134,7 @@ src/assets/logos/      loghi (ApiceHotel e strutture)
 src/ui/                tokens.css (colori/dimensioni), base.css, Shell (barra + header), Drawer (menu), componenti
 src/randai/            RandAI (predisposto, spento)
 supabase/migrations/   schema database con RLS
-supabase/functions/    pin-auth (login con PIN lato server), ewelink-sync (lettore eWeLink), _shared (logica comune)
+supabase/functions/    pin-auth (login con PIN lato server), ewelink-sync (lettore eWeLink), notify-dispatch (invio notifiche), _shared (logica comune)
 scripts/               create-user, check-bundle
 test/                  test automatici (permessi, coda, schema RLS, niente segreti)
 ```

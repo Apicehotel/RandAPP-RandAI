@@ -384,3 +384,19 @@ a.btn, .hub-link, .card.issue, a.card, .drawer a, nav a { color: inherit; }
 .iconbtn:disabled { opacity: .6; cursor: default; }
 .iconbtn.spin svg { animation: spin .8s linear infinite; }
 @media (prefers-reduced-motion: reduce) { .iconbtn.spin svg { animation-duration: 3s; } }
+
+/* Campanella delle notifiche nella barra in alto. */
+.top-right { display: flex; align-items: center; gap: var(--gap-tight); }
+.bellbtn { position: relative; display: inline-grid; place-items: center; width: var(--avatar); height: var(--avatar); border-radius: 50%; background: var(--surface-2); color: var(--text); text-decoration: none; }
+.bell-badge { position: absolute; top: -4px; right: -4px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--danger); color: #fff; font-size: 11px; font-weight: 700; line-height: 18px; text-align: center; }
+
+/* Elenco notifiche e impostazioni. */
+.notif { display: grid; gap: 4px; text-decoration: none; color: inherit; border-left: 4px solid transparent; }
+.notif.unread { border-left-color: var(--accent); }
+.notif.urgent { border-left-color: var(--danger); }
+.notif .when { color: var(--text-2); font-size: var(--fs-xs); }
+.notif.read strong { font-weight: 550; }
+.kindrow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--gap-tight); align-items: center; padding: 6px 0; border-top: 1px solid var(--border); }
+.kindrow .chips { overflow: visible; padding: 0; flex-wrap: nowrap; }
+.kindrow .chip { --chip-h: 28px; min-height: 28px; height: 28px; padding: 0 9px; font-size: var(--fs-xs); }
+.copybox { word-break: break-all; font-family: ui-monospace, monospace; font-size: var(--fs-xs); background: var(--surface-2); border-radius: var(--radius-sm); padding: 8px; }

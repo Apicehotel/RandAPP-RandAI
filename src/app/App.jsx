@@ -25,6 +25,8 @@ const SaleList = lazyWithRetry(() => import('../screens/PlanningSale.jsx').then(
 const SaleDetail = lazyWithRetry(() => import('../screens/PlanningSale.jsx').then((m) => ({ default: m.SaleDetail })))
 const SaleConfig = lazyWithRetry(() => import('../screens/PlanningSaleConfig.jsx'))
 const SaleNew = lazyWithRetry(() => import('../screens/PlanningSaleNew.jsx'))
+const Notifications = lazyWithRetry(() => import('../screens/Notifications.jsx'))
+const NotificationSettings = lazyWithRetry(() => import('../screens/Notifications.jsx').then((m) => ({ default: m.NotificationSettings })))
 const Task = lazyWithRetry(() => import('../screens/Task.jsx'))
 const AlertList = lazyWithRetry(() => import('../screens/TaskUrgent.jsx').then((m) => ({ default: m.AlertList })))
 const AlertDetail = lazyWithRetry(() => import('../screens/TaskUrgent.jsx').then((m) => ({ default: m.AlertDetail })))
@@ -159,6 +161,8 @@ function Screen({ route, ctx, onLogout, onSwitchHotel }) {
   const canView = can(ctx.permissions, PERM.ISSUES_VIEW)
 
   if (route.startsWith('/profile')) return <Profile ctx={ctx} onLogout={onLogout} onSwitchHotel={onSwitchHotel} />
+  if (route === '/notifications/settings') return <NotificationSettings ctx={ctx} />
+  if (route.startsWith('/notifications')) return <Notifications ctx={ctx} />
   if (route.startsWith('/randai') && randaiEnabled) return <RandAI />
   if (MANAGEMENT_PREFIXES.some((p) => route === p || route.startsWith(`${p}/`))) return <ManagementScreen route={route} ctx={ctx} />
   if (route.startsWith('/planning')) return <PlanningScreen route={route} ctx={ctx} />
