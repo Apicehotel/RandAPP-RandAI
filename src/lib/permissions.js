@@ -111,6 +111,8 @@ export function menuGroupsFor(permissions) {
         { id: 'interventions', label: 'Interventi', path: '/interventions', icon: 'wrench', perm: PERM.INTERVENTIONS_VIEW },
         { id: 'new-intervention', label: 'Nuovo intervento', path: '/interventions/new', icon: 'plus', perm: PERM.INTERVENTIONS_CREATE },
         { id: 'planning', label: 'Planning', path: '/planning', icon: 'calendar', perm: PLANNING_ANY },
+        { id: 'new-work', label: 'Nuovo planning lavori', path: '/planning/work/new', icon: 'plus', perm: PERM.PLANNING_WORK_CREATE },
+        { id: 'new-booking', label: 'Nuovo planning sale', path: '/planning/sale/new', icon: 'plus', perm: PERM.PLANNING_SALE_CREATE },
         { id: 'task', label: 'Task', path: '/task', icon: 'check', perm: TASK_ANY },
       ],
     },

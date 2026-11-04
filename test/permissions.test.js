@@ -108,3 +108,11 @@ test('etichette ruolo', () => {
   assert.equal(roleLabel('manutentore'), 'Manutentore')
   assert.equal(roleLabel('sconosciuto'), 'sconosciuto')
 })
+
+test('menu: "Nuovo planning lavori/sale" solo col permesso create di ciascuno', () => {
+  const flat = (perms) => menuGroupsFor(new Set(perms)).flatMap((g) => g.items.map((i) => i.id))
+  assert.ok(flat([PERM.PLANNING_WORK_VIEW, PERM.PLANNING_WORK_CREATE]).includes('new-work'))
+  assert.ok(!flat([PERM.PLANNING_WORK_VIEW, PERM.PLANNING_WORK_CREATE]).includes('new-booking'))
+  assert.ok(flat([PERM.PLANNING_SALE_VIEW, PERM.PLANNING_SALE_CREATE]).includes('new-booking'))
+  assert.ok(!flat([PERM.PLANNING_SALE_VIEW]).includes('new-booking'))
+})
