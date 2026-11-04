@@ -78,11 +78,12 @@ export default function Home({ ctx }) {
   const visible = TILE_ORDER.filter((k) => tiles[k])
 
   return (
-    <div className="page">
-      <div className="stack sticky-head">
+    <div className="page fixed-head">
+      <div className="stack page-head">
         <h1>Oggi</h1>
         <p className="muted">{todayTitle()}</p>
       </div>
+      <div className="page-scroll">
 
       {failed.length > 0 && (
         <div className="card muted" role="status">Alcune sezioni non si sono caricate. Riapri la Home per riprovare.</div>
@@ -124,6 +125,7 @@ export default function Home({ ctx }) {
           ))}
         </div>
       )}
+      </div>
     </div>
   )
 }
