@@ -1,5 +1,6 @@
 -- RandApp: schema di base multi-hotel.
--- Da applicare SOLO a un progetto Supabase nuovo/separato. Non toccare i database esistenti.
+-- Vive nello schema `randapp` (creato da 0000_schema.sql) del progetto Supabase condiviso con la vecchia app:
+-- non crea né modifica niente in `public`.
 -- Regole: ogni record operativo ha hotel_id; RLS attiva su ogni tabella; nessun segreto qui dentro.
 
 create extension if not exists pgcrypto;

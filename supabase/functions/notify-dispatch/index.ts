@@ -16,7 +16,9 @@ async function secret(name: string): Promise<string | null> {
   const v = Deno.env.get(name);
   if (v) return v;
   try {
-    const rows = await sql`select value from public.edge_function_secrets where key = ${name.toLowerCase()} limit 1`;
+    // Nel progetto condiviso le chiavi VAPID si chiamano vapid_public / vapid_private.
+    const alias: Record<string, string> = { VAPID_PUBLIC_KEY: "vapid_public", VAPID_PRIVATE_KEY: "vapid_private" };
+    const rows = await sql`select value from public.edge_function_secrets where key = ${alias[name] ?? name.toLowerCase()} limit 1`;
     return rows[0]?.value ? String(rows[0].value) : null;
   } catch {
     return null;

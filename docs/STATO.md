@@ -113,8 +113,10 @@ _Nessun lavoro in corso._ (Scrivi qui: strumento, branch, cosa stai facendo.)
 
 - 2026-11-04 — Claude (branch `claude/ritocchi-planning`): link con il colore del tema e pastiglie Audio/Video allineate.
 
+- 2026-11-04 — Claude (branch `claude/aggancio-supabase`): **aggancio al Supabase esistente** (schema separato `randapp`). Applicate `0000`–`0014` (la `0014` fissa il `search_path` di due funzioni trigger), schema esposto a PostgREST, funzioni `randapp-pin-auth`, `ewelink-sync`, `notify-dispatch` pubblicate e provate (ricerca nomi OK; eWeLink in prova a vuoto e poi reale: 30 dispositivi trovati e abbinati), utenti dei 5 ruoli mappati copiati dentro il database (PIN invariati), seed luoghi (478) e sensori (45), pg_cron attivo. `ewelink-sync` ora aggiorna i sensori di **tutte** le strutture per codice dispositivo; `notify-dispatch` legge le chiavi VAPID come `vapid_public`/`vapid_private` (nomi della tabella condivisa). `public` non è stato toccato. **Da fare: prova di login su telefono vero.**
+
 ## Da fare (in ordine)
-1. Agganciare il Supabase **esistente** (scelta dell'utente): verificare collisioni di nomi, applicare `0001`…`0012` in ordine, pubblicare `pin-auth` e `ewelink-sync`, creare i primi utenti, eseguire i seed (sensori, luoghi).
+1. ~~Agganciare il Supabase esistente~~ (fatto il 2026-11-04, vedi sopra).
 2. **Provare il login e le segnalazioni su un telefono vero** (vedi note sotto).
 3. Notifiche WhatsApp (API Meta) sulle segnalazioni.
 4. Coda offline (Dexie) che conserva l'hotel di origine dell'operazione.
@@ -124,8 +126,8 @@ _Nessun lavoro in corso._ (Scrivi qui: strumento, branch, cosa stai facendo.)
 8. Riattivare RandAI (dopo il lancio).
 
 ## Note per il prossimo strumento
-- **Il login non è mai stato provato end-to-end**: non esisteva ancora un progetto Supabase. Build e test passano; le schermate sono state viste renderizzate solo con dati demo (mock), non su Supabase vero: manca ancora la prova PIN → sessione → segnalazioni reale. È il primo controllo da fare.
+- **Il login con PIN non è ancora stato provato da un telefono**: la funzione risponde e il database è pronto, ma manca la prova PIN → sessione → segnalazioni reale. Build e test passano; le schermate sono state viste renderizzate solo con dati demo (mock), non su Supabase vero: manca ancora la prova PIN → sessione → segnalazioni reale. È il primo controllo da fare.
 - Tutte le sezioni della barra (Operatività, Planning, Home, Task) hanno ormai i loro permessi nel database; non resta nessuna voce con `perm: null` tranne Profilo e il menu "Altro".
 - Il PIN è di 4 cifre (come nella vecchia app): la protezione è nel blocco dopo 5 errori (10 minuti) e nel limite sulla ricerca nomi.
-- Database: l'utente ha deciso di agganciarsi al Supabase esistente (2026-11-02). Lo schema è nato per un progetto separato: prima di applicare le migrazioni controllare collisioni con le tabelle della vecchia app e non toccare i dati esistenti senza il suo ok.
+- Database: agganciato al Supabase esistente nello schema `randapp` (2026-11-04). Non toccare `public` (vecchia app) senza il ok dell'utente. Ruoli speciali della vecchia app (Portiere Notturno, Capo Governante, Direttore Centro Congressi, Tecnico esterno, RandAI, Supremo) non ancora copiati: i loro utenti non possono entrare nella nuova app finché i ruoli non sono decisi.
 - Non aggiungere dipendenze o fogli CSS di override senza un motivo concreto; il budget del bundle è controllato da `npm run check:bundle`.
