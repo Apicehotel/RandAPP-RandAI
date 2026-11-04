@@ -6,6 +6,8 @@ File di passaggio di consegne tra Claude, Cursor e Codex. Aggiornalo a ogni sess
 _Nessun lavoro in corso._ (Scrivi qui: strumento, branch, cosa stai facendo.)
 
 ## Fatto
+- 2026-11-04 — Claude (branch `claude/operativita-pattern`): Operatività con lo stesso schema del Planning.
+  - Hub: riquadri Segnalazioni/Interventi con 3 numeri (`issueStats`, `interventionStats`: fatte/fatti = completati oggi) e tasto "+ Nuova segnalazione"/"+ Nuovo intervento" solo con il permesso di creare. Componenti condivisi in `src/ui/hub.jsx` (`HubChoice`, `StatRow`). Liste: riga dei 3 numeri e tasto "+ Nuova"/"+ Nuovo". Nessuna migrazione. Test 118.
 - 2026-11-02 — Claude (branch `claude/sensori-stagioni`): Sensori divisi in **Temperature** e **Interruttori** (Accesi/Spenti/Misti/Non raggiungibili) con **stagione Inverno/Estate**.
   - Migrazione `0010_sensor_seasons.sql`: ruolo del sensore (ambiente/motore/frigo) e tabella `sensor_settings` (stagione e soglie 20/18/0 della vecchia app). Test: 101.
   - Interpretazione mia della richiesta (la frase era troncata): da confermare. Lo script di importazione dei 45 sensori (fuori dal repo) ora assegna il ruolo "motore" ai sensori C/F; va eseguito dopo `0009` e `0010`.

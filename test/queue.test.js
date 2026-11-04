@@ -36,3 +36,24 @@ test('non modifica l\'array originale', () => {
   sortByPriority(sample)
   assert.deepEqual(sample, copy)
 })
+
+import { issueStats } from '../src/lib/queue.js'
+import { interventionStats } from '../src/lib/interventions.js'
+
+test('statistiche Operatività: aperte, urgenti, fatte oggi', () => {
+  const at = (d) => new Date(`${d}T10:00:00`).toISOString()
+  const issues = [
+    { status: 'aperta', urgency: 'urgente' },
+    { status: 'in_corso', urgency: 'normale' },
+    { status: 'completata', completed_at: at('2026-11-04') },
+    { status: 'completata', completed_at: at('2026-11-03') },
+  ]
+  assert.deepEqual(issueStats(issues, '2026-11-04'), { open: 2, urgent: 1, done: 1 })
+  const items = [
+    { status: 'programmato' },
+    { status: 'in_corso' },
+    { status: 'fatto', completed_at: at('2026-11-04') },
+    { status: 'fatto', completed_at: at('2026-11-01') },
+  ]
+  assert.deepEqual(interventionStats(items, '2026-11-04'), { open: 2, running: 1, done: 1 })
+})

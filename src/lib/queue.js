@@ -56,3 +56,18 @@ export function filterByStatus(issues, status) {
   if (!status || status === 'tutte') return issues
   return issues.filter((i) => i.status === status)
 }
+
+// Statistiche come nel Planning: aperte · urgenti · completate oggi (data locale).
+const isoLocal = (value) => {
+  const d = new Date(value)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+export const completedOn = (item, iso) => Boolean(item.completed_at) && isoLocal(item.completed_at) === iso
+export function issueStats(issues, iso) {
+  const open = issues.filter(isOpen)
+  return {
+    open: open.length,
+    urgent: open.filter((i) => i.urgency === 'urgente').length,
+    done: issues.filter((i) => completedOn(i, iso)).length,
+  }
+}
