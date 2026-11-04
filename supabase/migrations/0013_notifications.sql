@@ -181,7 +181,8 @@ begin
       and m.auth_user_id is distinct from p_exclude
       and (not p_only_present or exists (
             select 1 from public.presence pr
-            where pr.hotel_id = p_hotel and pr.user_id = m.auth_user_id and pr.present))
+            where pr.hotel_id = p_hotel and pr.user_id = m.auth_user_id and pr.present
+              and pr.since > now() - interval '7 hours 20 minutes'))
   loop
     insert into public.notifications (hotel_id, user_id, kind, title, body, link, priority, ref_id)
     values (p_hotel, r.uid, p_kind, left(p_title, 120), left(p_body, 500), p_link, coalesce(p_priority, 'normal'), p_ref)
@@ -402,12 +403,25 @@ begin
 end;
 $$;
 
+-- Come la vecchia app: la presenza scade da sola dopo 7 ore e 20 minuti.
+create or replace function public.expire_presence() returns integer
+language plpgsql security definer set search_path = public
+as $$
+declare n integer;
+begin
+  update public.presence set present = false where present and since <= now() - interval '7 hours 20 minutes';
+  get diagnostics n = row_count;
+  return n;
+end;
+$$;
+
 create or replace function public.notify_run() returns jsonb
 language sql security definer set search_path = public
 as $$
-  select jsonb_build_object('alerts', public.notify_stale_alerts(), 'sensors', public.notify_sensor_checks(), 'reminders', public.notify_due_reminders());
+  select jsonb_build_object('expired', public.expire_presence(), 'alerts', public.notify_stale_alerts(),
+                            'sensors', public.notify_sensor_checks(), 'reminders', public.notify_due_reminders());
 $$;
-revoke all on function public.notify_stale_alerts(), public.notify_sensor_checks(), public.notify_due_reminders(), public.notify_run() from public, anon, authenticated;
+revoke all on function public.expire_presence(), public.notify_stale_alerts(), public.notify_sensor_checks(), public.notify_due_reminders(), public.notify_run() from public, anon, authenticated;
 
 -- Notifica di prova: la manda a se stesso chi ha il permesso notifications.manage (serve a provare i canali).
 create or replace function public.notify_test(p_hotel text) returns integer

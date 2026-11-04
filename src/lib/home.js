@@ -97,10 +97,11 @@ export function buildTodo(data, { today, role, perSection = 3, max = 10 }) {
 
 // ---- Presenza
 // Se qualcuno dimentica di segnare l'uscita, dopo 16 ore non risulta più presente.
-export const PRESENCE_MAX_HOURS = 16
+// Come nella vecchia app: la presenza scade da sola dopo 7 ore e 20 minuti (anche sul server: expire_presence()).
+export const PRESENCE_MAX_MINUTES = 7 * 60 + 20
 
 export const isPresentNow = (row, now = Date.now()) =>
-  Boolean(row.present) && now - new Date(row.since).getTime() < PRESENCE_MAX_HOURS * 3600e3
+  Boolean(row.present) && now - new Date(row.since).getTime() < PRESENCE_MAX_MINUTES * 60e3
 
 export const presentNow = (rows, now = Date.now()) =>
   rows.filter((r) => isPresentNow(r, now)).sort((a, b) => new Date(a.since).getTime() - new Date(b.since).getTime())

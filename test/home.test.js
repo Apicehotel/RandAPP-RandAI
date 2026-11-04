@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
-  buildTiles, buildTodo, isPresentNow, presentNow, PRESENCE_MAX_HOURS,
+  buildTiles, buildTodo, isPresentNow, presentNow, PRESENCE_MAX_MINUTES,
 } from '../src/lib/home.js'
 
 const today = '2026-10-31'
@@ -88,11 +88,12 @@ test('da fare adesso: vuoto se non c\'è nulla o niente è visibile', () => {
   assert.deepEqual(buildTodo({ ...empty, issues: [issue(1, 'completata', 'urgente')] }, { today, role }), [])
 })
 
-test('presenza: sparisce dopo 16 ore o se ha segnato l\'uscita', () => {
+test('presenza: sparisce dopo 7 ore e 20 o se ha segnato l\'uscita', () => {
   const h = (n) => new Date(NOW - n * 3600e3).toISOString()
-  assert.equal(PRESENCE_MAX_HOURS, 16)
+  assert.equal(PRESENCE_MAX_MINUTES, 440)
   assert.equal(isPresentNow({ present: true, since: h(2) }, NOW), true)
-  assert.equal(isPresentNow({ present: true, since: h(17) }, NOW), false)
+  assert.equal(isPresentNow({ present: true, since: h(7.5) }, NOW), false)
+  assert.equal(isPresentNow({ present: true, since: h(7) }, NOW), true)
   assert.equal(isPresentNow({ present: false, since: h(1) }, NOW), false)
   const list = presentNow([
     { user_id: 'b', present: true, since: h(1) },
