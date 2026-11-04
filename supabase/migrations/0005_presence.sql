@@ -45,6 +45,11 @@ begin
   join public.hotel_memberships m on m.auth_user_id = p.auth_user_id
   where p.auth_user_id = auth.uid() and m.hotel_id = p_hotel and m.active;
 
+  -- Come la vecchia app: si è "in struttura" in UNA struttura alla volta.
+  if p_present then
+    update public.presence set present = false where user_id = auth.uid() and hotel_id <> p_hotel and present;
+  end if;
+
   insert into public.presence as t (hotel_id, user_id, display_name, role, present, since)
   values (p_hotel, auth.uid(), v_name, v_role, p_present, now())
   on conflict (hotel_id, user_id) do update
