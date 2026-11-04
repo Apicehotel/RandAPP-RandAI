@@ -2,7 +2,7 @@
 -- Le misure (temperatura, umidità, relay, online, ultimo aggiornamento) le scriverà un servizio di sincronizzazione
 -- col service role (eWeLink): non ancora attivo. Dal browser si gestisce solo l'anagrafica dei sensori.
 
-insert into public.role_permissions (role, permission) values
+insert into randapp.role_permissions (role, permission) values
   ('admin','sensors.view'), ('admin','sensors.manage'),
   ('direzione','sensors.view'), ('direzione','sensors.manage'),
   ('responsabile','sensors.view'), ('responsabile','sensors.manage'),
@@ -11,9 +11,9 @@ insert into public.role_permissions (role, permission) values
   ('reception','sensors.view')
 on conflict do nothing;
 
-create table public.sensors (
+create table randapp.sensors (
   id           uuid primary key default gen_random_uuid(),
-  hotel_id     text not null references public.hotels (id),
+  hotel_id     text not null references randapp.hotels (id),
   device_key   text not null check (char_length(btrim(device_key)) between 1 and 80),
   name         text not null check (char_length(btrim(name)) between 1 and 80),
   kind         text not null default 'temperatura' check (kind in ('temperatura','relay')),
@@ -32,24 +32,24 @@ create table public.sensors (
   unique (hotel_id, device_key),
   check (alert_min is null or alert_max is null or alert_min <= alert_max)
 );
-create index sensors_hotel_idx on public.sensors (hotel_id, active, sort_order, name);
-create trigger sensors_touch before update on public.sensors
-  for each row execute function public.touch_updated_at();
+create index sensors_hotel_idx on randapp.sensors (hotel_id, active, sort_order, name);
+create trigger sensors_touch before update on randapp.sensors
+  for each row execute function randapp.touch_updated_at();
 
-alter table public.sensors enable row level security;
+alter table randapp.sensors enable row level security;
 
-create policy sensors_select on public.sensors
-  for select to authenticated using (public.has_permission(hotel_id, 'sensors.view'));
-create policy sensors_insert on public.sensors
+create policy sensors_select on randapp.sensors
+  for select to authenticated using (randapp.has_permission(hotel_id, 'sensors.view'));
+create policy sensors_insert on randapp.sensors
   for insert to authenticated
-  with check (public.has_permission(hotel_id, 'sensors.manage') and created_by = auth.uid());
-create policy sensors_update on public.sensors
+  with check (randapp.has_permission(hotel_id, 'sensors.manage') and created_by = auth.uid());
+create policy sensors_update on randapp.sensors
   for update to authenticated
-  using (public.has_permission(hotel_id, 'sensors.manage'))
-  with check (public.has_permission(hotel_id, 'sensors.manage'));
+  using (randapp.has_permission(hotel_id, 'sensors.manage'))
+  with check (randapp.has_permission(hotel_id, 'sensors.manage'));
 
 -- Nessun DELETE. Le misure non sono scrivibili dal browser (grant a colonne).
-revoke all on public.sensors from anon, authenticated;
-grant select on public.sensors to authenticated;
-grant insert (hotel_id, device_key, name, kind, alert_min, alert_max, sort_order, created_by) on public.sensors to authenticated;
-grant update (name, kind, alert_min, alert_max, sort_order, active) on public.sensors to authenticated;
+revoke all on randapp.sensors from anon, authenticated;
+grant select on randapp.sensors to authenticated;
+grant insert (hotel_id, device_key, name, kind, alert_min, alert_max, sort_order, created_by) on randapp.sensors to authenticated;
+grant update (name, kind, alert_min, alert_max, sort_order, active) on randapp.sensors to authenticated;

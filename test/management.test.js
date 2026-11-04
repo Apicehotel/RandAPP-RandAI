@@ -198,59 +198,59 @@ test('menu Gestione: ogni voce compare solo col suo permesso', () => {
 // ---- Schema
 const dir = new URL('../supabase/migrations/', import.meta.url).pathname
 const sql = readdirSync(dir).filter((f) => f.endsWith('.sql')).sort().map((f) => readFileSync(join(dir, f), 'utf8')).join('\n')
-const policiesOf = (table) => [...sql.matchAll(new RegExp(`create policy\\s+\\w+\\s+on public\\.${table}[\\s\\S]*?;`, 'gi'))].map((m) => m[0])
+const policiesOf = (table) => [...sql.matchAll(new RegExp(`create policy\\s+\\w+\\s+on randapp\\.${table}[\\s\\S]*?;`, 'gi'))].map((m) => m[0])
 
 test('moduli di gestione: hotel_id obbligatorio, policy con has_permission, niente DELETE', () => {
   const tables = { inventory_items: 'warehouse', inventory_movements: 'warehouse', supply_products: 'supplies',
     supply_requests: 'supplies', supply_request_items: 'supplies', hk_rooms: 'housekeeping', sensors: 'sensors' }
   for (const [table, prefix] of Object.entries(tables)) {
-    assert.match(sql, new RegExp(`create table public\\.${table}[\\s\\S]*?hotel_id\\s+text not null`, 'i'), table)
+    assert.match(sql, new RegExp(`create table randapp\\.${table}[\\s\\S]*?hotel_id\\s+text not null`, 'i'), table)
     const policies = policiesOf(table)
     assert.ok(policies.length >= 1, table)
     for (const p of policies) assert.match(p, new RegExp(`has_permission\\(hotel_id,\\s*'${prefix}\\.`, 'i'), table)
-    assert.doesNotMatch(sql, new RegExp(`create policy[^;]*on public\\.${table}\\s+for delete`, 'i'), table)
-    assert.doesNotMatch(sql, new RegExp(`grant[^;]*delete[^;]*on[^;]*public\\.${table}`, 'i'), table)
+    assert.doesNotMatch(sql, new RegExp(`create policy[^;]*on randapp\\.${table}\\s+for delete`, 'i'), table)
+    assert.doesNotMatch(sql, new RegExp(`grant[^;]*delete[^;]*on[^;]*randapp\\.${table}`, 'i'), table)
   }
 })
 
 test('magazzino: la giacenza non è scrivibile dal browser, solo inventory_move()', () => {
-  assert.doesNotMatch(sql, /grant\s+insert\s*\([^)]*\bquantity\b[^)]*\)\s+on public\.inventory_items/i)
-  assert.doesNotMatch(sql, /grant\s+update\s*\([^)]*\bquantity\b[^)]*\)\s+on public\.inventory_items/i)
-  assert.doesNotMatch(sql, /grant[^;]*(insert|update)[^;(]*on public\.inventory_movements/i)
-  assert.match(sql, /function public\.inventory_move[\s\S]*security definer/i)
+  assert.doesNotMatch(sql, /grant\s+insert\s*\([^)]*\bquantity\b[^)]*\)\s+on randapp\.inventory_items/i)
+  assert.doesNotMatch(sql, /grant\s+update\s*\([^)]*\bquantity\b[^)]*\)\s+on randapp\.inventory_items/i)
+  assert.doesNotMatch(sql, /grant[^;]*(insert|update)[^;(]*on randapp\.inventory_movements/i)
+  assert.match(sql, /function randapp\.inventory_move[\s\S]*security definer/i)
   assert.match(sql, /has_permission\(v_item\.hotel_id,\s*'warehouse\.move'\)/i)
-  assert.match(sql, /grant execute on function public\.inventory_move\(uuid, text, numeric, text\) to authenticated/i)
+  assert.match(sql, /grant execute on function randapp\.inventory_move\(uuid, text, numeric, text\) to authenticated/i)
 })
 
 test('rifornimento: richieste e righe si scrivono solo con le funzioni del server', () => {
-  assert.doesNotMatch(sql, /grant[^;]*(insert|update)[^;(]*on public\.(supply_requests|supply_request_items)/i)
-  assert.match(sql, /function public\.supply_create_request[\s\S]*security definer/i)
-  assert.match(sql, /function public\.supply_resolve_item[\s\S]*security definer/i)
+  assert.doesNotMatch(sql, /grant[^;]*(insert|update)[^;(]*on randapp\.(supply_requests|supply_request_items)/i)
+  assert.match(sql, /function randapp\.supply_create_request[\s\S]*security definer/i)
+  assert.match(sql, /function randapp\.supply_resolve_item[\s\S]*security definer/i)
   assert.match(sql, /has_permission\(p_hotel,\s*'supplies\.create'\)/i)
   assert.match(sql, /has_permission\(v_hotel,\s*'supplies\.complete'\)/i)
 })
 
 test('housekeeping: dal browser solo stato e nota; struttura e giornata passano da funzioni con manage', () => {
-  assert.match(sql, /grant update \(status, note, updated_by\) on public\.hk_rooms/i)
-  assert.match(sql, /function public\.hk_set_room_active[\s\S]*security definer/i)
-  assert.match(sql, /function public\.hk_reset_day[\s\S]*security definer/i)
+  assert.match(sql, /grant update \(status, note, updated_by\) on randapp\.hk_rooms/i)
+  assert.match(sql, /function randapp\.hk_set_room_active[\s\S]*security definer/i)
+  assert.match(sql, /function randapp\.hk_reset_day[\s\S]*security definer/i)
   assert.equal([...sql.matchAll(/has_permission\((?:v_hotel|p_hotel),\s*'housekeeping\.manage'\)/gi)].length, 2)
 })
 
 test('stagione sensori: tabella per struttura con RLS, niente DELETE, solo sensors.manage scrive', () => {
-  assert.match(sql, /create table public\.sensor_settings[\s\S]*?hotel_id\s+text primary key/i)
+  assert.match(sql, /create table randapp\.sensor_settings[\s\S]*?hotel_id\s+text primary key/i)
   const policies = policiesOf('sensor_settings')
   assert.equal(policies.length, 3)
   assert.match(policies[0], /sensors\.view/)
   assert.match(policies[1], /sensors\.manage/)
   assert.match(policies[2], /sensors\.manage/)
-  assert.doesNotMatch(sql, /grant[^;]*delete[^;]*on[^;]*public\.sensor_settings/i)
+  assert.doesNotMatch(sql, /grant[^;]*delete[^;]*on[^;]*randapp\.sensor_settings/i)
   assert.match(sql, /season\s+text not null default 'inverno' check \(season in \('inverno','estate'\)\)/i)
 })
 
 test('sensori: le misure non sono scrivibili dal browser', () => {
   for (const col of ['temperature', 'humidity', 'switch_state', 'online', 'last_seen']) {
-    assert.doesNotMatch(sql, new RegExp(`grant\\s+(insert|update)\\s*\\([^)]*\\b${col}\\b[^)]*\\)\\s+on public\\.sensors`, 'i'), col)
+    assert.doesNotMatch(sql, new RegExp(`grant\\s+(insert|update)\\s*\\([^)]*\\b${col}\\b[^)]*\\)\\s+on randapp\\.sensors`, 'i'), col)
   }
 })
 
@@ -329,11 +329,11 @@ test('moduli: la bozza si salva, si riprende e non rompe senza storage', () => {
 test('0011: tabelle nuove con hotel_id e RLS, niente DELETE, colleghi solo via funzione', () => {
   const sql = readFileSync(join(import.meta.dirname, '../supabase/migrations/0011_forms.sql'), 'utf8')
   for (const t of ['hotel_locations', 'sale_rooms', 'sale_layouts', 'sale_clients']) {
-    assert.match(sql, new RegExp(`create table public\\.${t}[\\s\\S]*?hotel_id\\s+text not null references public\\.hotels`), `${t}: hotel_id`)
-    assert.match(sql, new RegExp(`alter table public\\.${t}\\s+enable row level security`), `${t}: RLS`)
+    assert.match(sql, new RegExp(`create table randapp\\.${t}[\\s\\S]*?hotel_id\\s+text not null references randapp\\.hotels`), `${t}: hotel_id`)
+    assert.match(sql, new RegExp(`alter table randapp\\.${t}\\s+enable row level security`), `${t}: RLS`)
   }
   assert.doesNotMatch(sql, /for delete|grant[^;]*delete/i)
-  assert.match(sql, /function public\.hotel_staff[\s\S]*is_hotel_member\(p_hotel\)/)
+  assert.match(sql, /function randapp\.hotel_staff[\s\S]*is_hotel_member\(p_hotel\)/)
   assert.match(sql, /planning_sale\.manage/)
   // il browser non può scrivere il catalogo luoghi senza locations.manage
   assert.match(sql, /hotel_locations_insert[\s\S]*locations\.manage/)

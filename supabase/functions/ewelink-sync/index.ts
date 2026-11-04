@@ -82,13 +82,13 @@ Deno.serve(async (req) => {
       const body = await req.json().catch(() => ({}));
       if (typeof body.hotel_id === "string" && body.hotel_id) hotelId = body.hotel_id;
       const allowed = await sql`
-        select 1 from public.hotel_memberships m
-        join public.role_permissions rp on rp.role = m.role
+        select 1 from randapp.hotel_memberships m
+        join randapp.role_permissions rp on rp.role = m.role
         where m.auth_user_id = ${uid} and m.hotel_id = ${hotelId} and m.active and rp.permission = 'sensors.view' limit 1`;
       if (allowed.length === 0) return json({ ok: false, error: "Non autorizzato" }, 403);
       byUser = true;
       // Freno: se i dati sono già di meno di 60 secondi fa non si richiama eWeLink.
-      const [recent] = await sql`select max(last_seen) > now() - interval '60 seconds' as fresh from public.sensors where hotel_id = ${hotelId}`;
+      const [recent] = await sql`select max(last_seen) > now() - interval '60 seconds' as fresh from randapp.sensors where hotel_id = ${hotelId}`;
       if (recent?.fresh) return json({ ok: true, throttled: true });
     }
 
@@ -105,7 +105,7 @@ Deno.serve(async (req) => {
     });
     const readings = toReadings(things);
 
-    const known = await sql`select device_key, name, last_seen from public.sensors where hotel_id = ${hotelId} and active`;
+    const known = await sql`select device_key, name, last_seen from randapp.sensors where hotel_id = ${hotelId} and active`;
     const knownKeys = new Set(known.map((s) => s.device_key));
     const seenKeys = new Set(readings.map((r) => r.device_key));
     const matched = readings.filter((r) => knownKeys.has(r.device_key));
@@ -118,7 +118,7 @@ Deno.serve(async (req) => {
     if (!dry && matched.length) {
       // Solo i campi che il dispositivo ha davvero: un relay non azzera una temperatura che non ha.
       const res = await sql`
-        update public.sensors s set
+        update randapp.sensors s set
           online = r.online,
           last_seen = r.last_seen,
           temperature = coalesce(r.temperature, s.temperature),

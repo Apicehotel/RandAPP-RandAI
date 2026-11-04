@@ -1,10 +1,10 @@
 import { supabase, functionsUrl, publicKey } from './supabase.js'
 
-// Il frontend non confronta mai il PIN: lo manda alla funzione server "pin-auth".
+// Il frontend non confronta mai il PIN: lo manda alla funzione server "randapp-pin-auth".
 async function callPinAuth(body) {
   let response
   try {
-    response = await fetch(`${functionsUrl}/pin-auth`, {
+    response = await fetch(`${functionsUrl}/randapp-pin-auth`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

@@ -106,11 +106,12 @@ Campanella in alto (con numero di non lette) → `/notifications`; impostazioni 
 - **Pianificazione** (pg_cron + pg_net dal pannello Supabase), ogni minuto: `select public.notify_run();` e una chiamata `POST <url funzione>/notify-dispatch` con l'intestazione `x-sync-secret`.
 - **Prova**: in Impostazioni notifiche il tasto di prova crea una notifica per te (`notify_test`). Non provato dal vivo: nessuna migrazione né funzione è ancora su un Supabase vero (le migrazioni sono validate in PGlite, Postgres reale).
 
-## Messa in funzione del database (nuovo progetto Supabase)
-1. Crea un progetto Supabase **nuovo e separato** da quelli esistenti.
-2. Applica in ordine `supabase/migrations/0001_base.sql`, `0002_interventions.sql`, `0003_planning.sql`, `0004_task.sql`, `0005_presence.sql`, `0006_warehouse.sql`, `0007_supplies.sql`, `0008_housekeeping.sql`, `0009_sensors.sql`, `0010_sensor_seasons.sql`, `0011_forms.sql`, `0012_planning_ops.sql` e `0013_notifications.sql`.
-3. Pubblica le funzioni `pin-auth`, `ewelink-sync` e `notify-dispatch` (`supabase/functions/`).
-4. Crea i primi utenti dal tuo terminale:
+## Messa in funzione del database (Supabase condiviso con la vecchia app)
+La nuova app **vive nello schema `randapp`** del progetto Supabase "Apice MultiHotel", che ospita anche la vecchia app nello schema `public`. Regole: **non si crea né si modifica niente in `public`**; utenti (`auth.users`) e Storage sono condivisi; le funzioni server della nuova app hanno nomi propri (`randapp-pin-auth`, `ewelink-sync`, `notify-dispatch`) perché `pin-auth`, `presence-status` ecc. sono della vecchia app e **non vanno sovrascritti**.
+1. Applica in ordine tutti i file di `supabase/migrations/` da `0000_schema.sql` a `0013_notifications.sql` (la `0000` crea lo schema).
+2. Esponi lo schema all'API: `alter role authenticator set pgrst.db_schemas = '<elenco attuale>, randapp'; notify pgrst, 'reload config';` (il client usa `db: { schema: 'randapp' }`).
+3. Pubblica le funzioni `randapp-pin-auth` (cartella `supabase/functions/randapp-pin-auth`), `ewelink-sync` e `notify-dispatch`. Tutte leggono il database con Postgres diretto (`SUPABASE_DB_URL`).
+4. Utenti: gli account esistenti (`auth.users`) si riusano; profilo, appartenenza e PIN della nuova app si **copiano** da `public` a `randapp` solo per i ruoli già mappati sui 6 della nuova app (admin, direzione, responsabile, manutentore, governante, reception). I ruoli speciali della vecchia app (Portiere Notturno, Capo Governante, Direttore Centro Congressi, Tecnico esterno, RandAI, Supremo) si mappano più avanti. Nuovi utenti dal terminale:
    ```bash
    SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... \
    npm run user:create -- --name "Nome Cognome" --hotels hotelgio,chocohotel --role admin --pin 0000
@@ -135,7 +136,7 @@ src/assets/logos/      loghi (ApiceHotel e strutture)
 src/ui/                tokens.css (colori/dimensioni), base.css, Shell (barra + header), Drawer (menu), componenti
 src/randai/            RandAI (predisposto, spento)
 supabase/migrations/   schema database con RLS
-supabase/functions/    pin-auth (login con PIN lato server), ewelink-sync (lettore eWeLink), notify-dispatch (invio notifiche), _shared (logica comune)
+supabase/functions/    randapp-pin-auth (login con PIN lato server), ewelink-sync (lettore eWeLink), notify-dispatch (invio notifiche), _shared (logica comune)
 scripts/               create-user, check-bundle
 test/                  test automatici (permessi, coda, schema RLS, niente segreti)
 ```

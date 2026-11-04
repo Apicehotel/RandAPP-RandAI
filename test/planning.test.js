@@ -156,23 +156,23 @@ test('sale: famiglie in ordine', () => {
 
 test('0012: stati solo da funzioni del server, niente DELETE, check non scrivibili dal browser', () => {
   const sql = readFileSync(join(import.meta.dirname, '../supabase/migrations/0012_planning_ops.sql'), 'utf8')
-  assert.match(sql, /create table public\.planning_work_days[\s\S]*?hotel_id\s+text not null/)
-  assert.match(sql, /alter table public\.planning_work_days enable row level security/)
-  assert.doesNotMatch(sql, /create policy[^;]*on public\.planning_work_days\s+for (insert|update|delete)/i)
-  assert.match(sql, /grant select on public\.planning_work_days to authenticated/)
+  assert.match(sql, /create table randapp\.planning_work_days[\s\S]*?hotel_id\s+text not null/)
+  assert.match(sql, /alter table randapp\.planning_work_days enable row level security/)
+  assert.doesNotMatch(sql, /create policy[^;]*on randapp\.planning_work_days\s+for (insert|update|delete)/i)
+  assert.match(sql, /grant select on randapp\.planning_work_days to authenticated/)
   assert.doesNotMatch(sql, /grant[^;]*delete/i)
   for (const fn of ['planning_work_day_set', 'sale_booking_set_op', 'sale_booking_set_check']) {
-    assert.match(sql, new RegExp(`function public\\.${fn}[\\s\\S]*?security definer`), fn)
-    assert.match(sql, new RegExp(`revoke all on function public\\.${fn}`), fn)
+    assert.match(sql, new RegExp(`function randapp\\.${fn}[\\s\\S]*?security definer`), fn)
+    assert.match(sql, new RegExp(`revoke all on function randapp\\.${fn}`), fn)
   }
   assert.match(sql, /has_permission\(v_row\.hotel_id, 'planning_work\.update'\)/)
   assert.match(sql, /has_permission\(v_row\.hotel_id, 'planning_sale\.operate'\)/)
   // le colonne di stato/check non sono nel grant di insert/update del browser
-  const grants = [...sql.matchAll(/grant (?:insert|update) \(([^)]*)\)\s+on public\.sale_bookings/g)].map((m) => m[1]).join(' ')
+  const grants = [...sql.matchAll(/grant (?:insert|update) \(([^)]*)\)\s+on randapp\.sale_bookings/g)].map((m) => m[1]).join(' ')
   for (const col of ['op_status', 'op_by_name', 'audio_status', 'video_status', 'audio_by_name', 'video_at']) {
     assert.doesNotMatch(grants, new RegExp(col), col)
   }
-  assert.match(sql, /grant update \(description, category, assignee_ids\) on public\.planning_works/)
+  assert.match(sql, /grant update \(description, category, assignee_ids\) on randapp\.planning_works/)
   // Fatto bloccato se i check richiesti non sono OK
   assert.match(sql, /p_status = 'fatto' and \(v_row\.audio_status not in/)
 })
