@@ -6,6 +6,7 @@ File di passaggio di consegne tra Claude, Cursor e Codex. Aggiornalo a ogni sess
 _Nessun lavoro in corso._ (Scrivi qui: strumento, branch, cosa stai facendo.)
 
 ## Fatto
+- 2026-11-04 — Claude (branch `claude/schermate-adattive`): schermate adattive a Piccolo/Normale/Grande e da 360 px al PC. Corretto il bug dei moduli (Nuovo intervento / Nuova prenotazione sala) che uscivano dallo schermo sul telefono: `.page` e `.two` ora usano `minmax(0, 1fr)`, campi con `min-width: 0`. Griglia sensori legata a `--sgrid-cols` (2 telefono, 3 PC; Piccolo 4 su PC; Grande 1 telefono / 2 PC). Tasti d'intestazione senza a-capo; 3 numeri in colonna con Grande su telefono stretto. Scansione di 21 schermate × 3 dimensioni × 3 larghezze senza scorrimento orizzontale. Solo CSS.
 - 2026-11-04 — Claude (branch `claude/sensori-layout`): layout di Sensori e impianti compatto: riga dei 3 numeri, stagione su una riga, temperature in riquadri a griglia con bordo per stato, "Nascondi" più piccolo, tasto "+ Nuovo". Solo grafica (`Sensors.jsx`, `base.css`), nessuna migrazione.
 - 2026-11-04 — Claude (branch `claude/task-pattern`): Task con lo stesso schema (hub e liste con 3 numeri, tasti "+ Nuovo avviso"/"+ Nuovo promemoria" solo con permesso). `alertStats`, `reminderStats` in `src/lib/task.js`; riuso di `src/ui/hub.jsx`. Nessuna migrazione. Test 119.
 - 2026-11-04 — Claude (branch `claude/operativita-pattern`): Operatività con lo stesso schema del Planning.
