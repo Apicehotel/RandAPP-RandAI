@@ -4,7 +4,7 @@ import { hotelById } from '../lib/hotels.js'
 import Appearance from './Appearance.jsx'
 import { Icon } from './kit.jsx'
 
-// Menu laterale che si apre dal cerchio del profilo (o dal pulsante "Altro").
+// Menu laterale che si apre dal cerchio del profilo.
 export default function Drawer({ open, onClose, ctx, route, onSwitchHotel, onLogout }) {
   const closeRef = useRef(null)
 

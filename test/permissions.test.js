@@ -13,27 +13,22 @@ test('can() funziona con Set e array, e nega se non ci sono permessi', () => {
 
 test('la barra in basso ha 5 posti, con Home al centro', () => {
   const ids = bottomNavFor(new Set([PERM.ISSUES_VIEW, PERM.PLANNING_WORK_VIEW, PERM.URGENT_VIEW])).map((i) => i.id)
-  assert.deepEqual(ids, ['operations', 'planning', 'home', 'task', 'more'])
+  assert.deepEqual(ids, ['operations', 'planning', 'home', 'task', 'randai'])
   assert.equal(ids.indexOf('home'), 2)
   assert.equal(BOTTOM_SLOTS.find((i) => i.center).id, 'home')
 })
 
-test('il quinto posto è "Altro" (apre il menu) finché RandAI è in pausa', () => {
-  const last = bottomNavFor(new Set([PERM.ISSUES_VIEW])).at(-1)
-  assert.equal(last.id, 'more')
-  assert.equal(last.action, 'menu')
-  assert.equal(last.path, undefined)
-})
-
-test('con RandAI acceso il quinto posto è RandAI', () => {
-  const last = bottomNavFor(new Set([PERM.ISSUES_VIEW]), { randai: true }).at(-1)
+test('il quinto posto è sempre la chat RandAI e il menu non è nella barra', () => {
+  const items = bottomNavFor(new Set([PERM.ISSUES_VIEW]))
+  const last = items.at(-1)
   assert.equal(last.id, 'randai')
   assert.equal(last.path, '/randai')
+  assert.ok(items.every((i) => i.action !== 'menu'))
 })
 
-test('senza permessi restano solo Home e Altro', () => {
+test('senza permessi restano solo Home e RandAI', () => {
   const ids = bottomNavFor(new Set()).map((i) => i.id)
-  assert.deepEqual(ids, ['home', 'more'])
+  assert.deepEqual(ids, ['home', 'randai'])
 })
 
 test('Planning compare con almeno uno dei due permessi planning', () => {
