@@ -362,3 +362,19 @@ a.btn, .hub-link, .card.issue, a.card, .drawer a, nav a { color: inherit; }
 .stats3 .muted, .stats3.mini small { overflow-wrap: anywhere; hyphens: auto; }
 @media (max-width: 420px) { :root[data-size='large'] .stats3:not(.mini) { grid-template-columns: minmax(0, 1fr); } }
 :root[data-size='small'] .stile .badge { font-size: 10px; padding: 1px 6px; white-space: nowrap; }
+
+/* Sensori: barra unica con Temperature/Interruttori e stagione affiancati, riquadri piccoli. */
+.sensbar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: var(--gap-tight); }
+.sensbar .chips { overflow: visible; padding: 0; flex-wrap: nowrap; gap: 4px; }
+.sensbar .chip { --chip-h: 30px; min-height: 30px; height: 30px; padding: 0 10px; font-size: var(--fs-xs); white-space: nowrap; }
+.season-note { margin: 0; font-size: var(--fs-xs); }
+.sensbar .abbr { display: none; }
+@media (max-width: 420px) {
+  .sensbar .full { display: none; }
+  .sensbar .abbr { display: inline; }
+  .sensbar { flex-wrap: nowrap; }
+  .sensbar .chip { padding: 0 8px; }
+  :root[data-size='large'] .sensbar { flex-wrap: wrap; }
+  :root[data-size='large'] .sensbar .full { display: inline; }
+  :root[data-size='large'] .sensbar .abbr { display: none; }
+}

@@ -58,27 +58,23 @@ export default function Sensors({ ctx }) {
         ]} />
       )}
 
-      <div className="card season">
-        <div className="row">
-          <strong>Stagione</strong>
-          {canManage ? (
-            <div className="chips" role="group" aria-label="Stagione">
-              {SEASONS.map((x) => (
-                <button key={x.id} className="chip" aria-pressed={settings.season === x.id} disabled={busy} onClick={() => changeSeason(x.id)}>{x.label}</button>
-              ))}
-            </div>
-          ) : <Badge kind={settings.season === 'estate' ? 'alta' : 'in_corso'}>{seasonLabel(settings.season)}</Badge>}
+      <div className="sensbar">
+        <div className="chips seg" role="group" aria-label="Sezione">
+          <button className="chip" aria-pressed={tab === 'temperature'} onClick={() => setTab('temperature')}><span className="full">Temperature</span><span className="abbr">Temp.</span> {temps.length}</button>
+          <button className="chip" aria-pressed={tab === 'switches'} onClick={() => setTab('switches')}><span className="full">Interruttori</span><span className="abbr">Interr.</span> {switchCount}</button>
         </div>
-        <p className="muted">
-          {settings.season === 'estate' ? `Motori e impianti: sopra ${settings.summer_max}°C` : `Motori e impianti: sotto ${settings.winter_min}°C`}
-          {' · '}Frigo e celle: sopra {settings.fridge_max}°C
-        </p>
+        {canManage ? (
+          <div className="chips seg season-pick" role="group" aria-label="Stagione">
+            {SEASONS.map((x) => (
+              <button key={x.id} className="chip" aria-pressed={settings.season === x.id} disabled={busy} onClick={() => changeSeason(x.id)}>{x.label}</button>
+            ))}
+          </div>
+        ) : <Badge kind={settings.season === 'estate' ? 'alta' : 'in_corso'}>{seasonLabel(settings.season)}</Badge>}
       </div>
-
-      <div className="chips" role="group" aria-label="Sezione">
-        <button className="chip" aria-pressed={tab === 'temperature'} onClick={() => setTab('temperature')}>Temperature ({temps.length})</button>
-        <button className="chip" aria-pressed={tab === 'switches'} onClick={() => setTab('switches')}>Interruttori ({switchCount})</button>
-      </div>
+      <p className="muted season-note">
+        {settings.season === 'estate' ? `Motori e impianti: sopra ${settings.summer_max}°C` : `Motori e impianti: sotto ${settings.winter_min}°C`}
+        {' · '}Frigo e celle: sopra {settings.fridge_max}°C
+      </p>
 
       {loading && !data && <Spinner />}
       <ErrorText>{error || actionError}</ErrorText>
