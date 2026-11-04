@@ -79,7 +79,7 @@ export default function Home({ ctx }) {
 
   return (
     <div className="page">
-      <div className="stack">
+      <div className="stack sticky-head">
         <h1>Oggi</h1>
         <p className="muted">{todayTitle()}</p>
       </div>
