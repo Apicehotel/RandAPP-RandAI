@@ -6,6 +6,7 @@ import {
   DEFAULT_SETTINGS, SEASONS, STATE_LABELS, SWITCH_GROUPS, formatHumidity, formatTemp, groupSwitches, hiddenSensors,
   seasonLabel, sensorKindLabel, sensorState, sortSensors, summarizeSensors, switchLabel, temperatureSensors, thresholdsFor,
 } from '../lib/sensors.js'
+import { StatRow } from '../ui/hub.jsx'
 import { Badge, Button, ErrorText, Spinner, formatDate } from '../ui/kit.jsx'
 
 const BADGE = { ok: 'fatto', allerta: 'aperto', offline: 'alta' }
@@ -46,23 +47,31 @@ export default function Sensors({ ctx }) {
     <div className="page">
       <div className="row">
         <h1>Sensori e impianti</h1>
-        {canManage && <Button variant="primary" onClick={() => go('/sensors/new')}>+ Sensore</Button>}
+        {canManage && <Button variant="primary" onClick={() => go('/sensors/new')}>+ Nuovo</Button>}
       </div>
 
-      <div className="card stack">
-        <div className="row"><strong>Stagione</strong><Badge kind={settings.season === 'estate' ? 'alta' : 'in_corso'}>{seasonLabel(settings.season)}</Badge></div>
-        {canManage ? (
-          <div className="chips" role="group" aria-label="Stagione">
-            {SEASONS.map((s) => (
-              <button key={s.id} className="chip" aria-pressed={settings.season === s.id} disabled={busy} onClick={() => changeSeason(s.id)}>{s.label}</button>
-            ))}
-          </div>
-        ) : null}
+      {data && (
+        <StatRow stats={[
+          { value: sum.total, label: 'Sensori' },
+          { value: sum.alert, label: 'In allerta', tone: sum.alert ? 'warn' : '' },
+          { value: sum.offline, label: 'Non aggiornati', tone: sum.offline ? 'warn' : '' },
+        ]} />
+      )}
+
+      <div className="card season">
+        <div className="row">
+          <strong>Stagione</strong>
+          {canManage ? (
+            <div className="chips" role="group" aria-label="Stagione">
+              {SEASONS.map((x) => (
+                <button key={x.id} className="chip" aria-pressed={settings.season === x.id} disabled={busy} onClick={() => changeSeason(x.id)}>{x.label}</button>
+              ))}
+            </div>
+          ) : <Badge kind={settings.season === 'estate' ? 'alta' : 'in_corso'}>{seasonLabel(settings.season)}</Badge>}
+        </div>
         <p className="muted">
-          {settings.season === 'estate'
-            ? `Motori e impianti: allerta se la temperatura sale sopra ${settings.summer_max}°C.`
-            : `Motori e impianti: allerta se la temperatura scende sotto ${settings.winter_min}°C.`}
-          {' '}Frigo e celle: allerta sopra {settings.fridge_max}°C.
+          {settings.season === 'estate' ? `Motori e impianti: sopra ${settings.summer_max}°C` : `Motori e impianti: sotto ${settings.winter_min}°C`}
+          {' · '}Frigo e celle: sopra {settings.fridge_max}°C
         </p>
       </div>
 
@@ -74,21 +83,22 @@ export default function Sensors({ ctx }) {
       {loading && !data && <Spinner />}
       <ErrorText>{error || actionError}</ErrorText>
       {error && <Button onClick={reload}>Riprova</Button>}
-      <p className="muted">I valori si aggiorneranno da soli quando sarà attiva la sincronizzazione con i dispositivi.</p>
-
       {tab === 'temperature' && (
-        <div className="list">
-          {data && <p className="muted">{sum.total} sensori · {sum.alert} in allerta · {sum.offline} non aggiornati</p>}
+        <div className="sgrid">
           {temps.map((s) => {
             const state = sensorState(s, now, settings)
             const limit = limitText(thresholdsFor(s, settings))
             return (
-              <div key={s.id} className="card stack">
-                <div className="row"><strong>{s.name}</strong><Badge kind={BADGE[state]}>{STATE_LABELS[state]}</Badge></div>
-                <div className="row"><span className="stat-num">{formatTemp(s.temperature)}</span><span className="muted">Umidità {formatHumidity(s.humidity)}</span></div>
-                {limit && <div className="muted">{limit}</div>}
-                <div className="row muted">
-                  <span>{s.last_seen ? `Aggiornato ${formatDate(s.last_seen)}` : 'Mai aggiornato'}</span>
+              <div key={s.id} className={`card stile ${state}`}>
+                <div className="stile-name">{s.name}</div>
+                <div className="stile-temp">{formatTemp(s.temperature)}</div>
+                <div className="stile-meta">
+                  <Badge kind={BADGE[state]}>{STATE_LABELS[state]}</Badge>
+                  <span className="muted">Umidità {formatHumidity(s.humidity)}</span>
+                </div>
+                {limit && <div className="muted stile-small">{limit}</div>}
+                <div className="stile-foot muted">
+                  <span>{s.last_seen ? formatDate(s.last_seen) : 'Mai aggiornato'}</span>
                   {canManage && <button className="link-btn" disabled={busy} onClick={() => setActive(s.id, false)}>Nascondi</button>}
                 </div>
               </div>
