@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabase.js'
+import { supabase, functionsUrl, publicKey } from '../lib/supabase.js'
 
 const COLUMNS =
   'id,hotel_id,device_key,name,kind,role,temperature,humidity,switch_state,online,alert_min,alert_max,last_seen,sort_order,active'
@@ -47,4 +47,25 @@ export async function setSeason(hotelId, userId, season) {
     .select(SETTINGS_COLUMNS).single()
   if (created.error) throw new Error('Impossibile cambiare stagione')
   return created.data
+}
+
+// Tasto "Aggiorna": chiede alla funzione di rileggere eWeLink adesso (solo lettura).
+// Se la funzione non risponde l'app si limita a ricaricare quello che c'è già nel database.
+export async function refreshFromDevices(hotelId) {
+  const { data } = await supabase.auth.getSession()
+  const token = data?.session?.access_token
+  if (!token) throw new Error('Sessione scaduta: rientra con il PIN')
+  let res
+  try {
+    res = await fetch(`${functionsUrl}/ewelink-sync`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, apikey: publicKey },
+      body: JSON.stringify({ hotel_id: hotelId }),
+    })
+  } catch {
+    throw new Error('Nessuna connessione')
+  }
+  const out = await res.json().catch(() => ({}))
+  if (!res.ok || !out.ok) throw new Error(res.status === 403 ? 'Non hai il permesso di aggiornare' : 'Lettura dai dispositivi non riuscita')
+  return out
 }

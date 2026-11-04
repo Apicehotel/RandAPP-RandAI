@@ -378,3 +378,5 @@ a.btn, .hub-link, .card.issue, a.card, .drawer a, nav a { color: inherit; }
   :root[data-size='large'] .sensbar .full { display: inline; }
   :root[data-size='large'] .sensbar .abbr { display: none; }
 }
+.refreshbar { font-size: var(--fs-xs); }
+.refreshbar .btn { white-space: nowrap; min-height: 34px; padding: 0 14px; }
