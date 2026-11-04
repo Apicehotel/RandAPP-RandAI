@@ -117,17 +117,12 @@ button { cursor: pointer; }
 
 .page { max-width: 880px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--gap); }
 .page > * { min-width: 0; }
-/* Intestazione che resta ferma in alto mentre scorrono le schede (Home: "Oggi" + data). */
-.sticky-head {
-  position: sticky; top: calc(var(--pad-page) * -1); z-index: 5;
-  margin: calc(var(--pad-page) * -1) calc(var(--pad-page) * -1) 0;
-  padding: var(--pad-page) var(--pad-page) var(--gap-tight);
-  background: var(--bg);
-}
-@media (min-width: 900px) {
-  .sticky-head { top: calc(var(--pad-page) * -1.5); margin: calc(var(--pad-page) * -1.5) calc(var(--pad-page) * -1.5) 0;
-    padding: calc(var(--pad-page) * 1.5) calc(var(--pad-page) * 1.5) var(--gap-tight); }
-}
+/* Intestazione fissa: il titolo non scorre, scorre solo il contenuto sotto (non dipende da position: sticky). */
+.shell-stage:has(> .page.fixed-head) { overflow: hidden; }
+.page.fixed-head { height: 100%; grid-template-rows: auto minmax(0, 1fr); align-content: start; }
+.page-scroll { overflow-y: auto; -webkit-overflow-scrolling: touch; display: grid; gap: var(--gap); align-content: start;
+  min-height: 0; margin: 0 calc(var(--pad-page) * -1); padding: 0 var(--pad-page) var(--gap); }
+@media (min-width: 900px) { .page-scroll { margin: 0 calc(var(--pad-page) * -1.5); padding: 0 calc(var(--pad-page) * 1.5) var(--gap); } }
 
 /* ---------- Componenti ---------- */
 .card {
