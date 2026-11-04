@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { getSettings, listSensors, setSeason, updateSensor } from '../data/sensors.js'
+import { getSettings, listSensors, refreshFromDevices, setSeason, updateSensor } from '../data/sensors.js'
 import { useAsync, go } from '../lib/hooks.js'
 import { can, PERM } from '../lib/permissions.js'
 import {
@@ -25,6 +25,8 @@ export default function Sensors({ ctx }) {
   const [tab, setTab] = useState('temperature')
   const [showHidden, setShowHidden] = useState(false)
   const [showMissing, setShowMissing] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
+  const [refreshNote, setRefreshNote] = useState('')
   const [busy, setBusy] = useState(false)
   const [actionError, setActionError] = useState('')
   const canManage = can(ctx.permissions, PERM.SENSORS_MANAGE)
@@ -38,10 +40,22 @@ export default function Sensors({ ctx }) {
   const hidden = hiddenSensors(all)
   const missing = missingSensors(all.filter((x) => x.active !== false), now)
   const health = syncHealth(all, now)
+  const newest = all.reduce((m, x) => (x.last_seen && (!m || x.last_seen > m) ? x.last_seen : m), null)
 
   const run = async (fn) => {
     setBusy(true); setActionError('')
     try { await fn() } catch (e) { setActionError(e.message) } finally { setBusy(false) }
+  }
+  const refresh = async () => {
+    setRefreshing(true); setRefreshNote(''); setActionError('')
+    try {
+      const out = await refreshFromDevices(ctx.hotelId)
+      await reload()
+      setRefreshNote(out.throttled ? 'Dati già aggiornati un attimo fa' : `Letti ${out.updated ?? 0} sensori`)
+    } catch (e) {
+      await reload().catch(() => {})
+      setActionError(e.message)
+    } finally { setRefreshing(false) }
   }
   const setActive = (id, active) => run(async () => { await updateSensor(ctx.hotelId, id, { active }); await reload() })
   const changeSeason = (season) => run(async () => { await setSeason(ctx.hotelId, ctx.userId, season); await settingsState.reload() })
@@ -64,6 +78,11 @@ export default function Sensors({ ctx }) {
           { value: sum.offline, label: 'Non aggiornati', tone: sum.offline ? 'warn' : '' },
         ]} />
       )}
+
+      <div className="row refreshbar">
+        <span className="muted">{refreshNote || (newest ? `Ultimo dato ${formatDate(newest)}` : 'Nessun dato ancora')}</span>
+        <Button onClick={refresh} disabled={refreshing || loading}>{refreshing ? 'Aggiorno…' : 'Aggiorna'}</Button>
+      </div>
 
       <div className="sensbar">
         <div className="chips seg" role="group" aria-label="Sezione">

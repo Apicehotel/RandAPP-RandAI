@@ -1,6 +1,7 @@
 // Legge i dispositivi eWeLink e aggiorna la tabella `sensors` di UNA struttura.
 // Stesso schema della vecchia app (sync-sensori-temperatura): sola lettura, Postgres diretto.
-// Si chiama a intervalli (vedi README, pg_cron) con l'intestazione x-sync-secret.
+// Si chiama a intervalli (vedi README, pg_cron) con l'intestazione x-sync-secret,
+// oppure dal tasto "Aggiorna" dell'app con la sessione dell'utente (permesso sensors.view).
 //   ?dry=1  -> mostra cosa leggerebbe, senza scrivere nulla (per provare)
 //
 // Credenziali: prima i segreti della funzione, poi (come la vecchia app) la tabella
@@ -60,12 +61,36 @@ async function readThings(cfg: Record<string, string>) {
 Deno.serve(async (req) => {
   try {
     if (req.method !== "POST") return json({ ok: false, error: "Metodo non consentito" }, 405);
-    const expected = await secret("SYNC_SECRET", "sensor_sync_secret");
-    if (!sameSecret(req.headers.get("x-sync-secret") ?? "", expected)) {
-      return json({ ok: false, error: "Non autorizzato" }, 401);
-    }
     const dry = new URL(req.url).searchParams.get("dry") === "1";
-    const hotelId = Deno.env.get("EWELINK_HOTEL_ID") ?? "hotelgio";
+    let hotelId = Deno.env.get("EWELINK_HOTEL_ID") ?? "hotelgio";
+    let byUser = false;
+
+    const provided = req.headers.get("x-sync-secret");
+    if (provided !== null) {
+      // Chiamata programmata (pg_cron): segreto di sincronizzazione.
+      const expected = await secret("SYNC_SECRET", "sensor_sync_secret");
+      if (!sameSecret(provided, expected)) return json({ ok: false, error: "Non autorizzato" }, 401);
+    } else {
+      // Tasto "Aggiorna" dell'app: utente con sessione valida e permesso sensors.view nella struttura.
+      const token = (req.headers.get("authorization") ?? "").replace(/^Bearer\s+/i, "");
+      if (!token) return json({ ok: false, error: "Non autorizzato" }, 401);
+      const who = await fetch(`${Deno.env.get("SUPABASE_URL")}/auth/v1/user`, {
+        headers: { Authorization: `Bearer ${token}`, apikey: Deno.env.get("SUPABASE_ANON_KEY") ?? "" },
+      });
+      const uid = who.ok ? (await who.json())?.id : null;
+      if (!uid) return json({ ok: false, error: "Non autorizzato" }, 401);
+      const body = await req.json().catch(() => ({}));
+      if (typeof body.hotel_id === "string" && body.hotel_id) hotelId = body.hotel_id;
+      const allowed = await sql`
+        select 1 from public.hotel_memberships m
+        join public.role_permissions rp on rp.role = m.role
+        where m.auth_user_id = ${uid} and m.hotel_id = ${hotelId} and m.active and rp.permission = 'sensors.view' limit 1`;
+      if (allowed.length === 0) return json({ ok: false, error: "Non autorizzato" }, 403);
+      byUser = true;
+      // Freno: se i dati sono già di meno di 60 secondi fa non si richiama eWeLink.
+      const [recent] = await sql`select max(last_seen) > now() - interval '60 seconds' as fresh from public.sensors where hotel_id = ${hotelId}`;
+      if (recent?.fresh) return json({ ok: true, throttled: true });
+    }
 
     const [appId, appSecret, email, password] = await Promise.all([
       secret("EWELINK_APP_ID", "ewelink_app_id"),
@@ -105,7 +130,7 @@ Deno.serve(async (req) => {
       `;
       updated = res.count;
     }
-    return json({ ok: true, dry, found: readings.length, matched: matched.length, updated, unmatched, missing });
+    return json({ ok: true, dry, by_user: byUser, found: readings.length, matched: matched.length, updated, unmatched, missing });
   } catch (e) {
     console.error("ewelink-sync", (e as Error).message);
     return json({ ok: false, error: "temporary_error" }, 500);
