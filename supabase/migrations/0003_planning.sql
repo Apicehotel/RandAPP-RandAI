@@ -1,6 +1,6 @@
 -- Planning: lavori per giorno (Planning Lavori) e prenotazioni sale (Planning Sale).
 
-insert into public.role_permissions (role, permission) values
+insert into randapp.role_permissions (role, permission) values
   ('admin','planning_work.view'), ('admin','planning_work.create'), ('admin','planning_work.update'),
   ('admin','planning_sale.view'), ('admin','planning_sale.create'), ('admin','planning_sale.update'),
   ('direzione','planning_work.view'), ('direzione','planning_work.create'), ('direzione','planning_work.update'),
@@ -15,9 +15,9 @@ insert into public.role_permissions (role, permission) values
 on conflict do nothing;
 
 -- ---------------------------------------------------------------- Planning Lavori
-create table public.planning_works (
+create table randapp.planning_works (
   id           uuid primary key default gen_random_uuid(),
-  hotel_id     text not null references public.hotels (id),
+  hotel_id     text not null references randapp.hotels (id),
   description  text not null check (char_length(description) between 1 and 200),
   days         date[] not null check (cardinality(days) between 1 and 31),
   status       text not null default 'da_fare' check (status in ('da_fare','fatto')),
@@ -26,14 +26,14 @@ create table public.planning_works (
   updated_at   timestamptz not null default now(),
   completed_at timestamptz
 );
-create index planning_works_hotel_idx on public.planning_works (hotel_id, created_at);
-create trigger planning_works_touch before update on public.planning_works
-  for each row execute function public.touch_updated_at();
+create index planning_works_hotel_idx on randapp.planning_works (hotel_id, created_at);
+create trigger planning_works_touch before update on randapp.planning_works
+  for each row execute function randapp.touch_updated_at();
 
 -- ---------------------------------------------------------------- Planning Sale
-create table public.sale_bookings (
+create table randapp.sale_bookings (
   id           uuid primary key default gen_random_uuid(),
-  hotel_id     text not null references public.hotels (id),
+  hotel_id     text not null references randapp.hotels (id),
   room         text not null check (char_length(room) between 1 and 60),
   client       text not null check (char_length(client) between 1 and 80),
   date_from    date not null,
@@ -47,34 +47,34 @@ create table public.sale_bookings (
   updated_at   timestamptz not null default now(),
   check (date_to >= date_from)
 );
-create index sale_bookings_hotel_idx on public.sale_bookings (hotel_id, date_to, date_from);
-create trigger sale_bookings_touch before update on public.sale_bookings
-  for each row execute function public.touch_updated_at();
+create index sale_bookings_hotel_idx on randapp.sale_bookings (hotel_id, date_to, date_from);
+create trigger sale_bookings_touch before update on randapp.sale_bookings
+  for each row execute function randapp.touch_updated_at();
 
-alter table public.planning_works enable row level security;
-alter table public.sale_bookings  enable row level security;
+alter table randapp.planning_works enable row level security;
+alter table randapp.sale_bookings  enable row level security;
 
-create policy planning_works_select on public.planning_works
-  for select to authenticated using (public.has_permission(hotel_id, 'planning_work.view'));
-create policy planning_works_insert on public.planning_works
+create policy planning_works_select on randapp.planning_works
+  for select to authenticated using (randapp.has_permission(hotel_id, 'planning_work.view'));
+create policy planning_works_insert on randapp.planning_works
   for insert to authenticated
-  with check (public.has_permission(hotel_id, 'planning_work.create') and created_by = auth.uid());
-create policy planning_works_update on public.planning_works
+  with check (randapp.has_permission(hotel_id, 'planning_work.create') and created_by = auth.uid());
+create policy planning_works_update on randapp.planning_works
   for update to authenticated
-  using (public.has_permission(hotel_id, 'planning_work.update'))
-  with check (public.has_permission(hotel_id, 'planning_work.update'));
+  using (randapp.has_permission(hotel_id, 'planning_work.update'))
+  with check (randapp.has_permission(hotel_id, 'planning_work.update'));
 
-create policy sale_bookings_select on public.sale_bookings
-  for select to authenticated using (public.has_permission(hotel_id, 'planning_sale.view'));
-create policy sale_bookings_insert on public.sale_bookings
+create policy sale_bookings_select on randapp.sale_bookings
+  for select to authenticated using (randapp.has_permission(hotel_id, 'planning_sale.view'));
+create policy sale_bookings_insert on randapp.sale_bookings
   for insert to authenticated
-  with check (public.has_permission(hotel_id, 'planning_sale.create') and created_by = auth.uid());
-create policy sale_bookings_update on public.sale_bookings
+  with check (randapp.has_permission(hotel_id, 'planning_sale.create') and created_by = auth.uid());
+create policy sale_bookings_update on randapp.sale_bookings
   for update to authenticated
-  using (public.has_permission(hotel_id, 'planning_sale.update'))
-  with check (public.has_permission(hotel_id, 'planning_sale.update'));
+  using (randapp.has_permission(hotel_id, 'planning_sale.update'))
+  with check (randapp.has_permission(hotel_id, 'planning_sale.update'));
 
 -- Nessuna policy di DELETE: lavori e prenotazioni non si cancellano dal browser (le prenotazioni si annullano).
 
-revoke all on public.planning_works, public.sale_bookings from anon;
-grant select, insert, update on public.planning_works, public.sale_bookings to authenticated;
+revoke all on randapp.planning_works, randapp.sale_bookings from anon;
+grant select, insert, update on randapp.planning_works, randapp.sale_bookings to authenticated;

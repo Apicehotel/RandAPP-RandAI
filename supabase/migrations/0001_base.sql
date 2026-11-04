@@ -5,28 +5,28 @@
 create extension if not exists pgcrypto;
 
 -- ---------------------------------------------------------------- strutture
-create table public.hotels (
+create table randapp.hotels (
   id     text primary key,
   name   text not null,
   active boolean not null default true
 );
 
-insert into public.hotels (id, name) values
+insert into randapp.hotels (id, name) values
   ('hotelgio',   'Hotel Giò'),
   ('chocohotel', 'Choco Hotel'),
   ('brigantino', 'Hotel Il Brigantino');
 
 -- ---------------------------------------------------------------- identità
-create table public.profiles (
+create table randapp.profiles (
   auth_user_id uuid primary key references auth.users (id) on delete cascade,
   display_name text not null,
   active       boolean not null default true,
   created_at   timestamptz not null default now()
 );
 
-create table public.hotel_memberships (
-  auth_user_id uuid not null references public.profiles (auth_user_id) on delete cascade,
-  hotel_id     text not null references public.hotels (id),
+create table randapp.hotel_memberships (
+  auth_user_id uuid not null references randapp.profiles (auth_user_id) on delete cascade,
+  hotel_id     text not null references randapp.hotels (id),
   role         text not null check (role in
                  ('admin','direzione','responsabile','manutentore','governante','reception')),
   active       boolean not null default true,
@@ -34,7 +34,7 @@ create table public.hotel_memberships (
 );
 
 -- Credenziali PIN: solo server (nessuna policy, nessun grant al browser).
-create table public.auth_pin_credentials (
+create table randapp.auth_pin_credentials (
   auth_user_id    uuid primary key references auth.users (id) on delete cascade,
   pin_hash        text not null,
   failed_attempts integer not null default 0,
@@ -44,13 +44,13 @@ create table public.auth_pin_credentials (
 );
 
 -- ---------------------------------------------------------------- permessi
-create table public.role_permissions (
+create table randapp.role_permissions (
   role       text not null,
   permission text not null,
   primary key (role, permission)
 );
 
-insert into public.role_permissions (role, permission) values
+insert into randapp.role_permissions (role, permission) values
   ('admin','issues.view'), ('admin','issues.create'), ('admin','issues.update'),
   ('admin','issues.assign'), ('admin','admin.access'),
   ('direzione','issues.view'), ('direzione','issues.create'),
@@ -62,24 +62,24 @@ insert into public.role_permissions (role, permission) values
   ('reception','issues.view'), ('reception','issues.create');
 
 -- ---------------------------------------------------------------- helper di autorizzazione
-create or replace function public.is_hotel_member(p_hotel text)
+create or replace function randapp.is_hotel_member(p_hotel text)
 returns boolean
-language sql stable security definer set search_path = public
+language sql stable security definer set search_path = randapp
 as $$
   select exists (
-    select 1 from public.hotel_memberships m
+    select 1 from randapp.hotel_memberships m
     where m.auth_user_id = auth.uid() and m.hotel_id = p_hotel and m.active
   );
 $$;
 
-create or replace function public.has_permission(p_hotel text, p_permission text)
+create or replace function randapp.has_permission(p_hotel text, p_permission text)
 returns boolean
-language sql stable security definer set search_path = public
+language sql stable security definer set search_path = randapp
 as $$
   select exists (
     select 1
-    from public.hotel_memberships m
-    join public.role_permissions rp on rp.role = m.role
+    from randapp.hotel_memberships m
+    join randapp.role_permissions rp on rp.role = m.role
     where m.auth_user_id = auth.uid()
       and m.hotel_id = p_hotel
       and m.active
@@ -87,15 +87,15 @@ as $$
   );
 $$;
 
-revoke all on function public.is_hotel_member(text) from public, anon;
-revoke all on function public.has_permission(text, text) from public, anon;
-grant execute on function public.is_hotel_member(text) to authenticated;
-grant execute on function public.has_permission(text, text) to authenticated;
+revoke all on function randapp.is_hotel_member(text) from public, anon;
+revoke all on function randapp.has_permission(text, text) from public, anon;
+grant execute on function randapp.is_hotel_member(text) to authenticated;
+grant execute on function randapp.has_permission(text, text) to authenticated;
 
 -- ---------------------------------------------------------------- segnalazioni
-create table public.issues (
+create table randapp.issues (
   id           uuid primary key default gen_random_uuid(),
-  hotel_id     text not null references public.hotels (id),
+  hotel_id     text not null references randapp.hotels (id),
   title        text not null check (char_length(title) between 1 and 140),
   description  text check (description is null or char_length(description) <= 2000),
   category     text not null default 'Altro',
@@ -111,9 +111,9 @@ create table public.issues (
   completed_at timestamptz
 );
 
-create index issues_hotel_status_idx on public.issues (hotel_id, status, urgency, created_at);
+create index issues_hotel_status_idx on randapp.issues (hotel_id, status, urgency, created_at);
 
-create or replace function public.touch_updated_at()
+create or replace function randapp.touch_updated_at()
 returns trigger language plpgsql as $$
 begin
   new.updated_at = now();
@@ -121,50 +121,50 @@ begin
 end;
 $$;
 
-create trigger issues_touch before update on public.issues
-  for each row execute function public.touch_updated_at();
+create trigger issues_touch before update on randapp.issues
+  for each row execute function randapp.touch_updated_at();
 
 -- ---------------------------------------------------------------- RLS su OGNI tabella
-alter table public.hotels               enable row level security;
-alter table public.profiles             enable row level security;
-alter table public.hotel_memberships    enable row level security;
-alter table public.auth_pin_credentials enable row level security;
-alter table public.role_permissions     enable row level security;
-alter table public.issues               enable row level security;
+alter table randapp.hotels               enable row level security;
+alter table randapp.profiles             enable row level security;
+alter table randapp.hotel_memberships    enable row level security;
+alter table randapp.auth_pin_credentials enable row level security;
+alter table randapp.role_permissions     enable row level security;
+alter table randapp.issues               enable row level security;
 
 -- Tabelle di servizio: nessun accesso dal browser.
-revoke all on public.auth_pin_credentials from anon, authenticated;
+revoke all on randapp.auth_pin_credentials from anon, authenticated;
 
 -- Lettura minima per far funzionare l'app dopo il login.
-create policy hotels_read on public.hotels
+create policy hotels_read on randapp.hotels
   for select to authenticated using (active);
 
-create policy profiles_read_own on public.profiles
+create policy profiles_read_own on randapp.profiles
   for select to authenticated using (auth_user_id = auth.uid());
 
-create policy memberships_read_own on public.hotel_memberships
+create policy memberships_read_own on randapp.hotel_memberships
   for select to authenticated using (auth_user_id = auth.uid());
 
-create policy role_permissions_read on public.role_permissions
+create policy role_permissions_read on randapp.role_permissions
   for select to authenticated using (true);
 
 -- Segnalazioni: sempre dentro la propria struttura e con il permesso giusto.
-create policy issues_select on public.issues
-  for select to authenticated using (public.has_permission(hotel_id, 'issues.view'));
+create policy issues_select on randapp.issues
+  for select to authenticated using (randapp.has_permission(hotel_id, 'issues.view'));
 
-create policy issues_insert on public.issues
+create policy issues_insert on randapp.issues
   for insert to authenticated
-  with check (public.has_permission(hotel_id, 'issues.create') and created_by = auth.uid());
+  with check (randapp.has_permission(hotel_id, 'issues.create') and created_by = auth.uid());
 
-create policy issues_update on public.issues
+create policy issues_update on randapp.issues
   for update to authenticated
-  using (public.has_permission(hotel_id, 'issues.update'))
-  with check (public.has_permission(hotel_id, 'issues.update'));
+  using (randapp.has_permission(hotel_id, 'issues.update'))
+  with check (randapp.has_permission(hotel_id, 'issues.update'));
 
 -- Nessuna policy di DELETE: le segnalazioni non si cancellano dal browser.
 
-revoke all on public.issues, public.hotels, public.profiles,
-              public.hotel_memberships, public.role_permissions from anon;
-grant select, insert, update on public.issues to authenticated;
-grant select on public.hotels, public.profiles,
-                public.hotel_memberships, public.role_permissions to authenticated;
+revoke all on randapp.issues, randapp.hotels, randapp.profiles,
+              randapp.hotel_memberships, randapp.role_permissions from anon;
+grant select, insert, update on randapp.issues to authenticated;
+grant select on randapp.hotels, randapp.profiles,
+                randapp.hotel_memberships, randapp.role_permissions to authenticated;

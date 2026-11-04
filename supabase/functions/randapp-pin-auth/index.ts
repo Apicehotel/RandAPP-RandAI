@@ -1,7 +1,11 @@
 // Login con PIN, tutto lato server. Il browser non vede mai hash né confronta il PIN.
 // Azioni: "directory" (cerca nome, solo se almeno 2 lettere) e "login" (id utente + PIN).
-// Variabili fornite da Supabase alle funzioni: SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY.
+// Nome pubblicato: "randapp-pin-auth" (nel progetto condiviso "pin-auth" è della vecchia app: NON va toccato).
+// Le tabelle stanno nello schema `randapp`. Postgres diretto (SUPABASE_DB_URL): la chiave service_role via PostgREST
+// risponde 401 alle Edge Function dal 1 ottobre 2026. Solo la sessione passa dall'Auth admin API.
+// Variabili fornite da Supabase: SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_DB_URL.
 import { createClient } from "npm:@supabase/supabase-js@2";
+import postgres from "npm:postgres@3.4.7";
 import bcrypt from "npm:bcryptjs@2.4.3";
 
 const URL_ = Deno.env.get("SUPABASE_URL")!;
@@ -9,6 +13,7 @@ const ANON = Deno.env.get("SUPABASE_ANON_KEY")!;
 const SERVICE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 const admin = createClient(URL_, SERVICE, { auth: { persistSession: false, autoRefreshToken: false } });
+const sql = postgres(Deno.env.get("SUPABASE_DB_URL")!, { prepare: false, max: 2, connect_timeout: 5, idle_timeout: 10 });
 const anon = createClient(URL_, ANON, { auth: { persistSession: false, autoRefreshToken: false } });
 
 const cors = {
@@ -47,8 +52,8 @@ function allowDirectory(req: Request, hotelId: string) {
 }
 
 async function hotelExists(hotelId: string) {
-  const { data } = await admin.from("hotels").select("id").eq("id", hotelId).eq("active", true).maybeSingle();
-  return Boolean(data);
+  const rows = await sql`select 1 from randapp.hotels where id = ${hotelId} and active limit 1`;
+  return rows.length > 0;
 }
 
 async function directory(req: Request, hotelId: string, rawQuery: string) {
@@ -56,31 +61,23 @@ async function directory(req: Request, hotelId: string, rawQuery: string) {
   if (q.length < MIN_QUERY) return json({ ok: true, users: [], query_required: true, min_query: MIN_QUERY });
   if (!allowDirectory(req, hotelId)) return json({ ok: false, error: "Troppe richieste. Riprova tra un minuto." }, 429);
 
-  const { data, error } = await admin
-    .from("hotel_memberships")
-    .select("auth_user_id, profiles!inner(display_name, active)")
-    .eq("hotel_id", hotelId)
-    .eq("active", true)
-    .eq("profiles.active", true)
-    .ilike("profiles.display_name", `${q}%`)
-    .limit(MAX_RESULTS);
-  if (error) {
-    console.error("pin-auth directory", error.message);
-    return json({ ok: false, error: "Errore temporaneo di accesso" }, 500);
-  }
-  const users = (data || []).map((row: any) => ({
-    id: String(row.auth_user_id),
-    name: String(row.profiles?.display_name || ""),
-  }));
+  const rows = await sql`
+    select m.auth_user_id, p.display_name
+    from randapp.hotel_memberships m
+    join randapp.profiles p on p.auth_user_id = m.auth_user_id
+    where m.hotel_id = ${hotelId} and m.active and p.active
+      and p.display_name ilike ${q + "%"}
+    order by p.display_name limit ${MAX_RESULTS}`;
+  const users = rows.map((row) => ({ id: String(row.auth_user_id), name: String(row.display_name || "") }));
   return json({ ok: true, users });
 }
 
 async function login(hotelId: string, userId: string, pin: string) {
   // Controlli di base: l'utente deve essere attivo e membro attivo della struttura.
-  const [{ data: profile }, { data: membership }, { data: credential }] = await Promise.all([
-    admin.from("profiles").select("active").eq("auth_user_id", userId).maybeSingle(),
-    admin.from("hotel_memberships").select("active").eq("auth_user_id", userId).eq("hotel_id", hotelId).maybeSingle(),
-    admin.from("auth_pin_credentials").select("pin_hash, failed_attempts, locked_until").eq("auth_user_id", userId).maybeSingle(),
+  const [[profile], [membership], [credential]] = await Promise.all([
+    sql`select active from randapp.profiles where auth_user_id = ${userId}`,
+    sql`select active from randapp.hotel_memberships where auth_user_id = ${userId} and hotel_id = ${hotelId}`,
+    sql`select pin_hash, failed_attempts, locked_until from randapp.auth_pin_credentials where auth_user_id = ${userId}`,
   ]);
 
   if (!profile || !membership || !credential) return json({ ok: false, error: BAD_LOGIN }, 401);
@@ -91,22 +88,18 @@ async function login(hotelId: string, userId: string, pin: string) {
     return json({ ok: false, error: "Troppi tentativi. Riprova più tardi." }, 429);
   }
 
-  const valid = await bcrypt.compare(pin, credential.pin_hash);
+  const valid = await bcrypt.compare(pin, String(credential.pin_hash));
   if (!valid) {
     const failures = Number(credential.failed_attempts || 0) + 1;
     if (failures >= MAX_FAILED) {
-      await admin.from("auth_pin_credentials")
-        .update({ failed_attempts: 0, locked_until: new Date(Date.now() + LOCK_MS).toISOString() })
-        .eq("auth_user_id", userId);
+      await sql`update randapp.auth_pin_credentials set failed_attempts = 0, locked_until = ${new Date(Date.now() + LOCK_MS)}, updated_at = now() where auth_user_id = ${userId}`;
     } else {
-      await admin.from("auth_pin_credentials").update({ failed_attempts: failures }).eq("auth_user_id", userId);
+      await sql`update randapp.auth_pin_credentials set failed_attempts = ${failures}, updated_at = now() where auth_user_id = ${userId}`;
     }
     return json({ ok: false, error: BAD_LOGIN }, 401);
   }
 
-  await admin.from("auth_pin_credentials")
-    .update({ failed_attempts: 0, locked_until: null })
-    .eq("auth_user_id", userId);
+  await sql`update randapp.auth_pin_credentials set failed_attempts = 0, locked_until = null where auth_user_id = ${userId}`;
 
   // Sessione: password casuale usa-e-getta, mai nota a nessuno, ruotata a ogni login.
   const { data: authUser, error: userError } = await admin.auth.admin.getUserById(userId);

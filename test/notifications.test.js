@@ -77,7 +77,7 @@ test('avvisi urgenti e promemoria vanno solo a chi è in struttura (come nel dat
   const onlyPresent = KINDS.filter((k) => k.presentOnly).map((k) => k.id).sort()
   assert.deepEqual(onlyPresent, ['reminder', 'urgent_alert', 'urgent_reminder'])
   for (const id of onlyPresent) {
-    const call = sql.split('perform public.notify(').slice(1).find((c) => c.includes(`'${id}',`) && !c.includes('Avviso preso in carico'))
+    const call = sql.split('perform randapp.notify(').slice(1).find((c) => c.includes(`'${id}',`) && !c.includes('Avviso preso in carico'))
     assert.match(call, /,\s*true\);/, `${id} deve passare p_only_present = true`)
   }
   assert.match(sql, /presence pr/)

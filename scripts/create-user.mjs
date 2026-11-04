@@ -32,7 +32,7 @@ if (problems.length) {
   process.exit(1)
 }
 
-const admin = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } })
+const admin = createClient(url, key, { db: { schema: 'randapp' }, auth: { persistSession: false, autoRefreshToken: false } })
 
 const { data: created, error: createError } = await admin.auth.admin.createUser({
   email: `u-${randomUUID()}@auth.invalid`,

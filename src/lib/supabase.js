@@ -15,6 +15,7 @@ export const publicKey = anonKey || ''
 // Nessun realtime all'avvio: i dati si caricano quando servono.
 export const supabase = isConfigured
   ? createClient(url, anonKey, {
+      db: { schema: 'randapp' }, // la nuova app vive nel suo schema; `public` è della vecchia app
       auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false },
     })
   : null

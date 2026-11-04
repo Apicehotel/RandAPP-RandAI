@@ -1,7 +1,7 @@
 -- Task: Avvisi Urgenti (note rapide da prendere in carico) e Promemoria (messaggi per ruolo, anche ripetuti).
 -- Nota: qui ci sono solo i dati. L'invio dei promemoria (notifiche) non è ancora attivo.
 
-insert into public.role_permissions (role, permission) values
+insert into randapp.role_permissions (role, permission) values
   ('admin','urgent.view'), ('admin','urgent.create'), ('admin','urgent.update'),
   ('direzione','urgent.view'), ('direzione','urgent.create'), ('direzione','urgent.update'),
   ('responsabile','urgent.view'), ('responsabile','urgent.create'), ('responsabile','urgent.update'),
@@ -17,9 +17,9 @@ insert into public.role_permissions (role, permission) values
 on conflict do nothing;
 
 -- ---------------------------------------------------------------- Avvisi urgenti
-create table public.urgent_alerts (
+create table randapp.urgent_alerts (
   id           uuid primary key default gen_random_uuid(),
-  hotel_id     text not null references public.hotels (id),
+  hotel_id     text not null references randapp.hotels (id),
   note         text not null check (char_length(note) between 1 and 300),
   status       text not null default 'aperto' check (status in ('aperto','in_carico','risolto')),
   created_by   uuid not null references auth.users (id),
@@ -29,14 +29,14 @@ create table public.urgent_alerts (
   created_at   timestamptz not null default now(),
   updated_at   timestamptz not null default now()
 );
-create index urgent_alerts_hotel_idx on public.urgent_alerts (hotel_id, status, created_at);
-create trigger urgent_alerts_touch before update on public.urgent_alerts
-  for each row execute function public.touch_updated_at();
+create index urgent_alerts_hotel_idx on randapp.urgent_alerts (hotel_id, status, created_at);
+create trigger urgent_alerts_touch before update on randapp.urgent_alerts
+  for each row execute function randapp.touch_updated_at();
 
 -- ---------------------------------------------------------------- Promemoria
-create table public.reminders (
+create table randapp.reminders (
   id           uuid primary key default gen_random_uuid(),
-  hotel_id     text not null references public.hotels (id),
+  hotel_id     text not null references randapp.hotels (id),
   message      text not null check (char_length(message) between 1 and 500),
   target_roles text[] not null default '{}'
                  check (target_roles <@ array['admin','direzione','responsabile','manutentore','governante','reception']),
@@ -52,34 +52,34 @@ create table public.reminders (
   updated_at   timestamptz not null default now(),
   check (end_date is null or end_date >= start_date)
 );
-create index reminders_hotel_idx on public.reminders (hotel_id, active, start_date);
-create trigger reminders_touch before update on public.reminders
-  for each row execute function public.touch_updated_at();
+create index reminders_hotel_idx on randapp.reminders (hotel_id, active, start_date);
+create trigger reminders_touch before update on randapp.reminders
+  for each row execute function randapp.touch_updated_at();
 
-alter table public.urgent_alerts enable row level security;
-alter table public.reminders     enable row level security;
+alter table randapp.urgent_alerts enable row level security;
+alter table randapp.reminders     enable row level security;
 
-create policy urgent_alerts_select on public.urgent_alerts
-  for select to authenticated using (public.has_permission(hotel_id, 'urgent.view'));
-create policy urgent_alerts_insert on public.urgent_alerts
+create policy urgent_alerts_select on randapp.urgent_alerts
+  for select to authenticated using (randapp.has_permission(hotel_id, 'urgent.view'));
+create policy urgent_alerts_insert on randapp.urgent_alerts
   for insert to authenticated
-  with check (public.has_permission(hotel_id, 'urgent.create') and created_by = auth.uid());
-create policy urgent_alerts_update on public.urgent_alerts
+  with check (randapp.has_permission(hotel_id, 'urgent.create') and created_by = auth.uid());
+create policy urgent_alerts_update on randapp.urgent_alerts
   for update to authenticated
-  using (public.has_permission(hotel_id, 'urgent.update'))
-  with check (public.has_permission(hotel_id, 'urgent.update'));
+  using (randapp.has_permission(hotel_id, 'urgent.update'))
+  with check (randapp.has_permission(hotel_id, 'urgent.update'));
 
-create policy reminders_select on public.reminders
-  for select to authenticated using (public.has_permission(hotel_id, 'reminders.view'));
-create policy reminders_insert on public.reminders
+create policy reminders_select on randapp.reminders
+  for select to authenticated using (randapp.has_permission(hotel_id, 'reminders.view'));
+create policy reminders_insert on randapp.reminders
   for insert to authenticated
-  with check (public.has_permission(hotel_id, 'reminders.create') and created_by = auth.uid());
-create policy reminders_update on public.reminders
+  with check (randapp.has_permission(hotel_id, 'reminders.create') and created_by = auth.uid());
+create policy reminders_update on randapp.reminders
   for update to authenticated
-  using (public.has_permission(hotel_id, 'reminders.update'))
-  with check (public.has_permission(hotel_id, 'reminders.update'));
+  using (randapp.has_permission(hotel_id, 'reminders.update'))
+  with check (randapp.has_permission(hotel_id, 'reminders.update'));
 
 -- Nessuna policy di DELETE: avvisi e promemoria non si cancellano dal browser (si risolvono / si disattivano).
 
-revoke all on public.urgent_alerts, public.reminders from anon;
-grant select, insert, update on public.urgent_alerts, public.reminders to authenticated;
+revoke all on randapp.urgent_alerts, randapp.reminders from anon;
+grant select, insert, update on randapp.urgent_alerts, randapp.reminders to authenticated;

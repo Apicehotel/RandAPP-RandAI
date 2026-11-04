@@ -50,21 +50,21 @@ Deno.serve(async (req) => {
     // Prende un blocco di consegne e le "prenota" (skip locked: due chiamate insieme non si pestano i piedi).
     const rows = await sql`
       with picked as (
-        select id from public.notification_deliveries
+        select id from randapp.notification_deliveries
         where status = 'pending' and attempts < ${MAX_ATTEMPTS}
         order by created_at limit ${BATCH} for update skip locked
       ), bumped as (
-        update public.notification_deliveries d set attempts = d.attempts + 1
+        update randapp.notification_deliveries d set attempts = d.attempts + 1
         from picked where d.id = picked.id returning d.id, d.attempts
       )
       select d.id, d.channel, b.attempts, n.kind, n.title, n.body, n.link, n.priority,
              v.platform, v.token, v.keys, v.id as device_id,
              c.config->>'template' as template, c.config->>'language' as language
       from bumped b
-      join public.notification_deliveries d on d.id = b.id
-      join public.notifications n on n.id = d.notification_id
-      left join public.notification_devices v on v.id = d.device_id
-      left join public.notification_channels c on c.hotel_id = n.hotel_id and c.channel = d.channel`;
+      join randapp.notification_deliveries d on d.id = b.id
+      join randapp.notifications n on n.id = d.notification_id
+      left join randapp.notification_devices v on v.id = d.device_id
+      left join randapp.notification_channels c on c.hotel_id = n.hotel_id and c.channel = d.channel`;
 
     let sent = 0, failed = 0, skipped = 0;
     for (const r of rows) {
@@ -72,7 +72,7 @@ Deno.serve(async (req) => {
       const payload = payloadOf(r, appUrl ?? "");
       try {
         if (plan.startsWith("skip:")) {
-          await sql`update public.notification_deliveries set status = 'skipped', error = ${plan.slice(5)} where id = ${r.id}`;
+          await sql`update randapp.notification_deliveries set status = 'skipped', error = ${plan.slice(5)} where id = ${r.id}`;
           skipped += 1;
           continue;
         }
@@ -81,18 +81,18 @@ Deno.serve(async (req) => {
         else if (plan === "web") {
           await webpush.sendNotification({ endpoint: r.token, keys: r.keys }, JSON.stringify(payload), { TTL: 3600, urgency: payload.urgent ? "high" : "normal" });
         }
-        await sql`update public.notification_deliveries set status = 'sent', sent_at = now(), error = null where id = ${r.id}`;
+        await sql`update randapp.notification_deliveries set status = 'sent', sent_at = now(), error = null where id = ${r.id}`;
         sent += 1;
       } catch (e) {
         if (plan === "web" && isGone(e)) {
-          await sql`update public.notification_devices set active = false where id = ${r.device_id}`;
-          await sql`update public.notification_deliveries set status = 'skipped', error = 'abbonamento scaduto' where id = ${r.id}`;
+          await sql`update randapp.notification_devices set active = false where id = ${r.device_id}`;
+          await sql`update randapp.notification_deliveries set status = 'skipped', error = 'abbonamento scaduto' where id = ${r.id}`;
           skipped += 1;
           continue;
         }
         const msg = String((e as Error)?.message ?? e).slice(0, 120); // niente segreti: solo il tipo di errore
         const final = r.attempts >= MAX_ATTEMPTS;
-        await sql`update public.notification_deliveries set status = ${final ? "failed" : "pending"}, error = ${msg} where id = ${r.id}`;
+        await sql`update randapp.notification_deliveries set status = ${final ? "failed" : "pending"}, error = ${msg} where id = ${r.id}`;
         failed += 1;
       }
     }

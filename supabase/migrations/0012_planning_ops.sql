@@ -2,16 +2,16 @@
 -- nelle prenotazioni sale, sale con famiglie e combinazioni.
 -- Le scritture sensibili (stati, chi/quando) passano solo da funzioni del server; nessuna policy di DELETE.
 
-insert into public.role_permissions (role, permission) values
+insert into randapp.role_permissions (role, permission) values
   ('admin','planning_sale.operate'), ('direzione','planning_sale.operate'),
   ('responsabile','planning_sale.operate'), ('manutentore','planning_sale.operate')
 on conflict do nothing;
 
 -- ---------------------------------------------------------------- lavori: uno stato per giorno
-create table public.planning_work_days (
+create table randapp.planning_work_days (
   id             uuid primary key default gen_random_uuid(),
-  hotel_id       text not null references public.hotels (id),
-  work_id        uuid not null references public.planning_works (id),
+  hotel_id       text not null references randapp.hotels (id),
+  work_id        uuid not null references randapp.planning_works (id),
   day            date not null,
   status         text not null default 'da_fare' check (status in ('da_fare','da_finire','fatto','annullato')),
   status_by_name text check (status_by_name is null or char_length(status_by_name) <= 80),
@@ -19,84 +19,84 @@ create table public.planning_work_days (
   updated_at     timestamptz not null default now(),
   unique (work_id, day)
 );
-create index planning_work_days_hotel_day_idx on public.planning_work_days (hotel_id, day);
-create trigger planning_work_days_touch before update on public.planning_work_days
-  for each row execute function public.touch_updated_at();
+create index planning_work_days_hotel_day_idx on randapp.planning_work_days (hotel_id, day);
+create trigger planning_work_days_touch before update on randapp.planning_work_days
+  for each row execute function randapp.touch_updated_at();
 
-alter table public.planning_work_days enable row level security;
-create policy planning_work_days_select on public.planning_work_days
-  for select to authenticated using (public.has_permission(hotel_id, 'planning_work.view'));
+alter table randapp.planning_work_days enable row level security;
+create policy planning_work_days_select on randapp.planning_work_days
+  for select to authenticated using (randapp.has_permission(hotel_id, 'planning_work.view'));
 -- Nessuna policy di insert/update/delete: i giorni nascono dal trigger e cambiano con la funzione sotto.
-revoke all on public.planning_work_days from anon;
-revoke all on public.planning_work_days from authenticated;
-grant select on public.planning_work_days to authenticated;
+revoke all on randapp.planning_work_days from anon;
+revoke all on randapp.planning_work_days from authenticated;
+grant select on randapp.planning_work_days to authenticated;
 
 -- Ogni lavoro crea le sue righe-giorno (stesso hotel_id).
-create or replace function public.planning_work_make_days()
-returns trigger language plpgsql security definer set search_path = public as $$
+create or replace function randapp.planning_work_make_days()
+returns trigger language plpgsql security definer set search_path = randapp as $$
 begin
-  insert into public.planning_work_days (hotel_id, work_id, day)
+  insert into randapp.planning_work_days (hotel_id, work_id, day)
   select new.hotel_id, new.id, d from unnest(new.days) as d
   on conflict do nothing;
   return new;
 end;
 $$;
-revoke all on function public.planning_work_make_days() from public, anon, authenticated;
-create trigger planning_works_make_days after insert on public.planning_works
-  for each row execute function public.planning_work_make_days();
+revoke all on function randapp.planning_work_make_days() from public, anon, authenticated;
+create trigger planning_works_make_days after insert on randapp.planning_works
+  for each row execute function randapp.planning_work_make_days();
 
 -- Lavori già presenti: una riga per ogni giorno.
-insert into public.planning_work_days (hotel_id, work_id, day, status)
+insert into randapp.planning_work_days (hotel_id, work_id, day, status)
 select w.hotel_id, w.id, d, case when w.status = 'fatto' then 'fatto' else 'da_fare' end
-from public.planning_works w, unnest(w.days) as d
+from randapp.planning_works w, unnest(w.days) as d
 on conflict do nothing;
 
-create or replace function public.planning_work_day_set(p_day uuid, p_status text)
-returns public.planning_work_days
-language plpgsql security definer set search_path = public as $$
+create or replace function randapp.planning_work_day_set(p_day uuid, p_status text)
+returns randapp.planning_work_days
+language plpgsql security definer set search_path = randapp as $$
 declare
-  v_row  public.planning_work_days;
+  v_row  randapp.planning_work_days;
   v_name text;
   v_open integer;
 begin
   if p_status not in ('da_fare','da_finire','fatto','annullato') then
     raise exception using errcode = '22023', message = 'stato non valido';
   end if;
-  select * into v_row from public.planning_work_days where id = p_day;
-  if not found or not public.has_permission(v_row.hotel_id, 'planning_work.update') then
+  select * into v_row from randapp.planning_work_days where id = p_day;
+  if not found or not randapp.has_permission(v_row.hotel_id, 'planning_work.update') then
     raise exception using errcode = '42501', message = 'non autorizzato';
   end if;
-  select display_name into v_name from public.profiles where auth_user_id = auth.uid();
-  update public.planning_work_days
+  select display_name into v_name from randapp.profiles where auth_user_id = auth.uid();
+  update randapp.planning_work_days
      set status = p_status,
          status_by_name = case when p_status = 'da_fare' then null else v_name end,
          status_at      = case when p_status = 'da_fare' then null else now() end
    where id = p_day returning * into v_row;
   -- Il lavoro è "fatto" quando non resta nessun giorno da fare o da finire.
-  select count(*) into v_open from public.planning_work_days
+  select count(*) into v_open from randapp.planning_work_days
    where work_id = v_row.work_id and status in ('da_fare','da_finire');
-  update public.planning_works
+  update randapp.planning_works
      set status = case when v_open = 0 then 'fatto' else 'da_fare' end,
          completed_at = case when v_open = 0 then now() else null end
    where id = v_row.work_id;
   return v_row;
 end;
 $$;
-revoke all on function public.planning_work_day_set(uuid, text) from public, anon;
-grant execute on function public.planning_work_day_set(uuid, text) to authenticated;
+revoke all on function randapp.planning_work_day_set(uuid, text) from public, anon;
+grant execute on function randapp.planning_work_day_set(uuid, text) to authenticated;
 
 -- Lo stato del lavoro intero non si scrive più dal browser (lo gestisce la funzione).
-revoke update on public.planning_works from authenticated;
-grant update (description, category, assignee_ids) on public.planning_works to authenticated;
+revoke update on randapp.planning_works from authenticated;
+grant update (description, category, assignee_ids) on randapp.planning_works to authenticated;
 
 -- ---------------------------------------------------------------- sale: famiglie e combinazioni
-alter table public.sale_rooms
+alter table randapp.sale_rooms
   add column family text check (family is null or char_length(family) <= 60),
   add column parts  text[] not null default '{}' check (cardinality(parts) <= 20);
 -- parts vuoto = sala singola (la sua parte è il suo id); una combinazione elenca le parti che occupa.
 
 -- ---------------------------------------------------------------- prenotazioni: stato operativo e check
-alter table public.sale_bookings
+alter table randapp.sale_bookings
   add column op_status      text not null default 'da_fare' check (op_status in ('da_fare','da_finire','fatto')),
   add column op_by_name     text check (op_by_name is null or char_length(op_by_name) <= 80),
   add column op_at          timestamptz,
@@ -109,7 +109,7 @@ alter table public.sale_bookings
 
 -- Alla creazione e quando cambia "richiesto" dal modulo i check si riallineano da soli
 -- (se cambia anche lo stato, è la funzione sale_booking_set_check a decidere).
-create or replace function public.sale_booking_sync_checks()
+create or replace function randapp.sale_booking_sync_checks()
 returns trigger language plpgsql as $$
 declare
   v_audio boolean := true;
@@ -130,37 +130,37 @@ begin
   return new;
 end;
 $$;
-create trigger sale_bookings_sync_checks before insert or update on public.sale_bookings
-  for each row execute function public.sale_booking_sync_checks();
+create trigger sale_bookings_sync_checks before insert or update on randapp.sale_bookings
+  for each row execute function randapp.sale_booking_sync_checks();
 
 -- Dal browser si scrivono solo i dati della prenotazione; stati e check passano dalle funzioni.
-revoke insert, update on public.sale_bookings from authenticated;
+revoke insert, update on randapp.sale_bookings from authenticated;
 grant insert (hotel_id, room, client, date_from, date_to, shift, pax, notes, layout, prep_date,
               audio_required, video_required, created_by)
-  on public.sale_bookings to authenticated;
+  on randapp.sale_bookings to authenticated;
 grant update (room, client, date_from, date_to, shift, pax, notes, layout, prep_date,
               audio_required, video_required, status)
-  on public.sale_bookings to authenticated;
+  on randapp.sale_bookings to authenticated;
 
-create or replace function public.sale_booking_set_op(p_id uuid, p_status text)
-returns public.sale_bookings
-language plpgsql security definer set search_path = public as $$
+create or replace function randapp.sale_booking_set_op(p_id uuid, p_status text)
+returns randapp.sale_bookings
+language plpgsql security definer set search_path = randapp as $$
 declare
-  v_row  public.sale_bookings;
+  v_row  randapp.sale_bookings;
   v_name text;
 begin
   if p_status not in ('da_fare','da_finire','fatto') then
     raise exception using errcode = '22023', message = 'stato non valido';
   end if;
-  select * into v_row from public.sale_bookings where id = p_id;
-  if not found or not public.has_permission(v_row.hotel_id, 'planning_sale.operate') then
+  select * into v_row from randapp.sale_bookings where id = p_id;
+  if not found or not randapp.has_permission(v_row.hotel_id, 'planning_sale.operate') then
     raise exception using errcode = '42501', message = 'non autorizzato';
   end if;
   if p_status = 'fatto' and (v_row.audio_status not in ('non_richiesto','ok') or v_row.video_status not in ('non_richiesto','ok')) then
     raise exception using errcode = '22023', message = 'Completa prima i controlli Audio/Video richiesti o impostali come non richiesti';
   end if;
-  select display_name into v_name from public.profiles where auth_user_id = auth.uid();
-  update public.sale_bookings
+  select display_name into v_name from randapp.profiles where auth_user_id = auth.uid();
+  update randapp.sale_bookings
      set op_status = p_status,
          op_by_name = case when p_status = 'da_fare' then null else v_name end,
          op_at      = case when p_status = 'da_fare' then null else now() end
@@ -168,14 +168,14 @@ begin
   return v_row;
 end;
 $$;
-revoke all on function public.sale_booking_set_op(uuid, text) from public, anon;
-grant execute on function public.sale_booking_set_op(uuid, text) to authenticated;
+revoke all on function randapp.sale_booking_set_op(uuid, text) from public, anon;
+grant execute on function randapp.sale_booking_set_op(uuid, text) to authenticated;
 
-create or replace function public.sale_booking_set_check(p_id uuid, p_kind text, p_state text)
-returns public.sale_bookings
-language plpgsql security definer set search_path = public as $$
+create or replace function randapp.sale_booking_set_check(p_id uuid, p_kind text, p_state text)
+returns randapp.sale_bookings
+language plpgsql security definer set search_path = randapp as $$
 declare
-  v_row  public.sale_bookings;
+  v_row  randapp.sale_bookings;
   v_name text;
   v_by   text;
   v_at   timestamptz;
@@ -183,24 +183,24 @@ begin
   if p_kind not in ('audio','video') or p_state not in ('non_richiesto','da_verificare','ok','problema') then
     raise exception using errcode = '22023', message = 'valore non valido';
   end if;
-  select * into v_row from public.sale_bookings where id = p_id;
-  if not found or not public.has_permission(v_row.hotel_id, 'planning_sale.operate') then
+  select * into v_row from randapp.sale_bookings where id = p_id;
+  if not found or not randapp.has_permission(v_row.hotel_id, 'planning_sale.operate') then
     raise exception using errcode = '42501', message = 'non autorizzato';
   end if;
-  select display_name into v_name from public.profiles where auth_user_id = auth.uid();
+  select display_name into v_name from randapp.profiles where auth_user_id = auth.uid();
   v_by := case when p_state in ('ok','problema') then v_name end;
   v_at := case when p_state in ('ok','problema') then now() end;
   if p_kind = 'audio' then
-    update public.sale_bookings
+    update randapp.sale_bookings
        set audio_required = (p_state <> 'non_richiesto'), audio_status = p_state, audio_by_name = v_by, audio_at = v_at
      where id = p_id returning * into v_row;
   else
-    update public.sale_bookings
+    update randapp.sale_bookings
        set video_required = (p_state <> 'non_richiesto'), video_status = p_state, video_by_name = v_by, video_at = v_at
      where id = p_id returning * into v_row;
   end if;
   return v_row;
 end;
 $$;
-revoke all on function public.sale_booking_set_check(uuid, text, text) from public, anon;
-grant execute on function public.sale_booking_set_check(uuid, text, text) to authenticated;
+revoke all on function randapp.sale_booking_set_check(uuid, text, text) from public, anon;
+grant execute on function randapp.sale_booking_set_check(uuid, text, text) to authenticated;
