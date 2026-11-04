@@ -147,7 +147,7 @@ export function NotificationSettings({ ctx }) {
               const p = prefFor(prefs, k.id)
               return (
                 <div key={k.id} className="kindrow">
-                  <span>{k.label}</span>
+                  <span>{k.label}{k.presentOnly && <small className="muted"> · solo se sei in struttura</small>}</span>
                   <div className="chips" role="group" aria-label={k.label}>
                     {CHANNELS.map((c) => (
                       <button key={c.id} type="button" className="chip" aria-pressed={p[c.id]} disabled={busy}

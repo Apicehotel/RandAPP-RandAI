@@ -154,9 +154,11 @@ revoke all on public.reminder_fires from anon, authenticated;
 -- ---------------------------------------------------------------- creare una notifica
 -- Un record in casella per ogni destinatario (ruoli e/o persone, escluso chi ha fatto l'azione)
 -- e una consegna in coda per ogni canale acceso (struttura + preferenza dell'utente).
+-- p_only_present = true: solo a chi in quel momento è "in struttura" (tabella presence, present = true).
 create or replace function public.notify(
   p_hotel text, p_roles text[], p_users uuid[], p_kind text, p_title text, p_body text,
-  p_link text, p_priority text default 'normal', p_ref uuid default null, p_exclude uuid default null
+  p_link text, p_priority text default 'normal', p_ref uuid default null, p_exclude uuid default null,
+  p_only_present boolean default false
 ) returns integer
 language plpgsql security definer set search_path = public
 as $$
@@ -177,6 +179,9 @@ begin
     where m.hotel_id = p_hotel and m.active and p.active
       and (m.role = any (coalesce(p_roles, '{}')) or m.auth_user_id = any (coalesce(p_users, '{}')))
       and m.auth_user_id is distinct from p_exclude
+      and (not p_only_present or exists (
+            select 1 from public.presence pr
+            where pr.hotel_id = p_hotel and pr.user_id = m.auth_user_id and pr.present))
   loop
     insert into public.notifications (hotel_id, user_id, kind, title, body, link, priority, ref_id)
     values (p_hotel, r.uid, p_kind, left(p_title, 120), left(p_body, 500), p_link, coalesce(p_priority, 'normal'), p_ref)
@@ -199,7 +204,7 @@ begin
   return n;
 end;
 $$;
-revoke all on function public.notify(text, text[], uuid[], text, text, text, text, text, uuid, uuid) from public, anon, authenticated;
+revoke all on function public.notify(text, text[], uuid[], text, text, text, text, text, uuid, uuid, boolean) from public, anon, authenticated;
 
 -- ---------------------------------------------------------------- eventi: avvisi urgenti
 create or replace function public.trg_notify_urgent_alert() returns trigger
@@ -208,7 +213,7 @@ as $$
 begin
   if tg_op = 'INSERT' then
     perform public.notify(new.hotel_id, array['admin','direzione','responsabile','manutentore'], null,
-      'urgent_alert', 'Avviso urgente', new.note, '/task/urgent/' || new.id, 'urgent', new.id, new.created_by);
+      'urgent_alert', 'Avviso urgente', new.note, '/task/urgent/' || new.id, 'urgent', new.id, new.created_by, true);
   elsif new.status = 'in_carico' and old.status = 'aperto' then
     perform public.notify(new.hotel_id, null, array[new.created_by],
       'urgent_alert', 'Avviso preso in carico', new.note, '/task/urgent/' || new.id, 'normal', new.id, new.taken_by);
@@ -290,7 +295,7 @@ begin
     select value into st from public.notification_state where key = 'alert:' || a.id;
     if st is null or ((st->>'n')::int < 6 and (st->>'at')::timestamptz < now() - interval '15 minutes') then
       perform public.notify(a.hotel_id, array['admin','direzione','responsabile','manutentore'], null,
-        'urgent_reminder', 'Avviso ancora da prendere in carico', a.note, '/task/urgent/' || a.id, 'urgent', a.id, null);
+        'urgent_reminder', 'Avviso ancora da prendere in carico', a.note, '/task/urgent/' || a.id, 'urgent', a.id, null, true);
       insert into public.notification_state (key, value) values ('alert:' || a.id, jsonb_build_object('n', 1, 'at', now()))
         on conflict (key) do update set value = jsonb_build_object('n', coalesce((notification_state.value->>'n')::int, 0) + 1, 'at', now()), updated_at = now();
       sent := sent + 1;
@@ -389,7 +394,7 @@ begin
         insert into public.reminder_fires (reminder_id, fire_date, fire_time) values (r.id, today, t);
       exception when unique_violation then continue;
       end;
-      perform public.notify(r.hotel_id, roles, null, 'reminder', 'Promemoria', r.message, '/task/reminders/' || r.id, 'normal', r.id, null);
+      perform public.notify(r.hotel_id, roles, null, 'reminder', 'Promemoria', r.message, '/task/reminders/' || r.id, 'normal', r.id, null, true);
       sent := sent + 1;
     end loop;
   end loop;

@@ -2,9 +2,9 @@
 // Le notifiche le crea solo il server; qui si leggono, si segnano come lette e si scelgono i canali.
 
 export const KINDS = [
-  { id: 'urgent_alert', label: 'Avviso urgente', icon: 'alert', group: 'Task' },
-  { id: 'urgent_reminder', label: 'Avviso ancora da prendere in carico', icon: 'alert', group: 'Task' },
-  { id: 'reminder', label: 'Promemoria', icon: 'clock', group: 'Task' },
+  { id: 'urgent_alert', presentOnly: true, label: 'Avviso urgente', icon: 'alert', group: 'Task' },
+  { id: 'urgent_reminder', presentOnly: true, label: 'Avviso ancora da prendere in carico', icon: 'alert', group: 'Task' },
+  { id: 'reminder', presentOnly: true, label: 'Promemoria', icon: 'clock', group: 'Task' },
   { id: 'issue_urgent', label: 'Segnalazione urgente', icon: 'alert', group: 'Operatività' },
   { id: 'issue_assigned', label: 'Segnalazione assegnata a me', icon: 'user', group: 'Operatività' },
   { id: 'intervention_assigned', label: 'Intervento assegnato a me', icon: 'wrench', group: 'Operatività' },
