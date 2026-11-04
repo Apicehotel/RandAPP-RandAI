@@ -67,8 +67,11 @@ button { cursor: pointer; }
 .nav-item .ico { display: grid; place-items: center; }
 .nav-item .lbl { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 .nav-item[aria-current='page'] { color: var(--accent); font-weight: 650; }
+.shell-nav { position: relative; z-index: 10; }
+/* La bolla Home sta DENTRO la barra (non sporge sopra i contenuti): nessun contenuto può coprirla. */
+.nav-item.nav-home { padding: 3px 0; }
 .nav-item.nav-home .ico {
-  width: var(--home-bubble); height: var(--home-bubble); border-radius: 50%; margin-top: calc(var(--home-bubble) / -3);
+  width: var(--home-bubble); height: var(--home-bubble); border-radius: 50%; margin-top: 0;
   background: var(--surface-2); border: 3px solid var(--surface); box-shadow: var(--shadow);
 }
 .nav-item.nav-home[aria-current='page'] .ico { background: var(--accent); color: var(--accent-text); }
