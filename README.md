@@ -9,7 +9,7 @@ Per ora funziona: **login con PIN, scelta struttura, permessi per ruolo, Home op
 Su questo repo lavorano insieme **Claude, Cursor e Codex**. Regole in [`AGENTS.md`](./AGENTS.md), stato corrente in [`docs/STATO.md`](./docs/STATO.md).
 
 ## Stack
-- **React 19 + Vite 7**, app mobile-first (telefono prima, poi desktop).
+- **React 19 + Vite 8**, app mobile-first (telefono prima, poi desktop).
 - **Supabase**: Auth, database Postgres con RLS, Edge Functions.
 - Dipendenze volutamente poche: `react`, `react-dom`, `@supabase/supabase-js`.
 
