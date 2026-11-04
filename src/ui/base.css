@@ -331,7 +331,12 @@ a.btn, .hub-link, .card.issue, a.card, .drawer a, nav a { color: inherit; }
 .season p { margin: 0; font-size: var(--fs-xs); }
 .sgrid { display: grid; grid-template-columns: repeat(var(--sgrid-cols, 2), minmax(0, 1fr)); gap: var(--gap-tight); }
 :root { --sgrid-cols: 2; }
-:root[data-size='small'] { --sgrid-cols: 2; }
+:root[data-size='small'] { --sgrid-cols: 3; }
+:root[data-size='small'] .stile { padding: 6px 8px; }
+:root[data-size='small'] .stile-temp { font-size: 20px; }
+:root[data-size='small'] .stile-name { font-size: var(--fs-xs); }
+:root[data-size='small'] .stile-meta .muted, :root[data-size='small'] .stile-small { display: none; }
+:root[data-size='small'] .stile-foot { flex-direction: column; align-items: flex-start; gap: 0; }
 :root[data-size='large'] { --sgrid-cols: 1; }
 @media (min-width: 700px) {
   :root { --sgrid-cols: 3; }
@@ -356,3 +361,4 @@ a.btn, .hub-link, .card.issue, a.card, .drawer a, nav a { color: inherit; }
 .hub-choice .btn, .hub-link + .btn { white-space: normal; }
 .stats3 .muted, .stats3.mini small { overflow-wrap: anywhere; hyphens: auto; }
 @media (max-width: 420px) { :root[data-size='large'] .stats3:not(.mini) { grid-template-columns: minmax(0, 1fr); } }
+:root[data-size='small'] .stile .badge { font-size: 10px; padding: 1px 6px; white-space: nowrap; }
