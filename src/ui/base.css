@@ -315,3 +315,9 @@ button { cursor: pointer; }
 .accent-text { color: var(--accent); }
 .hub-link { display: grid; gap: var(--gap-list); text-decoration: none; color: inherit; }
 a.btn { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
+
+/* Link nel tema (non più blu di sistema) e pastiglie dei check alla stessa altezza */
+a { color: var(--accent); }
+a.btn, .hub-link, .card.issue, a.card, .drawer a, nav a { color: inherit; }
+.checkpill { align-self: start; }
+.two { align-items: start; }
