@@ -89,7 +89,7 @@ button { cursor: pointer; }
   .shell-stage { grid-row: 2; grid-column: 2; padding: calc(var(--pad-page) * 1.5); }
 }
 
-/* ---------- Menu laterale (cerchio profilo / "Altro") ---------- */
+/* ---------- Menu laterale (cerchio del profilo) ---------- */
 .drawer-wrap { position: fixed; inset: 0; z-index: 50; }
 .drawer-scrim { position: absolute; inset: 0; border: 0; background: rgba(0, 0, 0, 0.45); }
 .drawer {
@@ -400,3 +400,14 @@ a.btn, .hub-link, .card.issue, a.card, .drawer a, nav a { color: inherit; }
 .kindrow .chips { overflow: visible; padding: 0; flex-wrap: nowrap; }
 .kindrow .chip { --chip-h: 28px; min-height: 28px; height: 28px; padding: 0 9px; font-size: var(--fs-xs); }
 .copybox { word-break: break-all; font-family: ui-monospace, monospace; font-size: var(--fs-xs); background: var(--surface-2); border-radius: var(--radius-sm); padding: 8px; }
+
+/* ---------- Chat RandAI ---------- */
+.chat { display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: var(--gap); height: 100%; min-height: 0; }
+.chat-log { overflow-y: auto; display: flex; flex-direction: column; gap: var(--gap-tight); min-height: 0; }
+.bubble { max-width: 85%; padding: var(--gap-tight) var(--gap); border-radius: var(--radius); background: var(--surface-2);
+  overflow-wrap: anywhere; display: grid; gap: 2px; }
+.bubble.user { align-self: flex-end; background: var(--accent); color: var(--accent-text); }
+.bubble.ai { align-self: flex-start; }
+.bubble.error { border: 1px solid var(--danger, #c0392b); }
+.chat-compose { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--gap-tight); }
+.chat-compose input { min-width: 0; }

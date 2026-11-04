@@ -39,6 +39,7 @@ const PATHS = {
   check: 'M5 12l5 5L20 7',
   menu: 'M4 7h16M4 12h16M4 17h16',
   plus: 'M12 5v14M5 12h14',
+  send: 'M3 11.5L21 3l-8.5 18-2.2-7.3z',
   sparkles: 'M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z',
   building: 'M5 21V4h9v17M14 9h5v12M3 21h18M8 8h2M8 12h2M8 16h2',
   close: 'M6 6l12 12M18 6L6 18',

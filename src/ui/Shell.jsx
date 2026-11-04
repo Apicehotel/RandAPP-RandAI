@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { bottomNavFor, initialsFor, isActivePath } from '../lib/permissions.js'
 import { hotelById } from '../lib/hotels.js'
-import { FEATURES } from '../app/features.js'
 import { logout } from '../lib/auth.js'
 import Drawer from './Drawer.jsx'
 import HotelPicker from './HotelPicker.jsx'
@@ -15,7 +14,7 @@ import { Icon } from './kit.jsx'
 export default function Shell({ route, ctx, onLogout, onSwitchHotel, onChangeHotel, children }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [pickerOpen, setPickerOpen] = useState(false)
-  const items = bottomNavFor(ctx.permissions, { randai: FEATURES.randai })
+  const items = bottomNavFor(ctx.permissions)
   const hotel = hotelById(ctx.hotelId)
   const hotelName = hotel?.name || ctx.hotelId
   const unread = useUnread(() => countUnread(ctx.hotelId, ctx.userId), [ctx.hotelId, ctx.userId])
@@ -42,6 +41,7 @@ export default function Shell({ route, ctx, onLogout, onSwitchHotel, onChangeHot
         <button
           type="button"
           className="avatar"
+          aria-haspopup="dialog"
           aria-label={`Apri il menu di ${ctx.name || 'profilo'}`}
           onClick={() => setMenuOpen(true)}
         >
@@ -62,9 +62,7 @@ export default function Shell({ route, ctx, onLogout, onSwitchHotel, onChangeHot
               <span className="lbl">{item.label}</span>
             </>
           )
-          return item.action === 'menu' ? (
-            <button key={item.id} type="button" className={cls} onClick={() => setMenuOpen(true)}>{inner}</button>
-          ) : (
+          return (
             <a key={item.id} href={`#${item.path}`} className={cls} aria-current={active ? 'page' : undefined}>
               {inner}
             </a>

@@ -69,7 +69,8 @@ export const ROLE_LABELS = {
 export const roleLabel = (role) => ROLE_LABELS[role] || role || ''
 
 // Barra in basso: 5 posti fissi come nella vecchia app.
-//   1 Operatività · 2 Planning · 3 Home (al centro) · 4 Task · 5 RandAI oppure "Altro".
+//   1 Operatività · 2 Planning · 3 Home (al centro) · 4 Task · 5 RandAI (chat).
+// Il menu completo non è nella barra: si apre dal cerchio del profilo in alto a destra.
 // "perm" è il permesso necessario (o un elenco: ne basta uno); null = visibile a tutti.
 // "match" sono i percorsi che tengono acceso il pulsante.
 export const BOTTOM_SLOTS = [
@@ -80,19 +81,18 @@ export const BOTTOM_SLOTS = [
 ]
 
 const RANDAI_SLOT = { id: 'randai', label: 'RandAI', path: '/randai', icon: 'sparkles', match: ['/randai'] }
-// Finché RandAI è in pausa il quinto posto apre il menu completo (come "Altro" nella vecchia app).
-const MORE_SLOT = { id: 'more', label: 'Altro', icon: 'menu', action: 'menu' }
 
-export function bottomNavFor(permissions, { randai = false } = {}) {
+// La chat RandAI c'è sempre (schermata predisposta); se il servizio è in pausa il campo di scrittura resta spento.
+export function bottomNavFor(permissions) {
   const items = BOTTOM_SLOTS.filter((item) => allowed(permissions, item.perm))
-  items.push(randai ? RANDAI_SLOT : MORE_SLOT)
+  items.push(RANDAI_SLOT)
   return items
 }
 
 export const isActivePath = (item, route) =>
   Boolean(item.match?.some((prefix) => route === prefix || route.startsWith(`${prefix}/`)))
 
-// Menu laterale aperto dal cerchio del profilo.
+// Menu laterale: si apre solo dal cerchio del profilo, in alto a destra.
 export function menuGroupsFor(permissions) {
   const groups = [
     {

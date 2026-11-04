@@ -163,7 +163,7 @@ function Screen({ route, ctx, onLogout, onSwitchHotel }) {
   if (route.startsWith('/profile')) return <Profile ctx={ctx} onLogout={onLogout} onSwitchHotel={onSwitchHotel} />
   if (route === '/notifications/settings') return <NotificationSettings ctx={ctx} />
   if (route.startsWith('/notifications')) return <Notifications ctx={ctx} />
-  if (route.startsWith('/randai') && randaiEnabled) return <RandAI />
+  if (route.startsWith('/randai')) return <RandAI live={randaiEnabled} ctx={ctx} />
   if (MANAGEMENT_PREFIXES.some((p) => route === p || route.startsWith(`${p}/`))) return <ManagementScreen route={route} ctx={ctx} />
   if (route.startsWith('/planning')) return <PlanningScreen route={route} ctx={ctx} />
   if (route.startsWith('/task')) return <TaskScreen route={route} ctx={ctx} />
