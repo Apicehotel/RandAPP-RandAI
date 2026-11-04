@@ -105,7 +105,8 @@ Deno.serve(async (req) => {
     });
     const readings = toReadings(things);
 
-    const known = await sql`select device_key, name, last_seen from randapp.sensors where hotel_id = ${hotelId} and active`;
+    // Un solo account eWeLink serve tutte le strutture: si aggiornano i sensori di tutte, per codice dispositivo.
+    const known = await sql`select device_key, name, last_seen from randapp.sensors where active`;
     const knownKeys = new Set(known.map((s) => s.device_key));
     const seenKeys = new Set(readings.map((r) => r.device_key));
     const matched = readings.filter((r) => knownKeys.has(r.device_key));
@@ -126,7 +127,7 @@ Deno.serve(async (req) => {
           switch_state = coalesce(r.switch_state, s.switch_state)
         from jsonb_to_recordset(${sql.json(matched as any)}::jsonb)
           as r(device_key text, online boolean, last_seen timestamptz, temperature numeric, humidity numeric, switch_state text)
-        where s.hotel_id = ${hotelId} and s.device_key = r.device_key
+        where s.device_key = r.device_key
       `;
       updated = res.count;
     }
