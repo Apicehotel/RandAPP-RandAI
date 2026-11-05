@@ -1,10 +1,10 @@
-# Deploy su Netlify. Indirizzo del progetto e opzioni sono pubblici. La chiave anon (VITE_SUPABASE_ANON_KEY) NON sta nel repo: si imposta nelle variabili di Netlify.
+# Deploy su Netlify. Indirizzo e chiave anon sono PUBBLICI per natura (finiscono nel browser di chiunque apra l app): la sicurezza sta nelle policy RLS. Segreti veri (service_role, password, token) mai qui.
 [build]
   command = "npm ci && npm run build"
   publish = "dist"
 
 [build.environment]
   VITE_SUPABASE_URL = "https://ooqlfldcrnkudhgjnied.supabase.co"
+  VITE_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9vcWxmbGRjcm5rdWRoZ2puaWVkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU0NjM4MjUsImV4cCI6MjEwMTAzOTgyNX0.RF6KV6biLqU9Hwlom8wwgW_PoQsrEbY0L9VpcULfd_8"
   VITE_FEATURE_RANDAI = "false"
   SECRETS_SCAN_OMIT_KEYS = "VITE_SUPABASE_ANON_KEY"
-  # VITE_SUPABASE_ANON_KEY si imposta in Netlify (Project configuration → Environment variables): non va scritta nel repo.

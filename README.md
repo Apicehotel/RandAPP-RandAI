@@ -133,6 +133,8 @@ La vecchia app di Hotel Giò usa un altro progetto Supabase ("HotelGio", ref `jm
 - Segreti (`legacy_db_password`, `legacy_db_host`, `legacy_project_ref`) solo in `public.edge_function_secrets`. Mai in repo.
 - Copiati con lo stesso metodo (file `ops.ts`): **interventi** (stato `pending/done` → `da_fare/fatto`; categorie Filtri, Idromassaggio, Edilizio, Extrapiani, Arredi, Altro; assegnatari collegati ai profili per nome; camere e "camere fatte" in `rooms`/`rooms_done`), **planning lavori** (un lavoro con i suoi giorni e lo stato per giorno `fatto/da_finire/da_fare`; lavori senza giorni saltati) e **prenotazioni sale** (una riga per giorno; turno `tutto_giorno` → `giornata`; le date passate risultano già `fatto`). Le righe importate non mandano notifiche. Non copiate: foto degli interventi, piani, dati del tecnico esterno.
 
+- **Numeri sui filtri**: ogni filtro di Segnalazioni e Interventi mostra quanti elementi contiene (es. "Tutte 612"), per controllare che non ne manchino.
+
 ## Registro errori (per ogni app, sempre attivo)
 Ogni errore (richiesta al server fallita, script rotto, accesso che non va, variabili mancanti) viene scritto nel registro **con la causa vera** e **di chi è la colpa**: **App** (bug, configurazione, servizio), **Utente** (PIN, permessi, sessione scaduta, troppi tentativi, dato non valido) o **Dispositivo** (nessuna connessione, versione in cache, memoria piena, estensioni del browser). Se dal solo errore non si può essere sicuri, il verdetto dice "probabile". Accanto c'è sempre "Cosa fare".
 - Dove si vede: **Profilo → Registro errori** (`#/errors`), e anche **prima del login** ("Problemi? Vedi registro errori" nella schermata di accesso e nella schermata "Configurazione mancante"). Filtri per causa, "Copia tutto" per mandarlo a chi gestisce l'app. Gli **admin** vedono anche gli errori di tutti i dispositivi (ultimi 7 giorni).
@@ -165,7 +167,7 @@ test/                  test automatici (permessi, coda, schema RLS, niente segre
 ## Deploy su Netlify
 
 - Sito: `randapp-randai` (https://randapp-randai.netlify.app). Configurazione in `netlify.toml` (build `npm ci && npm run build`, publish `dist`).
-- `VITE_SUPABASE_URL` e `VITE_FEATURE_RANDAI` stanno in `netlify.toml`. **`VITE_SUPABASE_ANON_KEY` si imposta in Netlify** (Project configuration → Environment variables, ambito Builds; il valore è in Supabase → Settings → API → anon) perché il repo non contiene chiavi. Senza, l'app mostra "Configurazione mancante".
+- `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (chiave **anon**, pubblica per natura: va nel browser di tutti) e `VITE_FEATURE_RANDAI` stanno in `netlify.toml`, così non serve impostare nulla nel pannello Netlify. Il file vince sulle variabili del pannello. Il test `no-secrets` ammette in `netlify.toml` solo un JWT con ruolo `anon`; la `service_role` e ogni altro segreto restano fuori dal repo.
 - Collegamento: Netlify → Add new project → Import from GitHub → `Apicehotel/RandAPP-RandAI` → branch `main`. Ogni merge su `main` ripubblica da solo.
 - Aprire l'app sempre dall'indirizzo in Safari/Chrome, non da anteprime di file (bloccano il collegamento al server).
 

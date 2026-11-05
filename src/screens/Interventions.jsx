@@ -56,7 +56,7 @@ export function InterventionList({ ctx }) {
       <div className="chips" role="group" aria-label="Filtro interventi">
         {FILTERS.map((f) => (
           <button key={f.id} className="chip" aria-pressed={filter === f.id} onClick={() => setFilter(f.id)}>
-            {f.label}
+            {f.label}{data ? ` ${filterInterventions(data, f.id).length}` : ''}
           </button>
         ))}
       </div>
