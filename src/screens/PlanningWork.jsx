@@ -8,6 +8,7 @@ import {
   addDaysIso, dayLabel, dayStats, liveDays, shortDate, todayIso, weekDaysIso, weekStartIso, workDayLabel, workDaysOn,
 } from '../lib/planning.js'
 import { Badge, Button, ErrorText, Spinner } from '../ui/kit.jsx'
+import { PrepList } from './PlanningSale.jsx'
 
 export function WeekNav({ start, onChange }) {
   const end = addDaysIso(start, 6)
@@ -81,7 +82,7 @@ export function WorkDayRow({ row, canUpdate, onChanged, showDay = false }) {
   )
 }
 
-export function WorkList({ ctx }) {
+function WorkWeek({ ctx }) {
   const [start, setStart] = useState(() => weekStartIso(todayIso()))
   const days = weekDaysIso(start)
   const today = todayIso()
@@ -93,15 +94,7 @@ export function WorkList({ ctx }) {
   const rows = data || []
 
   return (
-    <div className="page">
-      <a href="#/planning">← Planning</a>
-      <div className="row">
-        <h1>Planning Lavori</h1>
-        {can(ctx.permissions, PERM.PLANNING_WORK_CREATE) && (
-          <Button variant="primary" onClick={() => go('/planning/work/new')}>+ Nuovo</Button>
-        )}
-      </div>
-
+    <div className="stack">
       <Stats stats={dayStats(rows, today)} />
       <WeekNav start={start} onChange={setStart} />
 
@@ -119,6 +112,30 @@ export function WorkList({ ctx }) {
           ) : <p className="muted">Nessun lavoro.</p>}
         </section>
       ))}
+    </div>
+  )
+}
+
+// Planning Lavori: due sezioni — i lavori organizzati e le sale da preparare.
+export function WorkList({ ctx }) {
+  const showPrep = can(ctx.permissions, PERM.PLANNING_SALE_VIEW)
+  const [tab, setTab] = useState('lavori')
+  return (
+    <div className="page">
+      <a href="#/planning">← Planning</a>
+      <div className="row">
+        <h1>Planning Lavori</h1>
+        {tab === 'lavori' && can(ctx.permissions, PERM.PLANNING_WORK_CREATE) && (
+          <Button variant="primary" onClick={() => go('/planning/work/new')}>+ Nuovo</Button>
+        )}
+      </div>
+      {showPrep && (
+        <div className="two" role="group" aria-label="Sezione">
+          <button type="button" className="chip" aria-pressed={tab === 'lavori'} onClick={() => setTab('lavori')}>Lavori</button>
+          <button type="button" className="chip" aria-pressed={tab === 'sale'} onClick={() => setTab('sale')}>Sale da preparare</button>
+        </div>
+      )}
+      {tab === 'lavori' || !showPrep ? <WorkWeek ctx={ctx} /> : <PrepList ctx={ctx} />}
     </div>
   )
 }

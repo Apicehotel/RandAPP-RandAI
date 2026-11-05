@@ -434,3 +434,13 @@ a.btn, .hub-link, .card.issue, a.card, .drawer a, nav a { color: inherit; }
 .bubble.error { border: 1px solid var(--danger, #c0392b); }
 .chat-compose { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--gap-tight); }
 .chat-compose input { min-width: 0; }
+
+/* Planning Sale: calendario del mese */
+.monthcal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; padding: 8px; }
+.mc-head { text-align: center; font-size: var(--fs-xs); color: var(--muted, #666); padding: 2px 0; }
+.mc-day { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 44px; padding: 4px 0; border: 1px solid transparent; border-radius: 10px; background: transparent; font: inherit; color: inherit; cursor: pointer; }
+.mc-day[data-out] { opacity: 0.4; }
+.mc-day[data-today] { border-color: var(--accent); }
+.mc-day[aria-pressed='true'] { background: var(--accent); color: var(--accent-text); }
+.mc-count { min-width: 18px; padding: 0 5px; border-radius: 999px; background: var(--accent-soft, rgba(0,0,0,.1)); font-size: var(--fs-xs); line-height: 18px; text-align: center; }
+.mc-day[aria-pressed='true'] .mc-count { background: rgba(255,255,255,.28); }

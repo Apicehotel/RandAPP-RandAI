@@ -5,7 +5,7 @@ import { useAsync, go } from '../lib/hooks.js'
 import { can, PERM } from '../lib/permissions.js'
 import {
   CHECK_STATES, addDaysIso, bookingStatusLabel, bookingsToPrepare, checkLabel, checksReady, dayLabel, prepDay, prepStats,
-  shiftLabel, shortDate, todayIso, weekDaysIso, weekStartIso,
+  shiftLabel, shortDate, todayIso, weekDaysIso, weekStartIso, eventOnDay, roomNames, monthGrid, monthLabel, monthStartIso, addMonthsIso,
 } from '../lib/planning.js'
 import { Badge, Button, ErrorText, Spinner } from '../ui/kit.jsx'
 import { Stats } from './PlanningWork.jsx'
@@ -91,7 +91,7 @@ export function BookingCard({ item, ctx, onChanged }) {
   )
 }
 
-export function SaleList({ ctx }) {
+export function PrepList({ ctx }) {
   const [anchor, setAnchor] = useState(todayIso)
   const [view, setView] = useState('giorno')
   const today = todayIso()
@@ -102,15 +102,8 @@ export function SaleList({ ctx }) {
   const label = view === 'giorno' ? dayLabel(anchor) : `${dayLabel(days[0])} – ${dayLabel(days[6])}`
 
   return (
-    <div className="page">
-      <a href="#/planning">← Planning</a>
-      <div className="row">
-        <h1>Planning Sale</h1>
-        {can(ctx.permissions, PERM.PLANNING_SALE_CREATE) && (
-          <Button variant="primary" onClick={() => go('/planning/sale/new')}>+ Nuovo</Button>
-        )}
-      </div>
-      <p className="banner">Qui le sale compaiono nel giorno di <strong>preparazione</strong>. Le date dell'evento sono nel calendario del riepilogo Planning.</p>
+    <div className="stack">
+      <p className="banner">Le sale compaiono nel giorno di <strong>preparazione</strong>. Le date dell'evento sono nel calendario in Planning Sale.</p>
 
       <Stats stats={prepStats(data || [], today)} />
 
@@ -139,6 +132,82 @@ export function SaleList({ ctx }) {
           </section>
         )
       })}
+    </div>
+  )
+}
+
+
+// Planning Sale = calendario delle sale: mese, ogni giorno mostra quante sale sono occupate (conta la data dell'EVENTO).
+export function SaleList({ ctx }) {
+  const today = todayIso()
+  const [month, setMonth] = useState(() => monthStartIso(today))
+  const [day, setDay] = useState(today)
+  const [room, setRoom] = useState('')
+  const grid = monthGrid(month)
+  const from = grid[0][0]
+  const { data, error, loading, reload } = useAsync(() => listBookings(ctx.hotelId, from), [ctx.hotelId, from])
+  const live = (data || []).filter((b) => b.status !== 'annullata')
+  const rooms = roomNames(live)
+  const shown = room ? live.filter((b) => b.room === room) : live
+  const on = (d) => shown.filter((b) => eventOnDay(b, d)).sort((a, b) => a.room.localeCompare(b.room))
+  const dayRows = on(day)
+  const move = (n) => { const m = addMonthsIso(month, n); setMonth(m); setDay(m.slice(0, 7) === today.slice(0, 7) ? today : m) }
+
+  return (
+    <div className="page">
+      <a href="#/planning">← Planning</a>
+      <div className="row">
+        <h1>Planning Sale</h1>
+        {can(ctx.permissions, PERM.PLANNING_SALE_CREATE) && (
+          <Button variant="primary" onClick={() => go('/planning/sale/new')}>+ Nuovo</Button>
+        )}
+      </div>
+      <p className="muted">Calendario delle sale: tocca un giorno per vedere cosa c'è. La preparazione è in Planning Lavori → Sale da preparare.</p>
+
+      {rooms.length > 1 && (
+        <div className="chips" role="group" aria-label="Filtro sala">
+          <button type="button" className="chip" aria-pressed={!room} onClick={() => setRoom('')}>Tutte</button>
+          {rooms.map((r) => (
+            <button key={r} type="button" className="chip" aria-pressed={room === r} onClick={() => setRoom(r)}>{r}</button>
+          ))}
+        </div>
+      )}
+
+      <div className="row weeknav">
+        <button type="button" className="chip" onClick={() => move(-1)} aria-label="Mese precedente">←</button>
+        <button type="button" className="chip" onClick={() => { setMonth(monthStartIso(today)); setDay(today) }}>{monthLabel(month)}</button>
+        <button type="button" className="chip" onClick={() => move(1)} aria-label="Mese successivo">→</button>
+      </div>
+
+      {loading && !data && <Spinner />}
+      <ErrorText>{error}</ErrorText>
+      {error && <Button onClick={reload}>Riprova</Button>}
+
+      <div className="card monthcal" role="grid" aria-label={monthLabel(month)}>
+        {['L', 'M', 'M', 'G', 'V', 'S', 'D'].map((h, i) => <span key={i} className="mc-head">{h}</span>)}
+        {grid.flat().map((d) => {
+          const n = on(d).length
+          return (
+            <button key={d} type="button" className="mc-day" aria-pressed={d === day}
+              data-out={d.slice(0, 7) !== month.slice(0, 7) || undefined} data-today={d === today || undefined}
+              onClick={() => setDay(d)} aria-label={`${dayLabel(d)}${n ? `, ${n} sale occupate` : ''}`}>
+              <span>{Number(d.slice(8))}</span>
+              {n > 0 && <b className="mc-count">{n}</b>}
+            </button>
+          )
+        })}
+      </div>
+
+      <section className="stack">
+        <h2>{dayLabel(day)}{day === today ? ' · oggi' : ''}</h2>
+        {dayRows.length ? dayRows.map((b) => (
+          <a key={b.id} className="card cal-event" href={`#/planning/sale/${b.id}`}>
+            <span><b>{b.room}</b> · {shiftLabel(b.shift)}</span>
+            <span>{b.client}{b.layout ? ` · ${b.layout}` : ''}{b.pax ? ` · ${b.pax} PAX` : ''}</span>
+            {b.date_from !== b.date_to && <small className="muted">{range(b)}</small>}
+          </a>
+        )) : <p className="muted">Nessuna sala occupata.</p>}
+      </section>
     </div>
   )
 }

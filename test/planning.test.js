@@ -176,3 +176,13 @@ test('0012: stati solo da funzioni del server, niente DELETE, check non scrivibi
   // Fatto bloccato se i check richiesti non sono OK
   assert.match(sql, /p_status = 'fatto' and \(v_row\.audio_status not in/)
 })
+
+import { monthGrid, addMonthsIso, monthLabel } from '../src/lib/planning.js'
+test('calendario mensile: settimane lun-dom che coprono il mese', () => {
+  const g = monthGrid('2026-11-15')
+  assert.equal(g[0][0], '2026-10-26') // 1 novembre 2026 è domenica: la griglia parte da lunedì 26/10
+  assert.ok(g.at(-1).includes('2026-11-30')) // 30/11 è lunedì: l'ultima riga arriva a domenica 6/12
+  assert.ok(g.every((w) => w.length === 7))
+  assert.equal(addMonthsIso('2026-12-20', 1), '2027-01-01')
+  assert.equal(monthLabel('2026-11-05'), 'Novembre 2026')
+})

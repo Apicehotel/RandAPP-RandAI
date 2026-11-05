@@ -175,3 +175,23 @@ export function roomsByFamily(rooms) {
 
 // Unisce le parti di più sale base per creare una combinazione.
 export const comboParts = (baseRooms) => [...new Set(baseRooms.flatMap(roomParts))]
+
+// Calendario mensile: settimane (lun-dom) che coprono il mese di `iso`, con i giorni fuori mese per riempire la griglia.
+export const monthStartIso = (iso) => `${iso.slice(0, 7)}-01`
+export const addMonthsIso = (iso, n) => {
+  const d = parseIso(monthStartIso(iso))
+  d.setMonth(d.getMonth() + n, 1)
+  return toIso(d)
+}
+export function monthGrid(iso) {
+  const first = monthStartIso(iso)
+  const next = addMonthsIso(first, 1)
+  const last = addDaysIso(next, -1)
+  const weeks = []
+  for (let w = weekStartIso(first); w <= last; w = addDaysIso(w, 7)) weeks.push(weekDaysIso(w))
+  return weeks
+}
+export const monthLabel = (iso) => {
+  const t = parseIso(monthStartIso(iso)).toLocaleDateString('it-IT', { month: 'long', year: 'numeric' })
+  return t.charAt(0).toUpperCase() + t.slice(1)
+}
