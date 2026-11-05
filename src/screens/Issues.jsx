@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { listIssues, getIssue, updateIssueStatus } from '../data/issues.js'
+import { listIssues, getIssue, updateIssueStatus, listIssuePhotos } from '../data/issues.js'
 import { listInterventionsForIssue } from '../data/interventions.js'
 import { useAsync, go } from '../lib/hooks.js'
 import { can, PERM } from '../lib/permissions.js'
@@ -64,6 +64,7 @@ export function IssueDetail({ ctx, id }) {
   const canUpdate = can(ctx.permissions, PERM.ISSUES_UPDATE)
   const canMakeIntervention = can(ctx.permissions, PERM.INTERVENTIONS_CREATE)
   const { data: linked } = useAsync(() => listInterventionsForIssue(ctx.hotelId, id), [ctx.hotelId, id])
+  const { data: photos } = useAsync(() => listIssuePhotos(ctx.hotelId, id), [ctx.hotelId, id])
 
   const change = async (status) => {
     setBusy(true)
@@ -92,10 +93,35 @@ export function IssueDetail({ ctx, id }) {
         </div>
         <div className="muted">
           {issue.room ? `Camera/zona ${issue.room} · ` : ''}{issue.category} · aperta il {formatDate(issue.created_at)}
+          {issue.created_by_name ? ` da ${issue.created_by_name}` : ''}
         </div>
         {issue.description && <p>{issue.description}</p>}
         <div><StatusBadge status={issue.status} /></div>
       </div>
+
+      {(issue.completion_note || issue.technician_name || issue.part_replaced || (issue.completed_at && issue.completed_by_name)) && (
+        <div className="card stack">
+          <h2>Intervento</h2>
+          {issue.completed_at && (
+            <div className="muted">Chiusa il {formatDate(issue.completed_at)}{issue.completed_by_name ? ` da ${issue.completed_by_name}` : ''}</div>
+          )}
+          {issue.technician_name && <div>Tecnico: {issue.technician_name}</div>}
+          {issue.part_replaced && <div>Pezzo sostituito: {issue.part_replaced}</div>}
+          {issue.completion_note && <p>{issue.completion_note}</p>}
+        </div>
+      )}
+
+      {photos && photos.length > 0 && (
+        <div className="card stack">
+          <h2>Foto</h2>
+          {['prima', 'dopo'].map((kind) => photos.filter((f) => f.kind === kind).map((f) => (
+            <figure key={f.id} className="stack">
+              <img src={f.data_url} alt={kind === 'prima' ? 'Foto del problema' : 'Foto dopo l\'intervento'} loading="lazy" style={{ maxWidth: '100%', borderRadius: 8 }} />
+              <figcaption className="muted">{kind === 'prima' ? 'Prima' : 'Dopo'}</figcaption>
+            </figure>
+          )))}
+        </div>
+      )}
 
       {((linked && linked.length > 0) || (canMakeIntervention && issue.status !== 'completata')) && (
         <div className="card stack">
