@@ -460,3 +460,17 @@ a.btn, .hub-link, .card.issue, a.card, .drawer a, nav a { color: inherit; }
 .login-card .pin-input { text-align: center; font-size: 1.4rem; letter-spacing: 0.5em; }
 .login-divider { display: flex; align-items: center; gap: var(--gap); color: var(--text-2); font-size: var(--fs-sm); }
 .login-divider::before, .login-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* Login: ingranaggio admin in alto a destra, tasti di servizio sulla stessa riga */
+.login { position: relative; }
+.login-gear {
+  position: absolute; top: 0; right: 0; z-index: 3; width: var(--control); height: var(--control);
+  display: grid; place-items: center; border: 1px solid var(--border); border-radius: 50%;
+  background: var(--surface); color: var(--text-2);
+}
+.login-gear[aria-expanded='true'] { color: var(--text); box-shadow: var(--shadow); }
+.login-gear-panel { position: absolute; top: calc(var(--control) + 6px); right: 0; left: 0; z-index: 4; }
+.login-admin { display: flex; gap: var(--gap); align-items: flex-start; }
+.login-admin small { display: block; color: var(--text-2); font-size: var(--fs-xs); }
+.login-tools { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap-list); }
+.login-tools .btn { min-width: 0; font-size: var(--fs-sm); padding-inline: 6px; }
