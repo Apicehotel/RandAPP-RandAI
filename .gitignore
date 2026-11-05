@@ -14,3 +14,6 @@ build/
 Thumbs.db
 .idea/
 .vscode/
+
+# Netlify (collegamento locale)
+.netlify/
