@@ -193,3 +193,8 @@ test/                  test automatici (permessi, coda, schema RLS, niente segre
 - Una sola schermata: **Utente** (2+ lettere, suggerimenti) e **PIN** (4 cifre, entra da solo). La struttura **non** si sceglie prima: la ricerca nomi interroga tutte le strutture e unisce le persone uguali; se la persona ha più strutture, dopo il PIN sceglie con quale lavorare (poi si cambia dal menu, senza rifare il PIN).
 - Il PIN si prova **una sola volta** (sulla struttura preferita o la prima): la sessione è della persona. Provarlo su ogni struttura consumerebbe i 5 tentativi prima del blocco di 10 minuti.
 - Sotto: "Problemi? Vedi registro errori" e "Prova collegamento" (diagnosi in chiaro). **Non cambiare questo aspetto senza che l'utente lo chieda.**
+
+### Login: tema, ingranaggio, tasti
+- Sotto la scheda c'è **Aspetto** (tema Sistema/Chiaro/Scuro e dimensione), uguale al menu laterale.
+- In alto a destra c'è l'**ingranaggio**: pannello "Impostazioni" con "Accesso admin" (dopo il PIN, se hai il permesso admin, apre il Profilo; altrimenti Home).
+- "Registro errori" e "Prova collegamento" stanno sulla stessa riga.

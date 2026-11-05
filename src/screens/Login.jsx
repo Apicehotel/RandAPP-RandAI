@@ -4,6 +4,9 @@ import { searchUsersAcrossHotels, loginUser, loadContext } from '../lib/auth.js'
 import { Button, ErrorText, Field, Spinner } from '../ui/kit.jsx'
 import { LocalErrors } from './ErrorLog.jsx'
 import { testConnection } from '../lib/auth.js'
+import Appearance from '../ui/Appearance.jsx'
+
+export const ADMIN_INTENT_KEY = 'randapp.adminIntent'
 
 const PIN_LENGTH = 4
 const MIN_QUERY = 2
@@ -22,6 +25,8 @@ export default function Login({ initialHotel, onLoggedIn }) {
   const [picking, setPicking] = useState(null) // { user, ctx }
   const [showLog, setShowLog] = useState(false)
   const [probe, setProbe] = useState(null)
+  const [gear, setGear] = useState(false)
+  const [adminIntent, setAdminIntent] = useState(false)
   const busyRef = useRef(false)
   const pinRef = useRef(null)
 
@@ -66,6 +71,7 @@ export default function Login({ initialHotel, onLoggedIn }) {
     setBusy(true)
     try {
       const ctx = await loginUser({ user, pin: value, preferredHotel: initialHotel })
+      if (adminIntent) { try { sessionStorage.setItem(ADMIN_INTENT_KEY, '1') } catch { /* nessun problema */ } }
       if (user.hotels.length > 1) setPicking({ user, ctx })
       else onLoggedIn(ctx)
     } catch (e) {
@@ -115,6 +121,20 @@ export default function Login({ initialHotel, onLoggedIn }) {
   return (
     <div className="center">
       <div className="auth-box login">
+        <button type="button" className="login-gear" aria-label="Impostazioni" aria-expanded={gear} data-testid="login-gear" onClick={() => setGear((v) => !v)}>
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="3.2" /><path d="M12 3v2.5M12 18.5V21M21 12h-2.5M5.5 12H3M18.4 5.6l-1.8 1.8M7.4 16.6l-1.8 1.8M18.4 18.4l-1.8-1.8M7.4 7.4 5.6 5.6" />
+          </svg>
+        </button>
+        {gear && (
+          <section className="card stack login-gear-panel" data-testid="login-gear-panel">
+            <h3>Impostazioni</h3>
+            <label className="login-admin">
+              <input type="checkbox" checked={adminIntent} onChange={(e) => setAdminIntent(e.target.checked)} />
+              <span><b>Accesso admin</b><small>Dopo il PIN ti porto al Profilo, con le impostazioni di amministrazione</small></span>
+            </label>
+          </section>
+        )}
         <div className="login-brand">
           <img className="brand-logo" src={apiceLogo} alt="ApiceHotel" width="132" height="132" />
           <h1>RandApp</h1>
@@ -174,11 +194,15 @@ export default function Login({ initialHotel, onLoggedIn }) {
           </Button>
 
           <div className="login-divider"><span>oppure</span></div>
-          <Button type="button" onClick={() => setShowLog((v) => !v)}>{showLog ? 'Nascondi registro errori' : 'Problemi? Vedi registro errori'}</Button>
+          <div className="login-tools">
+            <Button type="button" onClick={() => setShowLog((v) => !v)}>{showLog ? 'Nascondi errori' : 'Registro errori'}</Button>
+            <Button type="button" onClick={async () => { setProbe({ text: 'Provo…' }); setProbe(await testConnection()) }}>Prova collegamento</Button>
+          </div>
           {showLog && <LocalErrors />}
-          <Button type="button" onClick={async () => { setProbe({ text: 'Provo…' }); setProbe(await testConnection()) }}>Prova collegamento</Button>
           {probe && <p className={probe.ok ? 'muted' : 'error'} role="status">{probe.text}</p>}
         </form>
+
+        <Appearance />
       </div>
     </div>
   )

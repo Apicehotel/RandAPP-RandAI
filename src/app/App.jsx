@@ -242,7 +242,12 @@ export default function App() {
     return (
       <Login
         initialHotel={readHotel()}
-        onLoggedIn={(c) => { writeHotel(c.hotelId); setCtx(c); window.location.hash = '/home' }}
+        onLoggedIn={(c) => {
+          writeHotel(c.hotelId); setCtx(c)
+          let admin = false
+          try { admin = sessionStorage.getItem('randapp.adminIntent') === '1'; sessionStorage.removeItem('randapp.adminIntent') } catch { /* nessun problema */ }
+          window.location.hash = admin && can(c.permissions, PERM.ADMIN) ? '/profile' : '/home'
+        }}
       />
     )
   }
