@@ -461,16 +461,28 @@ a.btn, .hub-link, .card.issue, a.card, .drawer a, nav a { color: inherit; }
 .login-divider { display: flex; align-items: center; gap: var(--gap); color: var(--text-2); font-size: var(--fs-sm); }
 .login-divider::before, .login-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
 
-/* Login: ingranaggio admin in alto a destra, tasti di servizio sulla stessa riga */
-.login { position: relative; }
-.login-gear {
-  position: absolute; top: 0; right: 0; z-index: 3; width: var(--control); height: var(--control);
-  display: grid; place-items: center; border: 1px solid var(--border); border-radius: 50%;
-  background: var(--surface); color: var(--text-2);
+/* Login: interruttore sole/luna in alto a destra, riga Impostazioni, tasti di servizio sulla stessa riga */
+.themeswitch { min-width: 44px; min-height: 44px; padding: 0 4px; display: inline-grid; place-items: center; border: 0; background: transparent; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.themeswitch-track {
+  position: relative; width: 58px; height: 30px; border-radius: 999px; display: flex; align-items: center; justify-content: space-between;
+  padding: 0 7px; box-sizing: border-box; background: var(--surface-2); border: 1px solid var(--border); color: var(--text-2);
 }
-.login-gear[aria-expanded='true'] { color: var(--text); box-shadow: var(--shadow); }
-.login-gear-panel { position: absolute; top: calc(var(--control) + 6px); right: 0; left: 0; z-index: 4; }
-.login-admin { display: flex; gap: var(--gap); align-items: flex-start; }
-.login-admin small { display: block; color: var(--text-2); font-size: var(--fs-xs); }
+.themeswitch-track svg { position: relative; z-index: 1; width: 15px; height: 15px; }
+.themeswitch-thumb { position: absolute; top: 2px; left: 2px; width: 24px; height: 24px; border-radius: 50%; background: var(--surface); box-shadow: 0 1px 3px rgba(0, 0, 0, .25); transition: transform .2s ease; }
+.themeswitch .ts-sun { color: #e65100; }
+.themeswitch.is-dark .themeswitch-thumb { transform: translateX(28px); }
+.themeswitch.is-dark .ts-sun { color: var(--text-2); }
+.themeswitch.is-dark .ts-moon { color: #f5f5f5; }
+.themeswitch-corner { position: fixed; z-index: 40; top: max(10px, calc(env(safe-area-inset-top) + 6px)); right: max(10px, calc(env(safe-area-inset-right) + 6px)); }
+@media (prefers-reduced-motion: reduce) { .themeswitch-thumb { transition: none; } }
+.login-settings {
+  display: flex; align-items: center; gap: var(--gap); width: 100%; text-align: left; padding: 10px var(--pad-card);
+  background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text);
+}
+.login-settings svg { flex: none; color: var(--accent); }
+.login-settings span { flex: 1; display: grid; }
+.login-settings small { color: var(--text-2); font-size: var(--fs-sm); }
+.login-settings i { font-style: normal; font-size: 22px; color: var(--accent); }
+.login-back { border: 0; background: none; color: var(--accent); font-weight: 600; padding: 0 0 6px; }
 .login-tools { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap-list); }
 .login-tools .btn { min-width: 0; font-size: var(--fs-sm); padding-inline: 6px; }

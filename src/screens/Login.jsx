@@ -4,7 +4,8 @@ import { searchUsersAcrossHotels, loginUser, loadContext } from '../lib/auth.js'
 import { Button, ErrorText, Field, Spinner } from '../ui/kit.jsx'
 import { LocalErrors } from './ErrorLog.jsx'
 import { testConnection } from '../lib/auth.js'
-import Appearance from '../ui/Appearance.jsx'
+import ThemeSwitch from '../ui/ThemeSwitch.jsx'
+import { can, PERM } from '../lib/permissions.js'
 
 export const ADMIN_INTENT_KEY = 'randapp.adminIntent'
 
@@ -25,8 +26,7 @@ export default function Login({ initialHotel, onLoggedIn }) {
   const [picking, setPicking] = useState(null) // { user, ctx }
   const [showLog, setShowLog] = useState(false)
   const [probe, setProbe] = useState(null)
-  const [gear, setGear] = useState(false)
-  const [adminIntent, setAdminIntent] = useState(false)
+  const [adminMode, setAdminMode] = useState(false) // 'Impostazioni': accesso protetto, poi Profilo
   const busyRef = useRef(false)
   const pinRef = useRef(null)
 
@@ -71,7 +71,10 @@ export default function Login({ initialHotel, onLoggedIn }) {
     setBusy(true)
     try {
       const ctx = await loginUser({ user, pin: value, preferredHotel: initialHotel })
-      if (adminIntent) { try { sessionStorage.setItem(ADMIN_INTENT_KEY, '1') } catch { /* nessun problema */ } }
+      if (adminMode) {
+        if (!can(ctx.permissions, PERM.ADMIN)) throw new Error('Questo utente non è amministratore')
+        try { sessionStorage.setItem(ADMIN_INTENT_KEY, '1') } catch { /* nessun problema */ }
+      }
       if (user.hotels.length > 1) setPicking({ user, ctx })
       else onLoggedIn(ctx)
     } catch (e) {
@@ -121,20 +124,7 @@ export default function Login({ initialHotel, onLoggedIn }) {
   return (
     <div className="center">
       <div className="auth-box login">
-        <button type="button" className="login-gear" aria-label="Impostazioni" aria-expanded={gear} data-testid="login-gear" onClick={() => setGear((v) => !v)}>
-          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <circle cx="12" cy="12" r="3.2" /><path d="M12 3v2.5M12 18.5V21M21 12h-2.5M5.5 12H3M18.4 5.6l-1.8 1.8M7.4 16.6l-1.8 1.8M18.4 18.4l-1.8-1.8M7.4 7.4 5.6 5.6" />
-          </svg>
-        </button>
-        {gear && (
-          <section className="card stack login-gear-panel" data-testid="login-gear-panel">
-            <h3>Impostazioni</h3>
-            <label className="login-admin">
-              <input type="checkbox" checked={adminIntent} onChange={(e) => setAdminIntent(e.target.checked)} />
-              <span><b>Accesso admin</b><small>Dopo il PIN ti porto al Profilo, con le impostazioni di amministrazione</small></span>
-            </label>
-          </section>
-        )}
+        <ThemeSwitch className="themeswitch-corner" />
         <div className="login-brand">
           <img className="brand-logo" src={apiceLogo} alt="ApiceHotel" width="132" height="132" />
           <h1>RandApp</h1>
@@ -144,8 +134,9 @@ export default function Login({ initialHotel, onLoggedIn }) {
 
         <form className="card stack login-card" onSubmit={(e) => { e.preventDefault(); submit() }} autoComplete="off">
           <header>
-            <h2>Bentornato</h2>
-            <p className="muted">Accedi per continuare</p>
+            {adminMode && <button type="button" className="login-back" data-testid="admin-back" onClick={() => { setAdminMode(false); setError('') }}>‹ RandApp</button>}
+            <h2>{adminMode ? 'Impostazioni' : 'Bentornato'}</h2>
+            <p className="muted">{adminMode ? 'Accesso protetto amministratore' : 'Accedi per continuare'}</p>
           </header>
 
           <Field label="Utente" id="login-user">
@@ -190,10 +181,22 @@ export default function Login({ initialHotel, onLoggedIn }) {
 
           <ErrorText>{error}</ErrorText>
           <Button variant="primary" type="submit" block disabled={busy} data-testid="login-submit">
-            {busy ? 'ACCESSO…' : 'ACCEDI →'}
+            {busy ? 'ACCESSO…' : adminMode ? 'ENTRA →' : 'ACCEDI →'}
           </Button>
 
-          <div className="login-divider"><span>oppure</span></div>
+          {!adminMode && (
+            <>
+              <div className="login-divider"><span>oppure</span></div>
+              <button type="button" className="login-settings" data-testid="open-settings-link" onClick={() => { setAdminMode(true); setError('') }}>
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4z" />
+                  <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" />
+                </svg>
+                <span><b>Impostazioni</b><small>Configura l'app e le preferenze</small></span>
+                <i aria-hidden="true">›</i>
+              </button>
+            </>
+          )}
           <div className="login-tools">
             <Button type="button" onClick={() => setShowLog((v) => !v)}>{showLog ? 'Nascondi errori' : 'Registro errori'}</Button>
             <Button type="button" onClick={async () => { setProbe({ text: 'Provo…' }); setProbe(await testConnection()) }}>Prova collegamento</Button>
@@ -201,8 +204,6 @@ export default function Login({ initialHotel, onLoggedIn }) {
           {showLog && <LocalErrors />}
           {probe && <p className={probe.ok ? 'muted' : 'error'} role="status">{probe.text}</p>}
         </form>
-
-        <Appearance />
       </div>
     </div>
   )
