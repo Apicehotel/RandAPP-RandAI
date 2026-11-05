@@ -12,3 +12,9 @@ select cron.schedule('randapp-ewelink-sync', '*/10 * * * *', $$select net.http_p
   url := 'https://ooqlfldcrnkudhgjnied.supabase.co/functions/v1/ewelink-sync',
   headers := jsonb_build_object('content-type','application/json','x-sync-secret',(select value from public.edge_function_secrets where key='sensor_sync_secret')),
   body := '{}'::jsonb, timeout_milliseconds := 20000);$$);
+
+-- Aggiunto il 2026-11-05: copia ogni notte (03:20 UTC) le segnalazioni dalla vecchia app. Per fermarlo: select cron.unschedule('randapp-legacy-sync');
+select cron.schedule('randapp-legacy-sync', '20 3 * * *', $$select net.http_post(
+  url := 'https://ooqlfldcrnkudhgjnied.supabase.co/functions/v1/legacy-sync',
+  headers := jsonb_build_object('content-type','application/json','x-sync-secret',(select value from public.edge_function_secrets where key='sensor_sync_secret')),
+  body := '{}'::jsonb, timeout_milliseconds := 120000);$$);

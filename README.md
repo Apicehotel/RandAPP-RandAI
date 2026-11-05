@@ -108,7 +108,7 @@ Campanella in alto (con numero di non lette) → `/notifications`; impostazioni 
 
 ## Messa in funzione del database (Supabase condiviso con la vecchia app)
 La nuova app **vive nello schema `randapp`** del progetto Supabase "Apice MultiHotel", che ospita anche la vecchia app nello schema `public`. Regole: **non si crea né si modifica niente in `public`**; utenti (`auth.users`) e Storage sono condivisi; le funzioni server della nuova app hanno nomi propri (`randapp-pin-auth`, `ewelink-sync`, `notify-dispatch`) perché `pin-auth`, `presence-status` ecc. sono della vecchia app e **non vanno sovrascritti**.
-1. Applica in ordine tutti i file di `supabase/migrations/` da `0000_schema.sql` a `0014_fix_search_path.sql` (la `0000` crea lo schema).
+1. Applica in ordine tutti i file di `supabase/migrations/` da `0000_schema.sql` a `0016_issues_created_by_optional.sql` (la `0000` crea lo schema).
 2. Esponi lo schema all'API: `alter role authenticator set pgrst.db_schemas = '<elenco attuale>, randapp'; notify pgrst, 'reload config';` (il client usa `db: { schema: 'randapp' }`).
 3. Pubblica le funzioni `randapp-pin-auth` (cartella `supabase/functions/randapp-pin-auth`), `ewelink-sync` e `notify-dispatch`. Tutte leggono il database con Postgres diretto (`SUPABASE_DB_URL`).
 4. Utenti: gli account esistenti (`auth.users`) si riusano; profilo, appartenenza e PIN della nuova app si **copiano** da `public` a `randapp` solo per i ruoli già mappati sui 6 della nuova app (admin, direzione, responsabile, manutentore, governante, reception). I ruoli speciali della vecchia app (Portiere Notturno, Capo Governante, Direttore Centro Congressi, Tecnico esterno, RandAI, Supremo) si mappano più avanti. Nuovi utenti dal terminale:
@@ -124,6 +124,14 @@ Fatto sul progetto condiviso `ooqlfldcrnkudhgjnied`: migrazioni `0000`–`0014` 
 Pianificazioni (pg_cron): `randapp-notify-run` ogni minuto, `randapp-notify-dispatch` ogni minuto, `randapp-ewelink-sync` ogni 10 minuti. Quelle della vecchia app non sono toccate.
 Script per rifare tutto (in ordine, dopo le migrazioni): `supabase/seed/00_users_from_legacy.sql` (copia utenti dei 5 ruoli mappati), `01_locations.sql` (478 luoghi), `02_sensors.sql` (45 sensori), `03_cron.sql` (le 3 pianificazioni). Nessun PIN, hash o chiave dentro.
 Nota sensori: eWeLink restituisce 30 dei 45 dispositivi; i 15 mancanti sono fermi anche nella vecchia app e la nuova li segnala come "Sensori che non arrivano più".
+
+### Copia dalla vecchia app (segnalazioni)
+La vecchia app di Hotel Giò usa un altro progetto Supabase ("HotelGio", ref `jmhzmwyolxzacjunfwcq`) con i dati completi (612 segnalazioni, non le 297 copiate in "Apice MultiHotel"). La funzione `legacy-sync` li legge **solo in lettura** (utente `randapp_reader`, solo `select` su segnalazioni, interventi, planning_lavori, prenotazioni_sale) e li copia in `randapp.issues` + `randapp.issue_photos`. Gira ogni notte alle 03:20 UTC (job `randapp-legacy-sync`) ed è idempotente (`legacy_id` = id della vecchia segnalazione).
+- Tradotto per la nuova app: stati `todo/waiting/done` → `da_fare/attesa_pezzo/completata` (con tecnico → `tecnico`), urgenza `media` → `normale`, categorie → Idraulica, Elettrico, Climatizzazione, Arredi, Altro. Titolo = prima riga della nota.
+- Non copiati di proposito: numeri di telefono di chi ha scritto su WhatsApp (autore = "WhatsApp"), dati tecnici di messaggistica.
+- Fino alla dismissione la vecchia app è la fonte: modifiche fatte nella nuova su righe importate vengono riallineate alla prossima copia.
+- Segreti (`legacy_db_password`, `legacy_db_host`, `legacy_project_ref`) solo in `public.edge_function_secrets`. Mai in repo.
+- Ancora da copiare con lo stesso metodo: interventi, planning lavori, prenotazioni sale.
 
 ## RandAI (in pausa)
 Il punto d'ingresso è `src/randai/`. La **chat** (`RandAI.jsx`, rotta `/randai`, pulsante in basso) è sempre raggiungibile e si carica solo quando la apri; con `VITE_FEATURE_RANDAI` spento mostra il messaggio "in pausa" e il campo è disabilitato. Il collegamento al servizio è tutto in `src/randai/client.js` (`askRandAI`, per ora lancia "non ancora collegato"): per accenderlo si sostituisce solo quella funzione. Tutto il codice di RandAI vive in quella cartella.
