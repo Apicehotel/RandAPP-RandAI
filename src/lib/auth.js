@@ -1,5 +1,6 @@
 import { supabase, functionsUrl, publicKey } from './supabase.js'
 import { logError } from './errorlog.js'
+import { HOTELS } from './hotels.js'
 
 // Il frontend non confronta mai il PIN: lo manda alla funzione server "randapp-pin-auth".
 async function callPinAuth(body) {
@@ -32,6 +33,32 @@ async function callPinAuth(body) {
 export async function searchUsers(hotelId, query) {
   const payload = await callPinAuth({ action: 'directory', hotel_id: hotelId, q: query })
   return payload.users || []
+}
+
+// Come nella vecchia app: si scrive il nome senza scegliere prima la struttura. L'elenco si cerca in tutte le strutture
+// e le persone uguali si uniscono (stesso id) con l'elenco delle loro strutture.
+export async function searchUsersAcrossHotels(query) {
+  const results = await Promise.allSettled(HOTELS.map((h) => searchUsers(h.id, query).then((users) => ({ hotel: h.id, users }))))
+  const ok = results.filter((r) => r.status === 'fulfilled').map((r) => r.value)
+  if (!ok.length) throw results[0].reason
+  const byId = new Map()
+  for (const { hotel, users } of ok) {
+    for (const u of users) {
+      const cur = byId.get(u.id) || { id: u.id, name: u.name, hotels: [] }
+      cur.hotels.push(hotel)
+      byId.set(u.id, cur)
+    }
+  }
+  return [...byId.values()].sort((a, b) => a.name.localeCompare(b.name, 'it'))
+}
+
+// Accesso con nome + PIN. Il PIN si prova UNA volta (sulla struttura preferita o la prima): la sessione è della persona,
+// quindi vale per tutte le sue strutture. Provarlo su ogni struttura sprecherebbe i tentativi (5 e blocco 10 minuti).
+export async function loginUser({ user, pin, preferredHotel = null }) {
+  const hotelId = user.hotels.includes(preferredHotel) ? preferredHotel : user.hotels[0]
+  const ctx = await loginWithPin({ hotelId, userId: user.id, pin })
+  if (!ctx) throw new Error('Accesso alla struttura non consentito')
+  return ctx
 }
 
 export async function loginWithPin({ hotelId, userId, pin }) {
