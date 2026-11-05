@@ -174,3 +174,8 @@ test/                  test automatici (permessi, coda, schema RLS, niente segre
 ## Numeri WhatsApp (admin)
 
 - **Profilo → Numeri WhatsApp** (`#/phones`, solo permesso `admin.access`): elenco persone con o senza numero (prima quelle senza), campo per assegnare/togliere il numero, e i numeri che hanno scritto su WhatsApp senza essere assegnati a nessuno (con numero di segnalazioni e ultima data). Funzioni `admin_phone_overview` e `admin_set_phone` (migrazione `0023`): il numero non è mai leggibile con una select dal browser. Quando un numero viene assegnato, le segnalazioni WhatsApp passano dal numero al nome.
+
+## Planning (come è organizzato)
+
+- **Planning Lavori** (`#/planning/work`): due sezioni. *Lavori* = i lavori da fare per giorno (settimana); *Sale da preparare* = la lista operativa delle prenotazioni sale nel loro giorno di preparazione, con Audio/Video e Fatto (visibile con il permesso `planning_sale.view`).
+- **Planning Sale** (`#/planning/sale`): calendario mensile delle sale. Conta la data dell'**evento**; il numero sul giorno è quante sale sono occupate, tocca il giorno per il dettaglio; filtro per sala. Nuova prenotazione con "+ Nuovo".
