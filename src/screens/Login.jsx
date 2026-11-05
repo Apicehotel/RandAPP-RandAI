@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { HOTELS, apiceLogo } from '../lib/hotels.js'
 import { searchUsers, loginWithPin } from '../lib/auth.js'
 import { Button, ErrorText, Spinner } from '../ui/kit.jsx'
+import { LocalErrors } from './ErrorLog.jsx'
 
 const PIN_LENGTH = 4
 const MIN_QUERY = 2
@@ -16,6 +17,7 @@ export default function Login({ initialHotel, onLoggedIn }) {
   const [pin, setPin] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [showLog, setShowLog] = useState(false)
 
   // Ricerca nome con piccola attesa, per non chiamare il server a ogni lettera.
   useEffect(() => {
@@ -70,6 +72,13 @@ export default function Login({ initialHotel, onLoggedIn }) {
     setError('')
   }
 
+  const logPanel = (
+    <div className="stack">
+      <Button variant="" onClick={() => setShowLog((v) => !v)}>{showLog ? 'Nascondi registro errori' : 'Problemi? Vedi registro errori'}</Button>
+      {showLog && <LocalErrors />}
+    </div>
+  )
+
   if (!hotelId) {
     return (
       <div className="center">
@@ -85,6 +94,7 @@ export default function Login({ initialHotel, onLoggedIn }) {
               </button>
             ))}
           </div>
+          {logPanel}
         </div>
       </div>
     )
@@ -115,6 +125,7 @@ export default function Login({ initialHotel, onLoggedIn }) {
           )}
           <ErrorText>{error}</ErrorText>
           <Button variant="" onClick={() => setHotelId(null)}>Cambia struttura</Button>
+          {logPanel}
         </div>
       </div>
     )
@@ -140,6 +151,7 @@ export default function Login({ initialHotel, onLoggedIn }) {
           <button type="button" onClick={() => setPin((p) => p.slice(0, -1))} disabled={busy} aria-label="Cancella">⌫</button>
         </div>
         {busy && <Spinner />}
+        {error && logPanel}
       </div>
     </div>
   )

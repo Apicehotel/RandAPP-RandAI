@@ -1,4 +1,5 @@
 import { supabase, functionsUrl, publicKey } from './supabase.js'
+import { logError } from './errorlog.js'
 
 // Il frontend non confronta mai il PIN: lo manda alla funzione server "randapp-pin-auth".
 async function callPinAuth(body) {
@@ -13,12 +14,17 @@ async function callPinAuth(body) {
       },
       body: JSON.stringify(body),
     })
-  } catch {
+  } catch (e) {
+    logError('accesso', `${body.action}: connessione assente o bloccata`, e?.message)
     throw new Error('Connessione assente. Riprova.')
   }
   const payload = await response.json().catch(() => null)
   if (!response.ok || !payload?.ok) {
-    throw new Error(payload?.error || 'Errore temporaneo di accesso')
+    // Si registra sempre: se è colpa dell'utente (PIN sbagliato, utente bloccato, troppi tentativi) il registro lo dice.
+    logError('accesso', `${body.action} → ${response.status}: ${payload?.error || 'risposta non valida'}`,
+      payload?.error ? '' : 'La risposta non è quella della funzione di accesso (indirizzo sbagliato o funzione non pubblicata?)',
+      { status: response.status })
+    throw new Error(payload?.error || `Errore di accesso (${response.status}). Vedi il registro errori.`)
   }
   return payload
 }

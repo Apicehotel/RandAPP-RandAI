@@ -54,6 +54,12 @@ export default function Profile({ ctx, onLogout, onSwitchHotel }) {
       <MyPhone />
 
       <div className="card stack">
+        <h2>Registro errori</h2>
+        <p className="muted">Se qualcosa non funziona, qui vedi la causa.</p>
+        <a className="btn" href="#/errors">Apri registro errori</a>
+      </div>
+
+      <div className="card stack">
         <Button onClick={onSwitchHotel}>Cambia struttura</Button>
         <Button variant="danger" onClick={async () => { await logout(); onLogout() }}>Esci</Button>
       </div>
