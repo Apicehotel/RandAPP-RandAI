@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { createBooking, getBooking, listBookings, updateBooking } from '../data/planning.js'
+import { createBookingDays, getBooking, listBookings, updateBooking } from '../data/planning.js'
 import { addSaleLayout, getSaleConfig, saveSaleClient } from '../data/forms.js'
 import { applyRecall, clearDraft, findClient, loadDraft, prepDefaults, prepOk, saveDraft } from '../lib/forms.js'
 import { useAsync, go } from '../lib/hooks.js'
 import { can, PERM } from '../lib/permissions.js'
 import {
-  FORM_SHIFTS, addDaysIso, bookingConflicts, prepDay, roomAvailability, roomNames, roomsByFamily, shiftLabel, shortDate, todayIso,
+  FORM_SHIFTS, addDaysIso, bookingConflicts, dayLabel, prepDay, rangeDays, roomAvailability, roomAvailabilityDays, roomNames, roomsByFamily, shiftLabel, shortDate, todayIso,
 } from '../lib/planning.js'
 import { Button, ErrorText, Field } from '../ui/kit.jsx'
 import { ChipPick, Stepper } from '../ui/forms.jsx'
@@ -19,7 +19,7 @@ export default function PlanningSaleNew({ ctx, editId = null }) {
   const draft = useRef(editId ? null : loadDraft('sale', ctx.hotelId, ctx.userId))
   const [form, setForm] = useState({
     client: '', room: '', layout: '', date_from: today, date_to: today, prep_date: today, shift: 'mattina',
-    pax: '1', notes: '', audio: false, video: false, saveRecall: false, ...(draft.current || {}),
+    pax: '1', notes: '', audio: false, video: false, saveRecall: false, day_shifts: {}, ...(draft.current || {}),
   })
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -54,6 +54,16 @@ export default function PlanningSaleNew({ ctx, editId = null }) {
     }))
   }
 
+  // Nuova prenotazione: un turno per giorno (default Tutto il giorno). In modifica resta il turno unico della riga.
+  const days = editId ? [] : rangeDays(form.date_from, form.date_to)
+  const shiftOf = (d) => form.day_shifts?.[d] || 'giornata'
+  const dayShifts = days.map((d) => ({ day: d, shift: shiftOf(d) }))
+  const setDayShift = (d, shift) => setForm((f) => ({ ...f, day_shifts: { ...f.day_shifts, [d]: shift } }))
+  const setAllShifts = (shift) => setForm((f) => ({ ...f, day_shifts: Object.fromEntries(days.map((d) => [d, shift])) }))
+  const availOf = (r) => (editId
+    ? roomAvailability(r, period, existing || [], allRooms, editId)
+    : roomAvailabilityDays(r, dayShifts, existing || [], allRooms))
+
   const configuredRooms = (config?.rooms || []).filter((r) => r.active || r.name === form.room)
   const allRooms = config?.rooms || []
   const hasConfig = configuredRooms.length > 0
@@ -64,11 +74,11 @@ export default function PlanningSaleNew({ ctx, editId = null }) {
   const canManage = can(ctx.permissions, PERM.PLANNING_SALE_MANAGE)
 
   // Come nella vecchia app: se cambi date o turno e la sala scelta non è più libera, la scelta si azzera.
-  const roomPeriodKey = `${form.date_from}|${form.date_to}|${form.shift}`
+  const roomPeriodKey = `${form.date_from}|${form.date_to}|${form.shift}|${JSON.stringify(form.day_shifts)}`
   useEffect(() => {
     if (!form.room || !allRooms.length) return
     const r = allRooms.find((x) => x.name === form.room)
-    if (r && roomAvailability(r, { date_from: form.date_from, date_to: form.date_to, shift: form.shift }, existing || [], allRooms, editId) !== 'free') {
+    if (r && availOf(r) !== 'free') {
       setForm((f) => ({ ...f, room: '' }))
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -76,9 +86,10 @@ export default function PlanningSaleNew({ ctx, editId = null }) {
 
   // Stato di ogni sala nel periodo scelto: libera o già occupata (e da chi).
   const period = { date_from: form.date_from, date_to: form.date_to, shift: form.shift }
-  const clash = form.room.trim() && form.date_to >= form.date_from
-    ? bookingConflicts({ ...form, id: editId, room: form.room }, existing || [], allRooms)[0]
-    : null
+  const clash = !form.room.trim() || form.date_to < form.date_from ? null
+    : editId
+      ? bookingConflicts({ ...form, id: editId, room: form.room }, existing || [], allRooms)[0]
+      : dayShifts.map((x) => bookingConflicts({ room: form.room, date_from: x.day, date_to: x.day, shift: x.shift }, existing || [], allRooms)[0]).find(Boolean) || null
 
   const addLayout = async () => {
     if (!newLayout.trim()) return
@@ -99,17 +110,18 @@ export default function PlanningSaleNew({ ctx, editId = null }) {
     if (!form.date_from || form.date_to < form.date_from) return setError('Controlla le date')
     if (layouts.length > 0 && !form.layout) return setError("Scegli l'allestimento")
     if (!prepOk(form.prep_date, form.date_from)) return setError("La preparazione deve essere il giorno dell'evento o prima")
+    if (days.length === 0 && !editId) return setError('Controlla le date')
+    if (days.length >= 31 && form.date_to > days.at(-1)) return setError('Massimo 31 giorni per prenotazione')
     if (clash) return setError('La sala è già occupata in quel turno')
     setBusy(true)
     setError('')
     try {
       const input = { ...form, audio_required: form.audio, video_required: form.video }
-      const booking = editId
-        ? await updateBooking(ctx.hotelId, editId, input, allRooms)
-        : await createBooking(ctx.hotelId, ctx.userId, input, allRooms)
+      const created = editId ? null : await createBookingDays(ctx.hotelId, ctx.userId, input, dayShifts, allRooms)
+      const booking = editId ? await updateBooking(ctx.hotelId, editId, input, allRooms) : created[0]
       if (form.saveRecall) await saveSaleClient(ctx.hotelId, form).catch(() => {})
       if (!editId) clearDraft('sale', ctx.hotelId, ctx.userId)
-      go(`/planning/sale/${booking.id}`)
+      go(editId || created.length === 1 ? `/planning/sale/${booking.id}` : '/planning/sale')
     } catch (err) {
       setError(`${err.message}. La bozza resta sul telefono: riprova.`)
       setBusy(false)
@@ -143,10 +155,35 @@ export default function PlanningSaleNew({ ctx, editId = null }) {
             <input id="date_to" className="input" type="date" min={form.date_from} value={form.date_to} onChange={set('date_to')} />
           </Field>
         </div>
-        <div className="stack">
-          <span className="field-label">Turno evento</span>
-          <ChipPick label="Turno" options={SHIFT_OPTS} value={form.shift} onChange={pick('shift')} />
-        </div>
+        {editId ? (
+          <div className="stack">
+            <span className="field-label">Turno evento</span>
+            <ChipPick label="Turno" options={SHIFT_OPTS} value={form.shift} onChange={pick('shift')} />
+          </div>
+        ) : (
+          <div className="stack">
+            <span className="field-label">Turno per giorno ({days.length} {days.length === 1 ? 'giorno' : 'giorni'}) *</span>
+            {days.length > 1 && (
+              <div className="chips wrap" role="group" aria-label="Stesso turno per tutti i giorni">
+                {SHIFT_OPTS.map((o) => (
+                  <button type="button" key={o.id} className="chip" onClick={() => setAllShifts(o.id)}>Tutti: {o.label}</button>
+                ))}
+              </div>
+            )}
+            {days.map((d) => (
+              <div key={d} className="dayshift">
+                <strong>{dayLabel(d)}</strong>
+                <div className="chips" role="group" aria-label={`Turno ${dayLabel(d)}`}>
+                  {SHIFT_OPTS.map((o) => (
+                    <button type="button" key={o.id} className="chip" aria-pressed={shiftOf(d) === o.id} onClick={() => setDayShift(d, o.id)}>
+                      {o.id === 'giornata' ? 'Tutto il giorno' : o.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
 
         <div className="stack">
           <span className="field-label">Da preparare il <small>(giorno operativo manutenzione)</small></span>
@@ -159,7 +196,7 @@ export default function PlanningSaleNew({ ctx, editId = null }) {
 
         {hasConfig ? (
           <div className="stack">
-            <span className="field-label">Sala · {configuredRooms.filter((r) => roomAvailability(r, period, existing || [], allRooms, editId) === 'free').length} libere nel periodo</span>
+            <span className="field-label">Sala · {configuredRooms.filter((r) => availOf(r) === 'free').length} libere nel periodo</span>
             <input className="input" type="search" value={roomQuery} onChange={(e) => setRoomQuery(e.target.value)} placeholder="Cerca sala…" aria-label="Cerca sala" />
             {form.room && <small className="ok-text">Scelta: <b>{form.room}</b> · disponibile per l'evento</small>}
             {roomsByFamily(configuredRooms.filter((r) => !roomQuery.trim() || r.name.toLowerCase().includes(roomQuery.trim().toLowerCase()))).map((g) => (
@@ -167,7 +204,7 @@ export default function PlanningSaleNew({ ctx, editId = null }) {
                 <small className="muted">{g.name}</small>
                 <div className="chips wrap" role="group" aria-label={`Sale ${g.name}`}>
                   {g.rooms.map((r) => {
-                    const a = roomAvailability(r, period, existing || [], allRooms, editId)
+                    const a = availOf(r)
                     return (
                       <button type="button" key={r.id} className="chip" aria-pressed={form.room === r.name} disabled={a !== 'free'}
                         onClick={() => pick('room')(r.name)}>
@@ -225,7 +262,7 @@ export default function PlanningSaleNew({ ctx, editId = null }) {
         )}
         <ErrorText>{error}</ErrorText>
         <Button variant="primary" type="submit" block disabled={busy || Boolean(clash)}>
-          {busy ? 'Salvo…' : editId ? 'Salva modifiche' : 'Prenota la sala'}
+          {busy ? 'Salvo…' : editId ? 'Salva modifiche' : days.length > 1 ? `Prenota la sala (${days.length} giorni)` : 'Prenota la sala'}
         </Button>
       </div>
     </form>

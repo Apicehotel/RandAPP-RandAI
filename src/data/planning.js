@@ -133,6 +133,32 @@ export async function createBooking(hotelId, userId, input, rooms = []) {
   return data
 }
 
+// Prenotazione su più giorni: una riga per giorno, ognuna col suo turno. Controllo e inserimento in un colpo solo
+// (se un giorno è occupato non si salva nulla). La preparazione scelta vale per il primo giorno; gli altri giorni si preparano il giorno stesso.
+export async function createBookingDays(hotelId, userId, input, days, rooms = []) {
+  if (!days.length) throw new Error('Scegli almeno un giorno')
+  const base = {
+    hotel_id: hotelId,
+    created_by: userId,
+    room: input.room.trim(),
+    client: input.client.trim(),
+    pax: input.pax ? Number(input.pax) : null,
+    notes: (input.notes || '').trim() || null,
+    layout: input.layout || null,
+    audio_required: Boolean(input.audio_required),
+    video_required: Boolean(input.video_required),
+  }
+  const rows = days.map((x, i) => ({ ...base, date_from: x.day, date_to: x.day, shift: x.shift, prep_date: i === 0 ? (input.prep_date || x.day) : x.day }))
+  const fresh = await listBookings(hotelId, rows[0].date_from)
+  for (const r of rows) {
+    const clash = bookingConflicts(r, fresh, rooms)[0]
+    if (clash) throw new Error(`Sala già occupata il ${shortDate(r.date_from)}: ${clash.client} (${shiftLabel(clash.shift)})`)
+  }
+  const { data, error } = await supabase.from('sale_bookings').insert(rows).select(BOOKING_COLUMNS)
+  if (error) throw new Error('Impossibile creare la prenotazione')
+  return data
+}
+
 // Annulla / riattiva (anagrafica della prenotazione, non lo stato operativo).
 export async function updateBookingStatus(hotelId, id, status, rooms = []) {
   if (status === 'attiva') {

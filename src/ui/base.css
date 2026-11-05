@@ -444,3 +444,9 @@ a.btn, .hub-link, .card.issue, a.card, .drawer a, nav a { color: inherit; }
 .mc-day[aria-pressed='true'] { background: var(--accent); color: var(--accent-text); }
 .mc-count { min-width: 18px; padding: 0 5px; border-radius: 999px; background: var(--accent-soft, rgba(0,0,0,.1)); font-size: var(--fs-xs); line-height: 18px; text-align: center; }
 .mc-day[aria-pressed='true'] .mc-count { background: rgba(255,255,255,.28); }
+
+/* Prenotazione sala: un turno per ogni giorno */
+.dayshift { display: grid; grid-template-columns: 5.5rem minmax(0, 1fr); align-items: center; gap: 8px; }
+.dayshift .chips { flex-wrap: nowrap; }
+.dayshift .chip { flex: 1 1 0; min-width: 0; padding-inline: 6px; font-size: var(--fs-xs); text-align: center; }
+@media (max-width: 420px) { .dayshift { grid-template-columns: 1fr; } }

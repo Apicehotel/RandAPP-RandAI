@@ -197,3 +197,19 @@ export const monthLabel = (iso) => {
   const t = parseIso(monthStartIso(iso)).toLocaleDateString('it-IT', { month: 'long', year: 'numeric' })
   return t.charAt(0).toUpperCase() + t.slice(1)
 }
+
+// ---- Prenotazione su più giorni: un turno per ogni giorno (come nella vecchia app). Ogni giorno è una riga.
+export const MAX_BOOKING_DAYS = 31
+export function rangeDays(fromIso, toIso) {
+  if (!fromIso || !toIso || toIso < fromIso) return []
+  const out = []
+  for (let d = fromIso; d <= toIso && out.length < MAX_BOOKING_DAYS; d = addDaysIso(d, 1)) out.push(d)
+  return out
+}
+
+// days = [{ day, shift }]. Libera se lo è ogni giorno; Occupata se in almeno un giorno lo è del tutto; altrimenti Parziale.
+export function roomAvailabilityDays(room, days, bookings, rooms, excludeId = null) {
+  const states = days.map((x) => roomAvailability(room, { date_from: x.day, date_to: x.day, shift: x.shift }, bookings, rooms, excludeId))
+  if (states.every((s) => s === 'free')) return 'free'
+  return states.includes('busy') ? 'busy' : 'partial'
+}
