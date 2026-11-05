@@ -96,3 +96,23 @@ export async function hasActiveSession() {
 export async function logout() {
   await supabase.auth.signOut()
 }
+
+// Prova di collegamento per il login: dice in chiaro dove si ferma (configurazione, rete, funzione).
+export async function testConnection() {
+  if (!functionsUrl) return { ok: false, text: 'App non configurata: mancano indirizzo o chiave del server nella versione installata (causa: app).' }
+  const host = functionsUrl.replace(/^https?:\/\//, '').split('/')[0]
+  const t0 = Date.now()
+  try {
+    const r = await fetch(`${functionsUrl}/randapp-pin-auth`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', apikey: publicKey, Authorization: `Bearer ${publicKey}` },
+      body: JSON.stringify({ action: 'directory', hotel_id: 'hotelgio', q: 'ma' }),
+    })
+    const ms = Date.now() - t0
+    const j = await r.json().catch(() => null)
+    if (r.ok && j?.ok) return { ok: true, text: `Server raggiunto (${host}, ${ms} ms). Il login funziona da qui.` }
+    return { ok: false, text: `Il server ${host} risponde ${r.status}${j?.error ? `: ${j.error}` : ' ma non è la funzione di accesso (indirizzo o chiave sbagliati: causa app)'}.` }
+  } catch (e) {
+    return { ok: false, text: `Non riesco a raggiungere ${host} (${e?.message || 'errore di rete'}). Causa probabile: connessione del telefono, blocco del browser o rete aziendale.` }
+  }
+}

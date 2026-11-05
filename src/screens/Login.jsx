@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { HOTELS, apiceLogo } from '../lib/hotels.js'
-import { searchUsers, loginWithPin } from '../lib/auth.js'
+import { searchUsers, loginWithPin, testConnection } from '../lib/auth.js'
 import { Button, ErrorText, Spinner } from '../ui/kit.jsx'
 import { LocalErrors } from './ErrorLog.jsx'
 
@@ -18,6 +18,7 @@ export default function Login({ initialHotel, onLoggedIn }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [showLog, setShowLog] = useState(false)
+  const [probe, setProbe] = useState(null)
 
   // Ricerca nome con piccola attesa, per non chiamare il server a ogni lettera.
   useEffect(() => {
@@ -76,6 +77,8 @@ export default function Login({ initialHotel, onLoggedIn }) {
     <div className="stack">
       <Button variant="" onClick={() => setShowLog((v) => !v)}>{showLog ? 'Nascondi registro errori' : 'Problemi? Vedi registro errori'}</Button>
       {showLog && <LocalErrors />}
+      <Button variant="" onClick={async () => { setProbe({ text: 'Provo…' }); setProbe(await testConnection()) }}>Prova collegamento</Button>
+      {probe && <p className={probe.ok ? 'muted' : 'error'} role="status">{probe.text}</p>}
     </div>
   )
 
