@@ -199,3 +199,18 @@ test('prenotazione vecchia "Auditorium" occupa Auditorium Intero e le due Tower'
   assert.equal(roomAvailability(rooms[1], period, bookings, rooms), 'busy')
   assert.equal(roomAvailability(rooms[2], period, bookings, rooms), 'free')
 })
+
+import { rangeDays, roomAvailabilityDays } from '../src/lib/planning.js'
+test('multi-giorno: elenco giorni e disponibilità con un turno per giorno', () => {
+  assert.deepEqual(rangeDays('2026-11-05', '2026-11-07'), ['2026-11-05', '2026-11-06', '2026-11-07'])
+  assert.equal(rangeDays('2026-11-05', '2026-11-04').length, 0)
+  assert.equal(rangeDays('2026-01-01', '2026-12-31').length, 31)
+  const rooms = [{ id: 'a', name: 'Cantina', parts: ['c'] }]
+  const bookings = [{ id: 'x', room: 'Cantina', status: 'attiva', shift: 'mattina', date_from: '2026-11-06', date_to: '2026-11-06' }]
+  const free = [{ day: '2026-11-05', shift: 'giornata' }, { day: '2026-11-06', shift: 'pomeriggio' }]
+  const busy = [{ day: '2026-11-05', shift: 'giornata' }, { day: '2026-11-06', shift: 'mattina' }]
+  const partial = [{ day: '2026-11-06', shift: 'giornata' }]
+  assert.equal(roomAvailabilityDays(rooms[0], free, bookings, rooms), 'free')
+  assert.equal(roomAvailabilityDays(rooms[0], busy, bookings, rooms), 'busy')
+  assert.equal(roomAvailabilityDays(rooms[0], partial, bookings, rooms), 'partial')
+})

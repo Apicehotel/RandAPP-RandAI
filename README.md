@@ -184,3 +184,5 @@ test/                  test automatici (permessi, coda, schema RLS, niente segre
 
 - `supabase/seed/05_sale_config.sql` (ripetibile) copia sale, allestimenti e clienti ricorrenti da `public.sale_*` (vecchia app multi-hotel) a `randapp.sale_rooms/sale_layouts/sale_clients`. Le sale hanno `family` (Trumpet, Sax, Auditorium…) e `parts`: una combinazione (es. *Trumpet 1+2*) occupa anche le sale che la compongono, quindi non è prenotabile se una parte è già presa.
 - Nel modulo di prenotazione: ricerca sala, stato Libera/Parziale/Occupata nel periodo, la sala si azzera se date/turno la rendono non libera, allestimento obbligatorio, richiamo cliente.
+
+- **Prenotazione su più giorni**: scegli "Evento dal/al" e per ogni giorno il turno (Mattina, Pomeriggio, Tutto il giorno; "Tutti: …" li imposta insieme). Si salva **una riga per giorno** (`createBookingDays`, tutto o niente, max 31 giorni). La sala risulta Libera solo se lo è in ogni giorno con il turno di quel giorno. Preparazione: la data scelta vale per il primo giorno, gli altri giorni "stesso giorno".
