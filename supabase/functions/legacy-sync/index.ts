@@ -4,7 +4,7 @@
 // Idempotente: ogni segnalazione ha `legacy_id` (id nella vecchia app); rilanciarla aggiorna, non duplica.
 // Fino alla dismissione la vecchia app è la fonte: le modifiche fatte nella nuova su righe importate vengono riallineate.
 // Segreti (variabili della funzione o tabella `edge_function_secrets`): legacy_db_password, legacy_db_host, legacy_project_ref, sensor_sync_secret.
-// Di proposito NON si copiano i numeri di telefono di chi ha scritto su WhatsApp.
+// I numeri WhatsApp si MANTENGONO (created_by_phone); se un profilo ha lo stesso numero compare il suo nome (link_issue_senders).
 import postgres from "npm:postgres@3.4.7";
 
 const HOTEL = "hotelgio";
@@ -36,11 +36,15 @@ const clean = (v: unknown, max: number) => {
   return s ? s.slice(0, max) : null;
 };
 
-// "WhatsApp +39..." → fonte whatsapp, nessun numero. Altri nomi restano com'erano.
+// "WhatsApp +39..." → fonte whatsapp, numero conservato (created_by_phone). Altri nomi restano com'erano.
 function author(raw: unknown) {
   const s = String(raw ?? "").trim();
-  if (/^whatsapp/i.test(s)) return { name: "WhatsApp", source: "whatsapp" };
-  return { name: clean(s, 80), source: "import" };
+  const m = s.match(/^whatsapp\s*(\+?[0-9 ]{8,20})?/i);
+  if (m) {
+    const phone = m[1] ? "+" + m[1].replace(/[^0-9]/g, "") : null;
+    return { name: phone ? `WhatsApp ${phone}` : "WhatsApp", source: "whatsapp", phone };
+  }
+  return { name: clean(s, 80), source: "import", phone: null };
 }
 
 function toRow(r: Record<string, unknown>) {
@@ -64,6 +68,7 @@ function toRow(r: Record<string, unknown>) {
     completed_at: done && r.completato_il ? new Date(r.completato_il as string).toISOString() : null,
     source: a.source,
     created_by_name: a.name,
+    created_by_phone: a.phone,
     completed_by_name: done ? clean(r.completato_da, 80) : null,
     completion_note: extra ? extra.slice(0, 2000) : null,
     technician_name: clean(r.tecnico_nome, 80),
@@ -82,18 +87,18 @@ async function syncIssues(legacy: ReturnType<typeof postgres>) {
     with src as (
       select * from jsonb_to_recordset(${payload}::text::jsonb) as r(
         legacy_id uuid, title text, description text, category text, urgency text, stato text, tecnico boolean, room text,
-        created_at timestamptz, completed_at timestamptz, source text, created_by_name text, completed_by_name text,
+        created_at timestamptz, completed_at timestamptz, source text, created_by_name text, created_by_phone text, completed_by_name text,
         completion_note text, technician_name text, part_replaced text)
     ), up as (
       insert into randapp.issues (hotel_id, legacy_id, title, description, category, urgency, status, room, created_by,
-                                  created_at, completed_at, source, created_by_name, completed_by_name,
+                                  created_at, completed_at, source, created_by_name, created_by_phone, completed_by_name,
                                   completion_note, technician_name, part_replaced)
       select ${HOTEL}, s.legacy_id, s.title, s.description, randapp.legacy_category(s.category),
              randapp.legacy_urgency(s.urgency), randapp.legacy_status(s.stato, s.tecnico), s.room,
              (select p.auth_user_id from randapp.profiles p
                 join randapp.hotel_memberships m on m.auth_user_id = p.auth_user_id and m.hotel_id = ${HOTEL}
                where s.source = 'import' and lower(p.display_name) = lower(s.created_by_name) limit 1),
-             coalesce(s.created_at, now()), s.completed_at, s.source, s.created_by_name, s.completed_by_name,
+             coalesce(s.created_at, now()), s.completed_at, s.source, s.created_by_name, s.created_by_phone, s.completed_by_name,
              s.completion_note, s.technician_name, s.part_replaced
       from src s
       on conflict (legacy_id) do update set
@@ -101,18 +106,19 @@ async function syncIssues(legacy: ReturnType<typeof postgres>) {
         urgency = excluded.urgency, status = excluded.status, room = excluded.room,
         completed_at = excluded.completed_at, completed_by_name = excluded.completed_by_name,
         completion_note = excluded.completion_note, technician_name = excluded.technician_name,
-        part_replaced = excluded.part_replaced
+        part_replaced = excluded.part_replaced, created_by_phone = excluded.created_by_phone
       where (randapp.issues.title, randapp.issues.description, randapp.issues.category, randapp.issues.urgency,
              randapp.issues.status, randapp.issues.room, randapp.issues.completed_at, randapp.issues.completed_by_name,
-             randapp.issues.completion_note, randapp.issues.technician_name, randapp.issues.part_replaced)
+             randapp.issues.completion_note, randapp.issues.technician_name, randapp.issues.part_replaced, randapp.issues.created_by_phone)
         is distinct from
             (excluded.title, excluded.description, excluded.category, excluded.urgency, excluded.status, excluded.room,
              excluded.completed_at, excluded.completed_by_name, excluded.completion_note, excluded.technician_name,
-             excluded.part_replaced)
+             excluded.part_replaced, excluded.created_by_phone)
       returning (xmax = 0) as inserted
     )
     select count(*) filter (where inserted) as inserted, count(*) filter (where not inserted) as updated from up`;
-  return { read: rows.length, inserted: Number(res[0].inserted), updated: Number(res[0].updated) };
+  const linked = await local`select randapp.link_issue_senders() as n`;
+  return { read: rows.length, inserted: Number(res[0].inserted), updated: Number(res[0].updated), linked: Number(linked[0].n) };
 }
 
 // Foto: si copiano solo quelle che mancano (prima/dopo), a piccoli gruppi.
