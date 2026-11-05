@@ -1,4 +1,4 @@
-// Sincronizza le segnalazioni dalla vecchia app (progetto Supabase "HotelGio") verso `randapp`.
+// Sincronizza segnalazioni (qui) e interventi, lavori, prenotazioni sale (ops.ts) dalla vecchia app (progetto Supabase "HotelGio") verso `randapp`.
 // SOLO LETTURA sulla vecchia: si collega con un utente che può soltanto fare select (randapp_reader).
 // Si chiama ogni 24 ore (pg_cron, vedi README) con l'intestazione x-sync-secret.
 // Idempotente: ogni segnalazione ha `legacy_id` (id nella vecchia app); rilanciarla aggiorna, non duplica.
@@ -6,6 +6,7 @@
 // Segreti (variabili della funzione o tabella `edge_function_secrets`): legacy_db_password, legacy_db_host, legacy_project_ref, sensor_sync_secret.
 // I numeri WhatsApp si MANTENGONO (created_by_phone); se un profilo ha lo stesso numero compare il suo nome (link_issue_senders).
 import postgres from "npm:postgres@3.4.7";
+import { syncBookings, syncInterventions, syncWorks } from "./ops.ts";
 
 const HOTEL = "hotelgio";
 const local = postgres(Deno.env.get("SUPABASE_DB_URL")!, { prepare: false, max: 2, connect_timeout: 5, idle_timeout: 10 });
@@ -174,7 +175,10 @@ Deno.serve(async (req) => {
     });
     const issues = await syncIssues(legacy);
     const photos = await syncPhotos(legacy);
-    return json({ ok: true, issues, photos });
+    const interventions = await syncInterventions(legacy, local);
+    const works = await syncWorks(legacy, local);
+    const bookings = await syncBookings(legacy, local);
+    return json({ ok: true, issues, photos, interventions, works, bookings });
   } catch (e) {
     return json({ ok: false, error: String((e as Error)?.message ?? e).slice(0, 200) }, 500);
   } finally {
