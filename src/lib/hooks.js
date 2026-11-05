@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { logError } from './errorlog.js'
 
 // Piccolo hook di caricamento: niente librerie extra, si ricarica a mano o quando torni sull'app.
 export function useAsync(fn, deps = []) {
@@ -10,6 +11,7 @@ export function useAsync(fn, deps = []) {
       const data = await fn()
       if (alive.current) setState({ data, error: null, loading: false })
     } catch (error) {
+      logError('schermata', error)
       if (alive.current) setState({ data: null, error: error.message || 'Errore', loading: false })
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

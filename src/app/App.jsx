@@ -7,6 +7,7 @@ import { can, PERM } from '../lib/permissions.js'
 import { randaiEnabled, loadRandAI } from '../randai/index.js'
 import Shell from '../ui/Shell.jsx'
 import Login from '../screens/Login.jsx'
+import { LocalErrors } from '../screens/ErrorLog.jsx'
 import { Spinner } from '../ui/kit.jsx'
 
 // Ogni schermata si scarica solo quando la apri.
@@ -34,6 +35,7 @@ const AlertNew = lazyWithRetry(() => import('../screens/TaskUrgentNew.jsx'))
 const ReminderList = lazyWithRetry(() => import('../screens/TaskReminders.jsx').then((m) => ({ default: m.ReminderList })))
 const ReminderDetail = lazyWithRetry(() => import('../screens/TaskReminders.jsx').then((m) => ({ default: m.ReminderDetail })))
 const ReminderNew = lazyWithRetry(() => import('../screens/TaskReminderNew.jsx'))
+const ErrorLog = lazyWithRetry(() => import('../screens/ErrorLog.jsx'))
 const Profile = lazyWithRetry(() => import('../screens/Profile.jsx'))
 const Operations = lazyWithRetry(() => import('../screens/Operations.jsx'))
 const ItemList = lazyWithRetry(() => import('../screens/Warehouse.jsx').then((m) => ({ default: m.ItemList })))
@@ -64,6 +66,7 @@ function SetupNeeded() {
         <div className="card stack">
           {missingConfig.map((name) => <code key={name}>{name}</code>)}
         </div>
+        <LocalErrors />
       </div>
     </div>
   )
@@ -160,6 +163,7 @@ const MANAGEMENT_PREFIXES = ['/warehouse', '/supplies', '/housekeeping', '/senso
 function Screen({ route, ctx, onLogout, onSwitchHotel }) {
   const canView = can(ctx.permissions, PERM.ISSUES_VIEW)
 
+  if (route.startsWith('/errors')) return <ErrorLog ctx={ctx} />
   if (route.startsWith('/profile')) return <Profile ctx={ctx} onLogout={onLogout} onSwitchHotel={onSwitchHotel} />
   if (route === '/notifications/settings') return <NotificationSettings ctx={ctx} />
   if (route.startsWith('/notifications')) return <Notifications ctx={ctx} />
