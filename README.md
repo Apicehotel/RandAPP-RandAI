@@ -194,7 +194,7 @@ test/                  test automatici (permessi, coda, schema RLS, niente segre
 - Il PIN si prova **una sola volta** (sulla struttura preferita o la prima): la sessione è della persona. Provarlo su ogni struttura consumerebbe i 5 tentativi prima del blocco di 10 minuti.
 - Sotto: "Problemi? Vedi registro errori" e "Prova collegamento" (diagnosi in chiaro). **Non cambiare questo aspetto senza che l'utente lo chieda.**
 
-### Login: tema, ingranaggio, tasti
-- Sotto la scheda c'è **Aspetto** (tema Sistema/Chiaro/Scuro e dimensione), uguale al menu laterale.
-- In alto a destra c'è l'**ingranaggio**: pannello "Impostazioni" con "Accesso admin" (dopo il PIN, se hai il permesso admin, apre il Profilo; altrimenti Home).
+### Login: interruttore tema, Impostazioni, tasti
+- In alto a destra c'è l'**interruttore sole/luna** (chiaro/scuro, come la vecchia app); "Sistema" resta nel menu laterale.
+- Sotto "oppure" c'è la riga **Impostazioni** ("Configura l'app e le preferenze"): apre l'accesso protetto amministratore (stessa schermata, Utente + PIN). Se l'utente è admin va al Profilo (impostazioni di amministrazione), altrimenti resta fuori con errore.
 - "Registro errori" e "Prova collegamento" stanno sulla stessa riga.
