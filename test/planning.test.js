@@ -186,3 +186,16 @@ test('calendario mensile: settimane lun-dom che coprono il mese', () => {
   assert.equal(addMonthsIso('2026-12-20', 1), '2027-01-01')
   assert.equal(monthLabel('2026-11-05'), 'Novembre 2026')
 })
+
+test('prenotazione vecchia "Auditorium" occupa Auditorium Intero e le due Tower', () => {
+  const rooms = [
+    { id: 'a', name: 'Auditorium Intero', parts: ['t1', 't2'] },
+    { id: 'b', name: 'Auditorium Tower 1', parts: ['t1'] },
+    { id: 'c', name: 'Cantina', parts: ['cantina'] },
+  ]
+  const bookings = [{ id: 'x', room: 'Auditorium', status: 'attiva', shift: 'giornata', date_from: '2026-11-10', date_to: '2026-11-10' }]
+  const period = { date_from: '2026-11-10', date_to: '2026-11-10', shift: 'mattina' }
+  assert.equal(roomAvailability(rooms[0], period, bookings, rooms), 'busy')
+  assert.equal(roomAvailability(rooms[1], period, bookings, rooms), 'busy')
+  assert.equal(roomAvailability(rooms[2], period, bookings, rooms), 'free')
+})

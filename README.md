@@ -179,3 +179,8 @@ test/                  test automatici (permessi, coda, schema RLS, niente segre
 
 - **Planning Lavori** (`#/planning/work`): due sezioni. *Lavori* = i lavori da fare per giorno (settimana); *Sale da preparare* = la lista operativa delle prenotazioni sale nel loro giorno di preparazione, con Audio/Video e Fatto (visibile con il permesso `planning_sale.view`).
 - **Planning Sale** (`#/planning/sale`): calendario mensile delle sale. Conta la data dell'**evento**; il numero sul giorno è quante sale sono occupate, tocca il giorno per il dettaglio; filtro per sala. Nuova prenotazione con "+ Nuovo".
+
+## Sale: configurazione copiata dalla vecchia app
+
+- `supabase/seed/05_sale_config.sql` (ripetibile) copia sale, allestimenti e clienti ricorrenti da `public.sale_*` (vecchia app multi-hotel) a `randapp.sale_rooms/sale_layouts/sale_clients`. Le sale hanno `family` (Trumpet, Sax, Auditorium…) e `parts`: una combinazione (es. *Trumpet 1+2*) occupa anche le sale che la compongono, quindi non è prenotabile se una parte è già presa.
+- Nel modulo di prenotazione: ricerca sala, stato Libera/Parziale/Occupata nel periodo, la sala si azzera se date/turno la rendono non libera, allestimento obbligatorio, richiamo cliente.
