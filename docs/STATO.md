@@ -6,6 +6,7 @@ File di passaggio di consegne tra Claude, Cursor e Codex. Aggiornalo a ogni sess
 _Nessun lavoro in corso._ (Scrivi qui: strumento, branch, cosa stai facendo.)
 
 ## Fatto
+- 2026-11-05 — Claude (branch `claude/chips-a-capo`): i filtri (chips) vanno a capo invece di scorrere di lato: con i numeri accanto ("Completata 599", "Tutte 612") uscivano dallo schermo. Solo CSS; Sensori e stagione restano su una riga.
 - 2026-11-05 — Claude (branch `claude/numeri-sezioni`): i filtri di Segnalazioni (Da fare/Tecnico/Attesa pezzo/Completata/Tutte) e Interventi (Aperti/Fatti/Tutti) mostrano il **numero di elementi** accanto al nome, per confrontare i totali con la vecchia app. Solo grafica.
 - 2026-11-05 — Netlify: aggiunto `netlify.toml` (build `npm ci && npm run build`, cartella `dist`, variabili pubbliche VITE_*). Sito Netlify creato: `randapp-randai`. Il file HTML aperto nell anteprima del telefono non può collegarsi al server: l app va aperta da un indirizzo vero in Safari.
 - 2026-11-05 — Login: verificato lato server (funzione di accesso risponde, permessi di tutti gli utenti ok, nessuna richiesta dal telefono nei log). Aggiunto "Prova collegamento" nella schermata di accesso per vedere la causa sul dispositivo.

@@ -180,7 +180,7 @@ button { cursor: pointer; }
 .badge.alta { background: color-mix(in srgb, var(--warn) 20%, transparent); color: var(--warn); }
 .badge.fatto, .badge.completata, .badge.risolto { background: color-mix(in srgb, var(--ok) 18%, transparent); color: var(--ok); }
 
-.chips { display: flex; gap: var(--gap-tight); overflow-x: auto; padding-bottom: 4px; }
+.chips { display: flex; flex-wrap: wrap; gap: var(--gap-tight); padding-bottom: 4px; }
 .chip {
   flex: none; min-height: var(--chip-h); padding: 0 var(--gap); border-radius: 999px; font-size: var(--fs-md);
   border: 1px solid var(--border); background: var(--surface); color: var(--text-2);
