@@ -29,7 +29,7 @@ export function IssueList({ ctx }) {
       <div className="chips" role="group" aria-label="Filtro stato">
         {[...STATUSES, { id: 'tutte', label: 'Tutte' }].map((s) => (
           <button key={s.id} className="chip" aria-pressed={status === s.id} onClick={() => setStatus(s.id)}>
-            {s.label}
+            {s.label}{data ? ` ${filterByStatus(data, s.id).length}` : ''}
           </button>
         ))}
       </div>
