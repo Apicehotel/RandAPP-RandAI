@@ -122,6 +122,7 @@ La nuova app **vive nello schema `randapp`** del progetto Supabase "Apice MultiH
 ### Stato dell'aggancio (4 novembre 2026)
 Fatto sul progetto condiviso `ooqlfldcrnkudhgjnied`: migrazioni `0000`–`0014` applicate; schema `randapp` esposto all'API (`pgrst.db_schemas = public, graphql_public, randapp`); funzioni `randapp-pin-auth`, `ewelink-sync`, `notify-dispatch` pubblicate (senza JWT: si proteggono da sole); utenti dei 5 ruoli mappati copiati (21 profili, 30 appartenenze, PIN invariati); seed di 478 luoghi e 45 sensori; segreti (eWeLink, sync, VAPID) letti dalla tabella `edge_function_secrets` della vecchia app, mai scritti qui.
 Pianificazioni (pg_cron): `randapp-notify-run` ogni minuto, `randapp-notify-dispatch` ogni minuto, `randapp-ewelink-sync` ogni 10 minuti. Quelle della vecchia app non sono toccate.
+Script per rifare tutto (in ordine, dopo le migrazioni): `supabase/seed/00_users_from_legacy.sql` (copia utenti dei 5 ruoli mappati), `01_locations.sql` (478 luoghi), `02_sensors.sql` (45 sensori), `03_cron.sql` (le 3 pianificazioni). Nessun PIN, hash o chiave dentro.
 Nota sensori: eWeLink restituisce 30 dei 45 dispositivi; i 15 mancanti sono fermi anche nella vecchia app e la nuova li segnala come "Sensori che non arrivano più".
 
 ## RandAI (in pausa)

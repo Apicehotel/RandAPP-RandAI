@@ -1,0 +1,55 @@
+-- Sensori e relay delle strutture (45), solo anagrafica: le misure le riempie la funzione ewelink-sync.
+-- Da eseguire DOPO le migrazioni (0009, 0010) e DOPO aver copiato almeno un admin (00_users_from_legacy.sql): serve come "creato da".
+-- Ripetibile: i sensori già presenti non vengono toccati.
+insert into randapp.sensors (hotel_id, device_key, name, kind, role, alert_min, active, created_by)
+select v.hotel_id, v.device_key, v.name, v.kind, v.role, v.alert_min, v.active,
+       (select m.auth_user_id from randapp.hotel_memberships m where m.role='admin' order by m.auth_user_id limit 1)
+from (values
+('chocohotel','10025342ee','Hall condizionatore','temperatura','ambiente',null::numeric,true),
+('chocohotel','1001e22b6e','P1 Sala colazioni','temperatura','ambiente',null,true),
+('chocohotel','1001e22b79','P2 choco condizionatore','temperatura','ambiente',null,true),
+('chocohotel','1001e22be8','P3 choco condizionatore','temperatura','ambiente',null,true),
+('chocohotel','1001e22c2d','P4 choco condizionatore','temperatura','ambiente',null,true),
+('chocohotel','100277fa3f','Temp boiler sanitario','temperatura','ambiente',null,true),
+('chocohotel','10023c84cb','Temp. Cella frigo','temperatura','ambiente',null,true),
+('hotelgio','10017d46b0','A1 da 101 a 108','relay','ambiente',null,true),
+('hotelgio','1000ab2989','A1 da 201 a 204+225+226+227','relay','ambiente',null,true),
+('hotelgio','1000b56c92','A1 da 301 a 305+324+325+326','relay','ambiente',null,true),
+('hotelgio','10023c3549','A1 da 401 a 405+426+427+428','relay','ambiente',null,true),
+('hotelgio','1000ab5695','A1 Termobagno centro','relay','ambiente',null,true),
+('hotelgio','10013fe358','A2 da 109 a 125','relay','ambiente',null,true),
+('hotelgio','1000abbce0','A2 da 205 a 224','relay','ambiente',null,true),
+('hotelgio','1000abba90','A2 da 306 a 323','relay','ambiente',null,true),
+('hotelgio','1000abe946','A2 da 406 a 425','relay','ambiente',null,true),
+('hotelgio','10017d5ea9','A2 Termobagno lato Gaggi','relay','ambiente',null,true),
+('hotelgio','1000aaaf46','A3 da 126 a 131','relay','ambiente',null,true),
+('hotelgio','1000aaefaa','A3 da 228 a 233','relay','ambiente',null,true),
+('hotelgio','1000abf392','A3 da 327 a 332','relay','ambiente',null,true),
+('hotelgio','1000ab90d4','A3 da 429 a 434','relay','ambiente',null,true),
+('hotelgio','1000ac00f9','A3 Termobagno lato jazz','relay','ambiente',null,true),
+('hotelgio','100296f9c1','Acqua calda sanitaria jazz','temperatura','ambiente',null,true),
+('hotelgio','10017d5f21','Allarme calda sanitaria o cella frigo (uff alb)','relay','ambiente',null,true),
+('hotelgio','100296feb2','Cella Frigo jazz-3','temperatura','ambiente',null,true),
+('hotelgio','1000c95e91','HALL Wine','relay','ambiente',null,true),
+('hotelgio','1000aac2b7','RISTORANTE 1 Montemorcino 800','relay','ambiente',null,true),
+('hotelgio','100140b44b','RISTORANTE 1 UTA Montemorcino','relay','ambiente',null,true),
+('hotelgio','1000ab7d01','RISTORANTE 2 Fontivegge Vinarelli','relay','ambiente',null,true),
+('hotelgio','1000abf21f','RISTORANTE 3 Colazioni Etichette','relay','ambiente',null,true),
+('hotelgio','1000b55ee6','SALA CANTINA','relay','ambiente',null,true),
+('hotelgio','1001409847','SALA CRAVATTE','relay','ambiente',null,true),
+('hotelgio','1000c9f251','SALA GUSTO','relay','ambiente',null,true),
+('hotelgio','10023c84e9','Temp acqua sanitaria jazz','temperatura','ambiente',null,true),
+('hotelgio','1002534102','Temp. C/F Jazz P1','temperatura','motore',null,true),
+('hotelgio','1001e22b8d','Temp. C/F W Alb. 1 tetto','temperatura','motore',null,true),
+('hotelgio','10025339c4','Temp. C/F W Alb. 2 tetto','temperatura','motore',null,true),
+('hotelgio','1001e22ba7','Temp. C/F W Alb.3 tetto','temperatura','motore',null,true),
+('hotelgio','10025340a7','Temp. C/F Jazz P2','temperatura','motore',null,true),
+('hotelgio','10023c8674','Temp. C/F Jazz P3','temperatura','motore',null,true),
+('hotelgio','1002534089','Temp. C/F Jazz P4','temperatura','motore',null,true),
+('hotelgio','10023c8536','Temp.C/F risto Wine','temperatura','ambiente',null,true),
+('hotelgio','1002533dfc','Termostato Colazioni Jazz','temperatura','ambiente',null,true),
+('hotelgio','100144a449','Termostato Etichette wine','temperatura','ambiente',null,true),
+('hotelgio','10023c8562','Termostato Risto Monte Morcino','temperatura','ambiente',null,true)
+) as v(hotel_id, device_key, name, kind, role, alert_min, active)
+where exists (select 1 from auth.users)
+on conflict (hotel_id, device_key) do nothing;
