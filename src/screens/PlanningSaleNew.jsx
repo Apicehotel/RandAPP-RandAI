@@ -24,6 +24,7 @@ export default function PlanningSaleNew({ ctx, editId = null }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [newLayout, setNewLayout] = useState('')
+  const [roomQuery, setRoomQuery] = useState('')
   const { data: existing } = useAsync(() => listBookings(ctx.hotelId, todayIso()), [ctx.hotelId])
   const { data: config, reload: reloadConfig } = useAsync(() => getSaleConfig(ctx.hotelId), [ctx.hotelId])
 
@@ -62,6 +63,17 @@ export default function PlanningSaleNew({ ctx, editId = null }) {
   const prep = prepDefaults(form.date_from, addDaysIso)
   const canManage = can(ctx.permissions, PERM.PLANNING_SALE_MANAGE)
 
+  // Come nella vecchia app: se cambi date o turno e la sala scelta non è più libera, la scelta si azzera.
+  const roomPeriodKey = `${form.date_from}|${form.date_to}|${form.shift}`
+  useEffect(() => {
+    if (!form.room || !allRooms.length) return
+    const r = allRooms.find((x) => x.name === form.room)
+    if (r && roomAvailability(r, { date_from: form.date_from, date_to: form.date_to, shift: form.shift }, existing || [], allRooms, editId) !== 'free') {
+      setForm((f) => ({ ...f, room: '' }))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roomPeriodKey, existing, config])
+
   // Stato di ogni sala nel periodo scelto: libera o già occupata (e da chi).
   const period = { date_from: form.date_from, date_to: form.date_to, shift: form.shift }
   const clash = form.room.trim() && form.date_to >= form.date_from
@@ -85,6 +97,7 @@ export default function PlanningSaleNew({ ctx, editId = null }) {
     if (!form.client.trim()) return setError("Scrivi il cliente o l'evento")
     if (!form.room.trim()) return setError('Scegli la sala')
     if (!form.date_from || form.date_to < form.date_from) return setError('Controlla le date')
+    if (layouts.length > 0 && !form.layout) return setError("Scegli l'allestimento")
     if (!prepOk(form.prep_date, form.date_from)) return setError("La preparazione deve essere il giorno dell'evento o prima")
     if (clash) return setError('La sala è già occupata in quel turno')
     setBusy(true)
@@ -147,7 +160,9 @@ export default function PlanningSaleNew({ ctx, editId = null }) {
         {hasConfig ? (
           <div className="stack">
             <span className="field-label">Sala · {configuredRooms.filter((r) => roomAvailability(r, period, existing || [], allRooms, editId) === 'free').length} libere nel periodo</span>
-            {roomsByFamily(configuredRooms).map((g) => (
+            <input className="input" type="search" value={roomQuery} onChange={(e) => setRoomQuery(e.target.value)} placeholder="Cerca sala…" aria-label="Cerca sala" />
+            {form.room && <small className="ok-text">Scelta: <b>{form.room}</b> · disponibile per l'evento</small>}
+            {roomsByFamily(configuredRooms.filter((r) => !roomQuery.trim() || r.name.toLowerCase().includes(roomQuery.trim().toLowerCase()))).map((g) => (
               <div key={g.name} className="stack">
                 <small className="muted">{g.name}</small>
                 <div className="chips wrap" role="group" aria-label={`Sale ${g.name}`}>
@@ -172,7 +187,7 @@ export default function PlanningSaleNew({ ctx, editId = null }) {
         )}
 
         <div className="stack">
-          <span className="field-label">Allestimento</span>
+          <span className="field-label">Allestimento{layouts.length > 0 ? ' *' : ''}</span>
           {layouts.length > 0 && (
             <div className="chips wrap" role="group" aria-label="Allestimento">
               {layouts.map((l) => (

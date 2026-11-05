@@ -145,13 +145,15 @@ const sharesParts = (a, b) => roomParts(a).some((p) => roomParts(b).includes(p))
 const SLOTS = { mattina: ['m'], pomeriggio: ['p'], sera: ['s'], giornata: ['m', 'p', 's'] }
 
 // Libera · Parziale (solo "giornata", se è occupata una parte) · Occupata.
+// Nomi usati nelle vecchie prenotazioni che non coincidono con la sala configurata ("Auditorium" = tutto l'auditorium).
+const ROOM_ALIAS = { auditorium: 'auditorium intero' }
 export function roomAvailability(room, period, bookings, rooms, excludeId = null) {
   const byName = new Map((rooms || []).map((r) => [norm(r.name), r]))
   const taken = new Set()
   for (const b of bookings || []) {
     if (b.status === 'annullata' || b.id === excludeId) continue
     if (!datesOverlap(period.date_from, period.date_to, b.date_from, b.date_to)) continue
-    const booked = byName.get(norm(b.room))
+    const booked = byName.get(ROOM_ALIAS[norm(b.room)] || norm(b.room))
     if (booked ? !sharesParts(booked, room) : norm(b.room) !== norm(room.name)) continue
     for (const s of SLOTS[b.shift] || []) taken.add(s)
   }
