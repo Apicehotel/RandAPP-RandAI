@@ -1,5 +1,4 @@
-# Deploy su Netlify. Le variabili VITE_* sono PUBBLICHE per natura (finiscono nel browser): indirizzo del progetto e chiave anon.
-# Nessun segreto qui: chiavi di servizio, password e token restano solo nei segreti delle funzioni.
+# Deploy su Netlify. Indirizzo e chiave anon sono PUBBLICI per natura (finiscono nel browser di chiunque apra l app): la sicurezza sta nelle policy RLS. Segreti veri (service_role, password, token) mai qui.
 [build]
   command = "npm ci && npm run build"
   publish = "dist"

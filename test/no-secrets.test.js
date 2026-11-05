@@ -21,6 +21,13 @@ test('nessun segreto nei file del progetto', () => {
   for (const file of files) {
     const text = readFileSync(root + file, 'utf8')
     for (const { name, re } of PATTERNS) {
+      // Unica eccezione: la chiave Supabase con ruolo "anon" in netlify.toml (pubblica per natura, va nel browser).
+      if (name === 'JWT' && file === 'netlify.toml') {
+        const all = text.match(new RegExp(re.source, 'g')) || []
+        const bad = all.filter((t) => JSON.parse(Buffer.from(t.split('.')[1], 'base64url').toString()).role !== 'anon')
+        assert.equal(bad.length, 0, `JWT non anon trovato in ${file}`)
+        continue
+      }
       assert.doesNotMatch(text, re, `${name} trovato in ${file}`)
     }
   }
