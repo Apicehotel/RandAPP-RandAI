@@ -55,9 +55,10 @@ export default function Profile({ ctx, onLogout, onSwitchHotel }) {
 
       {can(ctx.permissions, PERM.ADMIN) && (
         <div className="card stack">
-          <h2>Numeri WhatsApp</h2>
-          <p className="muted">Chi ha il numero, chi manca, numeri non assegnati.</p>
-          <a className="btn" href="#/phones">Apri numeri WhatsApp</a>
+          <h2>Impostazioni admin</h2>
+          <p className="muted">Utenti e PIN, ruoli, notifiche WhatsApp, consumi, diagnostica.</p>
+          <a className="btn" href="#/settings">Apri impostazioni</a>
+          <a href="#/phones">Numeri WhatsApp non assegnati</a>
         </div>
       )}
 
