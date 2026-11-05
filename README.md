@@ -165,6 +165,10 @@ test/                  test automatici (permessi, coda, schema RLS, niente segre
 ## Deploy su Netlify
 
 - Sito: `randapp-randai` (https://randapp-randai.netlify.app). Configurazione in `netlify.toml` (build `npm ci && npm run build`, publish `dist`).
-- Le variabili `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_FEATURE_RANDAI` sono pubbliche (finiscono nel browser) e stanno in `netlify.toml`. Nessun segreto nel repo.
+- `VITE_SUPABASE_URL` e `VITE_FEATURE_RANDAI` stanno in `netlify.toml`. **`VITE_SUPABASE_ANON_KEY` si imposta in Netlify** (Project configuration → Environment variables, ambito Builds; il valore è in Supabase → Settings → API → anon) perché il repo non contiene chiavi. Senza, l'app mostra "Configurazione mancante".
 - Collegamento: Netlify → Add new project → Import from GitHub → `Apicehotel/RandAPP-RandAI` → branch `main`. Ogni merge su `main` ripubblica da solo.
 - Aprire l'app sempre dall'indirizzo in Safari/Chrome, non da anteprime di file (bloccano il collegamento al server).
+
+## Numeri WhatsApp (admin)
+
+- **Profilo → Numeri WhatsApp** (`#/phones`, solo permesso `admin.access`): elenco persone con o senza numero (prima quelle senza), campo per assegnare/togliere il numero, e i numeri che hanno scritto su WhatsApp senza essere assegnati a nessuno (con numero di segnalazioni e ultima data). Funzioni `admin_phone_overview` e `admin_set_phone` (migrazione `0023`): il numero non è mai leggibile con una select dal browser. Quando un numero viene assegnato, le segnalazioni WhatsApp passano dal numero al nome.

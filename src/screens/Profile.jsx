@@ -3,7 +3,7 @@ import { getMyPhone, setMyPhone } from '../data/profile.js'
 import { useAsync } from '../lib/hooks.js'
 import { logout } from '../lib/auth.js'
 import { hotelById } from '../lib/hotels.js'
-import { roleLabel } from '../lib/permissions.js'
+import { roleLabel, can, PERM } from '../lib/permissions.js'
 import { Button, ErrorText, Spinner } from '../ui/kit.jsx'
 
 function MyPhone() {
@@ -52,6 +52,14 @@ export default function Profile({ ctx, onLogout, onSwitchHotel }) {
       </div>
 
       <MyPhone />
+
+      {can(ctx.permissions, PERM.ADMIN) && (
+        <div className="card stack">
+          <h2>Numeri WhatsApp</h2>
+          <p className="muted">Chi ha il numero, chi manca, numeri non assegnati.</p>
+          <a className="btn" href="#/phones">Apri numeri WhatsApp</a>
+        </div>
+      )}
 
       <div className="card stack">
         <h2>Registro errori</h2>

@@ -15,3 +15,19 @@ export async function setMyPhone(phone) {
   }
   return data || ''
 }
+
+// Solo admin: chi ha il numero, quali numeri WhatsApp non sono ancora collegati a nessuno.
+export async function adminPhoneOverview(hotelId) {
+  const { data, error } = await supabase.rpc('admin_phone_overview', { p_hotel: hotelId })
+  if (error) throw new Error('Impossibile leggere i numeri')
+  return data || []
+}
+
+export async function adminSetPhone(hotelId, userId, phone) {
+  const { data, error } = await supabase.rpc('admin_set_phone', { p_hotel: hotelId, p_user: userId, p_phone: phone })
+  if (error) {
+    if (/già usato|Numero non valido|non trovata/.test(error.message || '')) throw new Error(error.message)
+    throw new Error('Impossibile salvare il numero')
+  }
+  return data || ''
+}
