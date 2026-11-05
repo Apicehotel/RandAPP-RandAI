@@ -196,5 +196,15 @@ test/                  test automatici (permessi, coda, schema RLS, niente segre
 
 ### Login: interruttore tema, Impostazioni, tasti
 - In alto a destra c'è l'**interruttore sole/luna** (chiaro/scuro, come la vecchia app); "Sistema" resta nel menu laterale.
-- Sotto "oppure" c'è la riga **Impostazioni** ("Configura l'app e le preferenze"): apre l'accesso protetto amministratore (stessa schermata, Utente + PIN). Se l'utente è admin va al Profilo (impostazioni di amministrazione), altrimenti resta fuori con errore.
+- Sotto "oppure" c'è la riga **Impostazioni** ("Configura l'app e le preferenze"): apre l'accesso protetto amministratore (stessa schermata, Utente + PIN). Se l utente è admin va alle **Impostazioni admin** (`#/settings`), altrimenti resta fuori con errore.
 - "Registro errori" e "Prova collegamento" stanno sulla stessa riga.
+
+## Impostazioni admin (`#/settings`, permesso `admin.access`)
+Come la vecchia app, adattate a PIN per persona e WhatsApp. Si apre da Profilo → Impostazioni admin o dal login (riga "Impostazioni").
+- **Utenti**: elenco e ricerca; crea utente (nome, ruolo, PIN 4 cifre, numero WhatsApp facoltativo); modifica nome/ruolo/attivo; numero WhatsApp (assorbe "Numeri WhatsApp", che resta per i numeri non assegnati); cambia PIN; sblocca dopo troppi tentativi. Non puoi toglierti da solo il ruolo admin né disattivarti.
+- **Ruoli**: matrice ruolo → permessi con interruttori (valgono per tutte le strutture; `admin` tiene sempre `admin.access`).
+- **Notifiche**: canali WhatsApp / ntfy / push attivabili per struttura, invii ultimi 7 giorni, ultimi falliti, destinazioni registrate, quante persone hanno il numero. (Per ora tutti i canali sono spenti: si accendono qui quando i segreti del server sono configurati.)
+- **Consumi**: conteggi della struttura, foto e peso, dimensione database, connessioni.
+- **Diagnostica**: errori ultimi 7 giorni (registro con la causa), invii falliti, numeri non assegnati.
+- Server: migrazione `0024_admin_settings.sql` (RPC `admin_*`, tutte con controllo permesso, mai PIN o hash) e funzione edge `randapp-admin` (crea utente e cambia PIN con bcrypt, verifica sessione e `admin.access`; il PIN non è mai nei log né restituito).
+- Non portate dalla vecchia app: scheda Sensori (c'è già la schermata Sensori), link per tecnici esterni (Fase 4).

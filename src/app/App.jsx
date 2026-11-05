@@ -12,6 +12,7 @@ import { Spinner } from '../ui/kit.jsx'
 
 // Ogni schermata si scarica solo quando la apri.
 const Phones = lazyWithRetry(() => import('../screens/Phones.jsx'))
+const Settings = lazyWithRetry(() => import('../screens/Settings.jsx'))
 const Home = lazyWithRetry(() => import('../screens/Home.jsx'))
 const IssueList = lazyWithRetry(() => import('../screens/Issues.jsx').then((m) => ({ default: m.IssueList })))
 const IssueDetail = lazyWithRetry(() => import('../screens/Issues.jsx').then((m) => ({ default: m.IssueDetail })))
@@ -165,6 +166,7 @@ function Screen({ route, ctx, onLogout, onSwitchHotel }) {
   const canView = can(ctx.permissions, PERM.ISSUES_VIEW)
 
   if (route.startsWith('/errors')) return <ErrorLog ctx={ctx} />
+  if (route.startsWith('/settings')) return can(ctx.permissions, PERM.ADMIN) ? <Settings ctx={ctx} /> : <NoAccess text="Solo gli admin vedono le impostazioni." />
   if (route.startsWith('/phones')) return can(ctx.permissions, PERM.ADMIN) ? <Phones ctx={ctx} /> : <NoAccess text="Solo gli admin vedono i numeri." />
   if (route.startsWith('/profile')) return <Profile ctx={ctx} onLogout={onLogout} onSwitchHotel={onSwitchHotel} />
   if (route === '/notifications/settings') return <NotificationSettings ctx={ctx} />
@@ -246,7 +248,7 @@ export default function App() {
           writeHotel(c.hotelId); setCtx(c)
           let admin = false
           try { admin = sessionStorage.getItem('randapp.adminIntent') === '1'; sessionStorage.removeItem('randapp.adminIntent') } catch { /* nessun problema */ }
-          window.location.hash = admin && can(c.permissions, PERM.ADMIN) ? '/profile' : '/home'
+          window.location.hash = admin && can(c.permissions, PERM.ADMIN) ? '/settings' : '/home'
         }}
       />
     )
