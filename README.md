@@ -187,3 +187,9 @@ test/                  test automatici (permessi, coda, schema RLS, niente segre
 - Nel modulo di prenotazione: ricerca sala, stato Libera/Parziale/Occupata nel periodo, la sala si azzera se date/turno la rendono non libera, allestimento obbligatorio, richiamo cliente.
 
 - **Prenotazione su più giorni**: scegli "Evento dal/al" e per ogni giorno il turno (Mattina, Pomeriggio, Tutto il giorno; "Tutti: …" li imposta insieme). Si salva **una riga per giorno** (`createBookingDays`, tutto o niente, max 31 giorni). La sala risulta Libera solo se lo è in ogni giorno con il turno di quel giorno. Preparazione: la data scelta vale per il primo giorno, gli altri giorni "stesso giorno".
+
+## Login (schermata fissa, come la vecchia app)
+
+- Una sola schermata: **Utente** (2+ lettere, suggerimenti) e **PIN** (4 cifre, entra da solo). La struttura **non** si sceglie prima: la ricerca nomi interroga tutte le strutture e unisce le persone uguali; se la persona ha più strutture, dopo il PIN sceglie con quale lavorare (poi si cambia dal menu, senza rifare il PIN).
+- Il PIN si prova **una sola volta** (sulla struttura preferita o la prima): la sessione è della persona. Provarlo su ogni struttura consumerebbe i 5 tentativi prima del blocco di 10 minuti.
+- Sotto: "Problemi? Vedi registro errori" e "Prova collegamento" (diagnosi in chiaro). **Non cambiare questo aspetto senza che l'utente lo chieda.**

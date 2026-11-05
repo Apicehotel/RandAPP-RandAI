@@ -450,3 +450,13 @@ a.btn, .hub-link, .card.issue, a.card, .drawer a, nav a { color: inherit; }
 .dayshift .chips { flex-wrap: nowrap; }
 .dayshift .chip { flex: 1 1 0; min-width: 0; padding-inline: 6px; font-size: var(--fs-xs); text-align: center; }
 @media (max-width: 420px) { .dayshift { grid-template-columns: 1fr; } }
+
+/* Login come nella vecchia app: schermata unica Utente + PIN */
+.login { gap: calc(var(--gap) * 1.5); }
+.login-brand { display: grid; justify-items: center; gap: 4px; text-align: center; }
+.login-brand h1 { margin: 6px 0 0; font-size: clamp(2rem, 9vw, 2.6rem); letter-spacing: -0.04em; line-height: 1; }
+.login-card { padding: calc(var(--gap) * 1.5); border-radius: calc(var(--radius) * 1.5); gap: var(--gap); }
+.login-card header h2 { margin: 0; font-size: 1.5rem; }
+.login-card .pin-input { text-align: center; font-size: 1.4rem; letter-spacing: 0.5em; }
+.login-divider { display: flex; align-items: center; gap: var(--gap); color: var(--text-2); font-size: var(--fs-sm); }
+.login-divider::before, .login-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
