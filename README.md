@@ -161,3 +161,10 @@ supabase/functions/    randapp-pin-auth (login con PIN lato server), ewelink-syn
 scripts/               create-user, check-bundle
 test/                  test automatici (permessi, coda, schema RLS, niente segreti)
 ```
+
+## Deploy su Netlify
+
+- Sito: `randapp-randai` (https://randapp-randai.netlify.app). Configurazione in `netlify.toml` (build `npm ci && npm run build`, publish `dist`).
+- Le variabili `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_FEATURE_RANDAI` sono pubbliche (finiscono nel browser) e stanno in `netlify.toml`. Nessun segreto nel repo.
+- Collegamento: Netlify → Add new project → Import from GitHub → `Apicehotel/RandAPP-RandAI` → branch `main`. Ogni merge su `main` ripubblica da solo.
+- Aprire l'app sempre dall'indirizzo in Safari/Chrome, non da anteprime di file (bloccano il collegamento al server).
