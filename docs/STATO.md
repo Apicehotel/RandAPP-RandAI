@@ -115,6 +115,8 @@ _Nessun lavoro in corso._ (Scrivi qui: strumento, branch, cosa stai facendo.)
 
 - 2026-11-04 — Claude (branch `claude/aggancio-supabase`): **aggancio al Supabase esistente** (schema separato `randapp`). Applicate `0000`–`0014` (la `0014` fissa il `search_path` di due funzioni trigger), schema esposto a PostgREST, funzioni `randapp-pin-auth`, `ewelink-sync`, `notify-dispatch` pubblicate e provate (ricerca nomi OK; eWeLink in prova a vuoto e poi reale: 30 dispositivi trovati e abbinati), utenti dei 5 ruoli mappati copiati dentro il database (PIN invariati), seed luoghi (478) e sensori (45), pg_cron attivo. `ewelink-sync` ora aggiorna i sensori di **tutte** le strutture per codice dispositivo; `notify-dispatch` legge le chiavi VAPID come `vapid_public`/`vapid_private` (nomi della tabella condivisa). `public` non è stato toccato. **Da fare: prova di login su telefono vero.**
 
+- 2026-11-05 — Claude (branch `claude/seed-e-pianificazioni`): salvati in `supabase/seed/` gli script già eseguiti a mano sul database (copia utenti, luoghi, sensori, pg_cron), così un altro strumento può rifare l'aggancio. Nessuna modifica al database. **Vercel**: il progetto non è ancora creato (la creazione è stata bloccata dal sistema di permessi); variabili da impostare: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_VAPID_PUBLIC_KEY`, `VITE_FEATURE_RANDAI=false`.
+
 ## Da fare (in ordine)
 1. ~~Agganciare il Supabase esistente~~ (fatto il 2026-11-04, vedi sopra).
 2. **Provare il login e le segnalazioni su un telefono vero** (vedi note sotto).
