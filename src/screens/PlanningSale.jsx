@@ -5,7 +5,7 @@ import { useAsync, go } from '../lib/hooks.js'
 import { can, PERM } from '../lib/permissions.js'
 import {
   CHECK_STATES, addDaysIso, bookingStatusLabel, bookingsToPrepare, checkLabel, checksReady, dayLabel, prepDay, prepStats,
-  shiftLabel, shortDate, todayIso, weekDaysIso, weekStartIso, eventOnDay, roomNames, monthGrid, monthLabel, monthStartIso, addMonthsIso,
+  shiftLabel, shortDate, todayIso, weekDaysIso, weekStartIso, eventOnDay, monthGrid, monthLabel, monthStartIso, addMonthsIso,
 } from '../lib/planning.js'
 import { Badge, Button, ErrorText, Spinner } from '../ui/kit.jsx'
 import { Stats } from './PlanningWork.jsx'
@@ -142,14 +142,11 @@ export function SaleList({ ctx }) {
   const today = todayIso()
   const [month, setMonth] = useState(() => monthStartIso(today))
   const [day, setDay] = useState(today)
-  const [room, setRoom] = useState('')
   const grid = monthGrid(month)
   const from = grid[0][0]
   const { data, error, loading, reload } = useAsync(() => listBookings(ctx.hotelId, from), [ctx.hotelId, from])
   const live = (data || []).filter((b) => b.status !== 'annullata')
-  const rooms = roomNames(live)
-  const shown = room ? live.filter((b) => b.room === room) : live
-  const on = (d) => shown.filter((b) => eventOnDay(b, d)).sort((a, b) => a.room.localeCompare(b.room))
+  const on = (d) => live.filter((b) => eventOnDay(b, d)).sort((a, b) => a.room.localeCompare(b.room))
   const dayRows = on(day)
   const move = (n) => { const m = addMonthsIso(month, n); setMonth(m); setDay(m.slice(0, 7) === today.slice(0, 7) ? today : m) }
 
@@ -163,15 +160,6 @@ export function SaleList({ ctx }) {
         )}
       </div>
       <p className="muted">Calendario delle sale: tocca un giorno per vedere cosa c'è. La preparazione è in Planning Lavori → Sale da preparare.</p>
-
-      {rooms.length > 1 && (
-        <div className="chips" role="group" aria-label="Filtro sala">
-          <button type="button" className="chip" aria-pressed={!room} onClick={() => setRoom('')}>Tutte</button>
-          {rooms.map((r) => (
-            <button key={r} type="button" className="chip" aria-pressed={room === r} onClick={() => setRoom(r)}>{r}</button>
-          ))}
-        </div>
-      )}
 
       <div className="row weeknav">
         <button type="button" className="chip" onClick={() => move(-1)} aria-label="Mese precedente">←</button>

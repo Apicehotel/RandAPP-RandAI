@@ -178,7 +178,7 @@ test/                  test automatici (permessi, coda, schema RLS, niente segre
 ## Planning (come è organizzato)
 
 - **Planning Lavori** (`#/planning/work`): due sezioni. *Lavori* = i lavori da fare per giorno (settimana); *Sale da preparare* = la lista operativa delle prenotazioni sale nel loro giorno di preparazione, con Audio/Video e Fatto (visibile con il permesso `planning_sale.view`).
-- **Planning Sale** (`#/planning/sale`): calendario mensile delle sale. Conta la data dell'**evento**; il numero sul giorno è quante sale sono occupate, tocca il giorno per il dettaglio; filtro per sala. Nuova prenotazione con "+ Nuovo".
+- **Planning Sale** (`#/planning/sale`): calendario mensile delle sale. Conta la data dell'**evento**; il numero sul giorno è quante sale sono occupate, tocca il giorno per il dettaglio. Nuova prenotazione con "+ Nuovo".
 
 ## Sale: configurazione copiata dalla vecchia app
 
