@@ -164,9 +164,10 @@ scripts/               create-user, check-bundle
 test/                  test automatici (permessi, coda, schema RLS, niente segreti)
 ```
 
-## Deploy su Netlify
+## Hosting: Netlify provvisorio, DigitalOcean definitivo
 
-- Sito: `randapp-randai` (https://randapp-randai.netlify.app). Configurazione in `netlify.toml` (build `npm ci && npm run build`, publish `dist`).
+- **Netlify è solo provvisorio** (per provare l'app sul telefono): sito https://randapp.netlify.app. **Il hosting definitivo è DigitalOcean** (Vercel scartato). Al passaggio: stesso build (`npm ci && npm run build`, cartella `dist`) con le variabili `VITE_*` impostate PRIMA del build, poi aggiornare `app_url` in `edge_function_secrets` e questa sezione.
+- Configurazione Netlify in `netlify.toml`. (Esiste anche un sito Netlify inutilizzato `randapp-randai`, creato per errore.) Configurazione in `netlify.toml` (build `npm ci && npm run build`, publish `dist`).
 - `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (chiave **anon**, pubblica per natura: va nel browser di tutti) e `VITE_FEATURE_RANDAI` stanno in `netlify.toml`, così non serve impostare nulla nel pannello Netlify. Il file vince sulle variabili del pannello. Il test `no-secrets` ammette in `netlify.toml` solo un JWT con ruolo `anon`; la `service_role` e ogni altro segreto restano fuori dal repo.
 - Collegamento: Netlify → Add new project → Import from GitHub → `Apicehotel/RandAPP-RandAI` → branch `main`. Ogni merge su `main` ripubblica da solo.
 - Aprire l'app sempre dall'indirizzo in Safari/Chrome, non da anteprime di file (bloccano il collegamento al server).
