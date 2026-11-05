@@ -122,15 +122,20 @@ _Nessun lavoro in corso._ (Scrivi qui: strumento, branch, cosa stai facendo.)
 - 2026-11-05 — Claude (branch `claude/telefono-profilo`): **ognuno inserisce il proprio numero da Profilo** (richiesta dell'utente: lo faranno loro quando completano il profilo). Migrazione `0018` (`get_my_phone`, `set_my_phone`: normalizza a `+39…`, rifiuta numeri non validi o già usati), `src/data/profile.js`, riquadro "Il mio numero WhatsApp" in `Profile.jsx`. Provato sul database con un utente finto (62 segnalazioni collegate, nome mostrato, annullato). Nessun numero va assegnato a mano. Test 138, build ok.
 - 2026-11-05 — Claude (branch `claude/import-interventi-planning-sale`): `legacy-sync` copia anche **interventi (25), planning lavori (258 con 319 giorni) e prenotazioni sale (241)** dal progetto HotelGio; seconda esecuzione senza doppioni. Migrazione `0019` (`legacy_id`, `created_by_name`, `completed_by_name`, `rooms_done`; `created_by` facoltativo; i trigger di notifica saltano le righe importate: verificato 0 notifiche). Utente di sola lettura esteso a `planning_lavori_giorni`. Test 138. **Da fare**: l'app non mostra ancora `rooms_done` negli interventi né il nome di chi ha creato lavori/prenotazioni; interventi senza foto copiate; un lavoro della vecchia app senza giorni non è stato copiato.
 
-## Da fare (in ordine)
-1. ~~Agganciare il Supabase esistente~~ (fatto il 2026-11-04, vedi sopra).
-2. **Provare il login e le segnalazioni su un telefono vero** (vedi note sotto).
-3. Notifiche WhatsApp (API Meta) sulle segnalazioni.
-4. Coda offline (Dexie) che conserva l'hotel di origine dell'operazione.
-5. Housekeeping (import Excel), presenze, temperature.
-6. PWA installabile, deploy.
-7. Assegnazione segnalazioni (`issues.assign` esiste già nei permessi ma non ha ancora una schermata).
-8. Riattivare RandAI (dopo il lancio).
+## Da fare (piano a fasi, deciso il 2026-11-05)
+**Fase 0 — sbloccare (prima di tutto).** Provare PIN → sessione → dati su un telefono vero. Oggi "non mi dà i nomi": controllare le variabili `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_VAPID_PUBLIC_KEY`, `VITE_FEATURE_RANDAI=false` nel build su DigitalOcean (vanno messe PRIMA del build). Poi: indirizzo dell'app in `edge_function_secrets` (chiave `app_url`) e documentare DO nel README al posto di Vercel. Il resto non vale finché il login non è provato.
+
+**Fase 1 — dettaglio segnalazione completo.** Foto prima/dopo scattate dall'app (compresse sul telefono, in `issue_photos`); assegnazione (schermata per `issues.assign`); pezzo/ricambio e attesa pezzo; nota di chiusura; storico eventi (chi ha cambiato cosa e quando, tabella eventi alimentata da trigger). Mostrare nell'app i dati già importati: `rooms_done` negli interventi, `created_by_name` in lavori e sale, tecnico e pezzo.
+
+**Fase 2 — utenti e ruoli nell'app.** Schermata utenti (crea, disattiva, cambia ruolo, azzera PIN), recupero PIN, editor dei permessi per ruolo. Ruoli ancora da decidere: Portiere Notturno, Capo Governante, Direttore Centro Congressi, Tecnico esterno, cucine (Isola dei Golosi, Ristorante Wine/Jazz, Colazione Jazz); poi copiare i loro utenti (modello: `supabase/seed/00_users_from_legacy.sql`). Il numero WhatsApp è già nel Profilo.
+
+**Fase 3 — offline leggero.** Coda delle scritture (Dexie) che conserva l'`hotel_id` di origine, lettura delle ultime liste dalla cache.
+
+**Fase 4 — tecnici esterni.** Portale con link a token, ruolo Tecnico esterno, avvisi WhatsApp (API Meta).
+
+**Rimandati** (poco usati nella vecchia app): magazzino avanzato, housekeeping completo con import Slope, chat interna, Home ricca, statistiche d'uso, WhatsApp in entrata, backup Telegram, sync Eye Supremo. **Non si portano**: sistemi RandAI/RandCore/RandMind/RandGateway.
+
+**Passaggio finale (dismissione della vecchia app).** 1) login e dati provati su telefono per tutti i ruoli; 2) ultima copia manuale con `legacy-sync`; 3) spegnere la vecchia app; 4) togliere il job `randapp-legacy-sync` (`select cron.unschedule('randapp-legacy-sync');`); 5) togliere l'utente `randapp_reader` da HotelGio e i segreti `legacy_*`; 6) togliere le colonne/funzioni `legacy_*` solo se non servono più.
 
 ## Note per il prossimo strumento
 - **Il login con PIN non è ancora stato provato da un telefono**: la funzione risponde e il database è pronto, ma manca la prova PIN → sessione → segnalazioni reale. Build e test passano; le schermate sono state viste renderizzate solo con dati demo (mock), non su Supabase vero: manca ancora la prova PIN → sessione → segnalazioni reale. È il primo controllo da fare.
