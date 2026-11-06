@@ -217,3 +217,12 @@ Come la vecchia app, adattate a PIN per persona e WhatsApp. Si apre da Profilo �
 
 ### Login pulito: rotella accanto al tema
 - In alto a destra: **rotella Impostazioni** + switch sole/luna. La rotella apre l'accesso con PIN amministratore (la scheda mostra solo il PIN a 6 cifre); toccala di nuovo o "‹ RandApp" per tornare al login normale. La riga "Impostazioni" nella scheda non c'è più.
+
+## RandAI: base per un'IA locale futura (migrazione 0026)
+Obiettivo: oggi nessun modello a pagamento obbligatorio; intanto si **raccolgono le scelte** per allenare più avanti un modello locale e staccarsi dal cloud.
+- **Casi simili già risolti** (`src/ui/SimilarCases.jsx`, RPC `similar_cases`): nella nuova segnalazione (mentre scrivi) e nel dettaglio di una segnalazione aperta mostra fino a 3 casi chiusi simili con soluzione e ricambio. È ricerca testuale italiana nel database (indice GIN su `issues`), **senza modelli e senza costi**, limitata alla struttura e al permesso `issues.view`.
+- **Percorso unico** (`src/lib/ai.js`): regole → storico → modello **locale** (spento) → **cloud** (spento, solo se serve e c'è budget). Ogni risposta registra il gradino: la quota locale deve salire nel tempo (si vede in Impostazioni → IA).
+- **Registro** (`randapp.ai_interactions`, `ai_feedback`; scrive solo `ai_log`, 120 righe/ora per persona): ogni "Casi simili" mostrato, il giudizio Sì/No e la **scelta della persona** quando invia una segnalazione (testo → categoria e urgenza, `source = human`). Numeri di telefono ed email vengono tolti **sul client e di nuovo sul server** (`ai_scrub`). Mai PIN, token, chiavi.
+- **Esempi verificati**: Impostazioni → IA → "Scarica esempi verificati (.jsonl)" (`ai_training_export`, solo admin): giudizi positivi, correzioni, scelte umane + storico dei casi chiusi (circa 600). Sono la materia prima per allenare un modello locale.
+- **Chat RandAI**: resta spenta (`askRandAI` non collegato). Quando si collega, deve passare dal percorso unico e registrare con `logAi`.
+- Regole per l'allenamento futuro: solo esempi verificati da persone, a lotti e con prova su casi noti prima dell'uso; niente allenamento automatico; il modello locale gira su una macchina nostra (da decidere), non su Supabase.
