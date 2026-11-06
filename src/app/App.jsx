@@ -7,6 +7,7 @@ import { can, PERM } from '../lib/permissions.js'
 import { randaiEnabled, loadRandAI } from '../randai/index.js'
 import Shell from '../ui/Shell.jsx'
 import Login from '../screens/Login.jsx'
+import Recover from '../screens/Recover.jsx'
 import { LocalErrors } from '../screens/ErrorLog.jsx'
 import { Spinner } from '../ui/kit.jsx'
 
@@ -239,6 +240,7 @@ export default function App() {
 
   if (!isConfigured) return <SetupNeeded />
   if (booting) return <div className="center"><Spinner /></div>
+  if (route.startsWith('/recover')) return <Recover route={route} />
 
   if (!ctx) {
     return (

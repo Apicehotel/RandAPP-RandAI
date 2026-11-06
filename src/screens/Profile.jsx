@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { getMyPhone, setMyPhone } from '../data/profile.js'
+import { getMyEmail, setMyEmail } from '../data/recovery.js'
+import { isValidEmail, normalizeEmail } from '../lib/recovery.js'
 import { useAsync } from '../lib/hooks.js'
 import { logout } from '../lib/auth.js'
 import { hotelById } from '../lib/hotels.js'
@@ -42,6 +44,39 @@ function MyPhone() {
   )
 }
 
+function MyEmail() {
+  const { data, loading, error } = useAsync(() => getMyEmail(), [])
+  const [value, setValue] = useState(null)
+  const [busy, setBusy] = useState(false)
+  const [msg, setMsg] = useState('')
+  const [err, setErr] = useState('')
+  const shown = value ?? data ?? ''
+
+  const save = async () => {
+    if (shown.trim() && !isValidEmail(shown)) return setErr('Email non valida')
+    setBusy(true); setErr(''); setMsg('')
+    try {
+      const saved = await setMyEmail(normalizeEmail(shown))
+      setValue(saved)
+      setMsg(saved ? 'Email salvata. Se dimentichi il PIN ti arriva il link qui.' : 'Email tolta.')
+    } catch (e) { setErr(e.message) } finally { setBusy(false) }
+  }
+
+  return (
+    <div className="card stack">
+      <h2>La mia email</h2>
+      <p className="muted">Serve solo per recuperare il PIN se lo dimentichi. La vedi solo tu.</p>
+      {loading && <Spinner />}
+      <ErrorText>{error}</ErrorText>
+      <input className="input" type="email" inputMode="email" autoComplete="email" placeholder="nome@esempio.it"
+        value={shown} onChange={(e) => { setValue(e.target.value); setMsg('') }} aria-label="La mia email" />
+      <Button variant="primary" disabled={busy} onClick={save}>Salva email</Button>
+      <ErrorText>{err}</ErrorText>
+      {msg && <p role="status">{msg}</p>}
+    </div>
+  )
+}
+
 export default function Profile({ ctx, onLogout, onSwitchHotel }) {
   return (
     <div className="page">
@@ -52,6 +87,7 @@ export default function Profile({ ctx, onLogout, onSwitchHotel }) {
       </div>
 
       <MyPhone />
+      <MyEmail />
 
       {can(ctx.permissions, PERM.ADMIN) && (
         <div className="card stack">

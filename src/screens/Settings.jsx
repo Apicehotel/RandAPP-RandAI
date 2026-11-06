@@ -4,6 +4,7 @@ import { useAsync } from '../lib/hooks.js'
 import { roleLabel } from '../lib/permissions.js'
 import { ROLES, groupPermissions, rolesMatrix, permActionLabel, formatBytes, isValidPin, deliverySummary, CHANNEL_LABELS } from '../lib/admin.js'
 import * as api from '../data/admin.js'
+import { recoveryStatus } from '../data/recovery.js'
 import { adminSetPhone } from '../data/profile.js'
 import { aiStats, aiTrainingExport } from '../data/ai.js'
 import { localShare, toJsonl } from '../lib/ai.js'
@@ -279,6 +280,7 @@ function DiagTab({ ctx }) {
   const u = useAsync(() => api.usage(ctx.hotelId), [ctx.hotelId])
   const n = useAsync(() => api.notificationOverview(ctx.hotelId), [ctx.hotelId])
   const failed = (n.data?.failed || []).length
+  const mail = useAsync(() => recoveryStatus(), [])
   return (
     <div className="stack">
       <div className="card stack">
@@ -289,6 +291,10 @@ function DiagTab({ ctx }) {
       <div className="card stack">
         <strong>Invii notifiche falliti: {n.data ? failed : '…'}</strong>
         <span className="muted">Dettagli nella scheda Notifiche.</span>
+      </div>
+      <div className="card stack">
+        <strong>Recupero PIN via email: {mail.loading ? '…' : mail.data ? 'attivo' : 'non configurato'}</strong>
+        <span className="muted">{mail.data ? 'Gmail collegato: chi ha un\'email nel profilo può recuperare il PIN.' : 'Mancano GMAIL_USER e GMAIL_APP_PASSWORD nei segreti della funzione.'}</span>
       </div>
       <div className="card stack">
         <strong>Telefoni e collegamento</strong>
