@@ -8,7 +8,7 @@ import {
   INTERVENTION_STATUSES, filterInterventions, sortInterventions, interventionStatusLabel,
 } from '../lib/interventions.js'
 import { StatRow } from '../ui/hub.jsx'
-import { interventionStats } from '../lib/interventions.js'
+import { interventionStats, roomsProgress, interventionPeople } from '../lib/interventions.js'
 import { todayIso } from '../lib/planning.js'
 import { Badge, Button, ErrorText, Spinner, formatDate } from '../ui/kit.jsx'
 
@@ -97,6 +97,9 @@ export function InterventionDetail({ ctx, id }) {
   if (error) return <div className="page"><ErrorText>{error}</ErrorText></div>
   if (!item) return <div className="page"><p className="muted">Intervento non trovato.</p></div>
 
+  const progress = roomsProgress(item)
+  const people = interventionPeople(item, staff)
+
   return (
     <div className="page">
       <a href="#/interventions">← Interventi</a>
@@ -111,11 +114,22 @@ export function InterventionDetail({ ctx, id }) {
         </div>
         {item.category && <div><Badge>{item.category}</Badge></div>}
         {item.scheduled_until && <div className="muted">fino a {formatDate(item.scheduled_until)}</div>}
-        {item.rooms?.length > 0 && <div className="muted">Camere: {item.rooms.join(', ')}</div>}
+        {people.createdBy && <div className="muted">Creato da {people.createdBy}</div>}
+        {progress.total > 0 && (
+          <div className="stack">
+            <div className="muted">Camere: {progress.done} su {progress.total} fatte</div>
+            {progress.rooms.map((r) => (
+              <div key={r.room} className={r.done ? '' : 'muted'}>
+                {r.done ? '✓' : '○'} {r.room}
+                {r.done && (r.at || r.by) ? ` · fatta${r.at ? ` il ${formatDate(r.at)}` : ''}${r.by ? ` da ${r.by}` : ''}` : ''}
+              </div>
+            ))}
+          </div>
+        )}
         {item.assignee_ids?.length > 0 && <div className="muted">Assegnato a: {staffNames(staff, item.assignee_ids).join(', ') || `${item.assignee_ids.length} persone`}</div>}
         {item.issue_id && <a href={`#/issues/${item.issue_id}`}>Vai alla segnalazione</a>}
         {item.notes && <p>{item.notes}</p>}
-        {item.completed_at && <div className="muted">Fatto il {formatDate(item.completed_at)}</div>}
+        {item.completed_at && <div className="muted">Fatto il {formatDate(item.completed_at)}{people.completedBy ? ` da ${people.completedBy}` : ''}</div>}
       </div>
 
       {canUpdate && (
