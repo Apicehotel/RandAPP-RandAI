@@ -230,3 +230,10 @@ Obiettivo: oggi nessun modello a pagamento obbligatorio; intanto si **raccolgono
 ### Numero WhatsApp: lo scrive ciascuno
 - Non serve che l'admin sappia a chi appartiene ogni numero. Dopo l'accesso, in **Home**, chi non ha ancora il numero vede la scheda "Il tuo numero WhatsApp" (`src/ui/PhonePrompt.jsx`): lo scrive e salva; "Più tardi" la nasconde 7 giorni. Si può cambiare sempre da Profilo → Il mio numero WhatsApp.
 - "Numeri non assegnati" (admin) è solo informativo: i numeri senza persona si collegano da soli quando ciascuno inserisce il proprio.
+
+## Recupero PIN via email (migrazione `0027`, funzione `randapp-pin-recovery`)
+- Ognuno scrive la **propria email** in Profilo → "La mia email" (la vede solo lui; unica per utente).
+- Al login, scelto il nome, "**PIN dimenticato?**" manda un link (vale 15 minuti, una sola volta) con la pagina `#/recover?token=…` dove si sceglie il nuovo PIN. La risposta è sempre la stessa, con o senza email nel profilo; il token è salvato solo come hash; limiti: 3 richieste/ora per utente e 10/ora per origine. Il nuovo PIN azzera blocco e tentativi.
+- Invio con **Gmail SMTP (porta 465)**. Segreti della funzione (Supabase → Edge Functions → Secrets, mai nel repo): `GMAIL_USER`, `GMAIL_APP_PASSWORD` (password per le app di Google), facoltativo `APP_URL` (default `https://randapp.netlify.app`; con Vercel va cambiato).
+- Impostazioni → Diagnostica mostra se il recupero è "attivo" o "non configurato".
+

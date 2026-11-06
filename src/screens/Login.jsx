@@ -6,6 +6,7 @@ import { LocalErrors } from './ErrorLog.jsx'
 import { testConnection } from '../lib/auth.js'
 import ThemeSwitch from '../ui/ThemeSwitch.jsx'
 import { can, PERM } from '../lib/permissions.js'
+import { requestPinRecovery } from '../data/recovery.js'
 
 export const ADMIN_INTENT_KEY = 'randapp.adminIntent'
 
@@ -28,6 +29,7 @@ export default function Login({ initialHotel, onLoggedIn }) {
   const [showLog, setShowLog] = useState(false)
   const [probe, setProbe] = useState(null)
   const [adminMode, setAdminMode] = useState(false) // 'Impostazioni': accesso protetto, poi Profilo
+  const [forgot, setForgot] = useState('') // '' | 'sending' | 'sent'
   const busyRef = useRef(false)
   const pinRef = useRef(null)
 
@@ -101,6 +103,12 @@ export default function Login({ initialHotel, onLoggedIn }) {
       busyRef.current = false
       setBusy(false)
     }
+  }
+
+  const sendRecovery = async () => {
+    if (!user) return setError('Scrivi e seleziona prima il tuo nome, poi tocca "PIN dimenticato?"')
+    setForgot('sending'); setError('')
+    try { await requestPinRecovery(user.id); setForgot('sent') } catch (e) { setError(e.message); setForgot('') }
   }
 
   const enter = async (hotelId) => {
@@ -210,6 +218,10 @@ export default function Login({ initialHotel, onLoggedIn }) {
           <Button variant="primary" type="submit" block disabled={busy} data-testid="login-submit">
             {busy ? 'ACCESSO…' : adminMode ? 'ENTRA →' : 'ACCEDI →'}
           </Button>
+
+          {!adminMode && (forgot === 'sent'
+            ? <p className="muted" role="status" data-testid="forgot-sent">Se nel tuo profilo c'è un'email, ti abbiamo mandato un link per scegliere un nuovo PIN (vale 15 minuti). Se non hai l'email nel profilo, chiedi a un admin di reimpostare il PIN.</p>
+            : <button type="button" className="login-back" data-testid="forgot-pin" disabled={forgot === 'sending'} onClick={sendRecovery}>PIN dimenticato?</button>)}
 
           <div className="login-tools">
             <Button type="button" onClick={() => setShowLog((v) => !v)}>{showLog ? 'Nascondi errori' : 'Registro errori'}</Button>
