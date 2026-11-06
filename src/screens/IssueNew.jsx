@@ -6,6 +6,9 @@ import { go, useAsync } from '../lib/hooks.js'
 import { CATEGORIES, URGENCIES } from '../lib/queue.js'
 import { Button, ErrorText, Field } from '../ui/kit.jsx'
 import { ChipPick, LocationInput } from '../ui/forms.jsx'
+import SimilarCases from '../ui/SimilarCases.jsx'
+import { logAi } from '../data/ai.js'
+import { queryFrom, scrubText } from '../lib/ai.js'
 
 const EMPTY = { title: '', room: '', category: CATEGORIES[0], urgency: 'normale', description: '' }
 const CATS = categoryOptions(CATEGORIES)
@@ -36,6 +39,8 @@ export default function IssueNew({ ctx }) {
     try {
       const issue = await createIssue(ctx.hotelId, ctx.userId, form)
       clearDraft('issue', ctx.hotelId, ctx.userId)
+      // La scelta della persona (testo → categoria e urgenza) è un esempio verificato per l'IA locale futura. Non blocca mai l'invio.
+      logAi(ctx.hotelId, { feature: 'classify', source: 'human', input: { title: scrubText(form.title).slice(0, 140), description: scrubText(form.description).slice(0, 500) }, output: { category: form.category, urgency: form.urgency } })
       go(`/issues/${issue.id}`)
     } catch (err) {
       setError(`${err.message}. La bozza resta sul telefono: riprova.`)
@@ -67,6 +72,7 @@ export default function IssueNew({ ctx }) {
           <textarea id="description" className="textarea" value={form.description} onChange={set('description')} maxLength={2000} />
         </Field>
         <ErrorText>{error}</ErrorText>
+        <SimilarCases ctx={ctx} query={queryFrom(form)} />
         <Button variant="primary" type="submit" block disabled={busy}>
           {busy ? 'Invio…' : 'Invia segnalazione'}
         </Button>

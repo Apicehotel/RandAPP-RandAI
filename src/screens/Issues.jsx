@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { listIssues, getIssue, updateIssueStatus, listIssuePhotos } from '../data/issues.js'
 import { listInterventionsForIssue } from '../data/interventions.js'
+import SimilarCases from '../ui/SimilarCases.jsx'
+import { queryFrom } from '../lib/ai.js'
 import { useAsync, go } from '../lib/hooks.js'
 import { can, PERM } from '../lib/permissions.js'
 import { STATUSES, filterByStatus, sortByPriority } from '../lib/queue.js'
@@ -98,6 +100,8 @@ export function IssueDetail({ ctx, id }) {
         {issue.description && <p>{issue.description}</p>}
         <div><StatusBadge status={issue.status} /></div>
       </div>
+
+      {issue.status !== 'completata' && <SimilarCases ctx={ctx} query={queryFrom(issue)} exclude={issue.id} />}
 
       {(issue.completion_note || issue.technician_name || issue.part_replaced || (issue.completed_at && issue.completed_by_name)) && (
         <div className="card stack">

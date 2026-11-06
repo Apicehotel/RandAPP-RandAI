@@ -5,12 +5,15 @@ import { roleLabel } from '../lib/permissions.js'
 import { ROLES, groupPermissions, rolesMatrix, permActionLabel, formatBytes, isValidPin, deliverySummary, CHANNEL_LABELS } from '../lib/admin.js'
 import * as api from '../data/admin.js'
 import { adminSetPhone } from '../data/profile.js'
+import { aiStats, aiTrainingExport } from '../data/ai.js'
+import { localShare, toJsonl } from '../lib/ai.js'
 import { Button, ErrorText, Spinner, formatDate } from '../ui/kit.jsx'
 
 const TABS = [
   { id: 'users', label: 'Utenti' },
   { id: 'roles', label: 'Ruoli' },
   { id: 'notify', label: 'Notifiche' },
+  { id: 'ai', label: 'IA' },
   { id: 'usage', label: 'Consumi' },
   { id: 'diag', label: 'Diagnostica' },
 ]
@@ -208,6 +211,51 @@ function NotifyTab({ ctx }) {
   )
 }
 
+// ------------------------------------------------------------------ IA (registro delle scelte, per il modello locale futuro)
+const SOURCE_LABELS = { rules: 'Regole', history: 'Storico', human: 'Scelte delle persone', local: 'Modello locale', cloud: 'Modello cloud' }
+
+function AiTab({ ctx }) {
+  const { data, error, loading } = useAsync(() => aiStats(ctx.hotelId), [ctx.hotelId])
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState('')
+  const download = async () => {
+    setBusy(true); setErr('')
+    try {
+      const rows = await aiTrainingExport(ctx.hotelId)
+      const url = URL.createObjectURL(new Blob([toJsonl(rows)], { type: 'application/x-ndjson' }))
+      const a = document.createElement('a')
+      a.href = url; a.download = `randapp-esempi-${ctx.hotelId}-${new Date().toISOString().slice(0, 10)}.jsonl`
+      document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url)
+    } catch (e) { setErr(e.message) } finally { setBusy(false) }
+  }
+  const share = data ? localShare(data.by_source) : null
+  return (
+    <div className="stack">
+      <p className="muted">Ogni "Casi simili" mostrato, ogni giudizio e ogni scelta fatta scrivendo una segnalazione viene registrato (senza numeri né email). Sono gli esempi per allenare, più avanti, un modello locale.</p>
+      {loading && !data && <Spinner />}
+      <ErrorText>{error || err}</ErrorText>
+      {data && (
+        <>
+          <div className="card row"><span>Richieste registrate (totale)</span><strong>{data.total}</strong></div>
+          <div className="card row"><span>Esempi già verificati</span><strong>{data.verified}</strong></div>
+          <div className="card row"><span>Casi chiusi nello storico (utilizzabili)</span><strong>{data.history_labeled}</strong></div>
+          <div className="card stack">
+            <strong>Da dove arrivano le risposte (30 giorni)</strong>
+            {Object.keys(data.by_source || {}).length === 0 && <span className="muted">Ancora nessuna richiesta.</span>}
+            {Object.entries(data.by_source || {}).map(([k, v]) => <span key={k}>{SOURCE_LABELS[k] || k}: {v}</span>)}
+            <span className="muted">Quota locale sui modelli usati: {share === null ? 'nessun modello ancora in uso' : `${Math.round(share * 100)}%`}</span>
+          </div>
+          <div className="card stack">
+            <strong>Giudizi</strong>
+            <span>Utili: {data.feedback?.up || 0} · Non utili: {data.feedback?.down || 0} · Corretti: {data.feedback?.corrected || 0}</span>
+          </div>
+        </>
+      )}
+      <Button onClick={download} disabled={busy}>{busy ? 'Preparo…' : 'Scarica esempi verificati (.jsonl)'}</Button>
+    </div>
+  )
+}
+
 // ------------------------------------------------------------------ Consumi
 function UsageTab({ ctx }) {
   const { data, error, loading } = useAsync(() => api.usage(ctx.hotelId), [ctx.hotelId])
@@ -254,7 +302,7 @@ function DiagTab({ ctx }) {
 export default function Settings({ ctx }) {
   const [tab, setTab] = useState('users')
   const hotel = HOTELS.find((h) => h.id === ctx.hotelId)
-  const Tab = { users: UsersTab, roles: RolesTab, notify: NotifyTab, usage: UsageTab, diag: DiagTab }[tab]
+  const Tab = { users: UsersTab, roles: RolesTab, notify: NotifyTab, ai: AiTab, usage: UsageTab, diag: DiagTab }[tab]
   return (
     <div className="page">
       <a href="#/profile">← Profilo</a>
