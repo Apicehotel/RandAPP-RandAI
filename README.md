@@ -196,7 +196,7 @@ test/                  test automatici (permessi, coda, schema RLS, niente segre
 
 ### Login: interruttore tema, Impostazioni, tasti
 - In alto a destra c'è l'**interruttore sole/luna** (chiaro/scuro, come la vecchia app); "Sistema" resta nel menu laterale.
-- Sotto "oppure" c'è la riga **Impostazioni** ("Configura l'app e le preferenze"): apre l'accesso protetto amministratore (stessa schermata, Utente + PIN). Se l utente è admin va alle **Impostazioni admin** (`#/settings`), altrimenti resta fuori con errore.
+- Sotto "oppure" c'è la riga **Impostazioni** ("Configura l'app e le preferenze"): apre l'accesso protetto amministratore: **solo il PIN amministratore a 6 cifre, nessun nome** (come la vecchia app). Entra come admin di sistema e va alle **Impostazioni admin** (`#/settings`).
 - "Registro errori" e "Prova collegamento" stanno sulla stessa riga.
 
 ## Impostazioni admin (`#/settings`, permesso `admin.access`)
@@ -208,3 +208,9 @@ Come la vecchia app, adattate a PIN per persona e WhatsApp. Si apre da Profilo �
 - **Diagnostica**: errori ultimi 7 giorni (registro con la causa), invii falliti, numeri non assegnati.
 - Server: migrazione `0024_admin_settings.sql` (RPC `admin_*`, tutte con controllo permesso, mai PIN o hash) e funzione edge `randapp-admin` (crea utente e cambia PIN con bcrypt, verifica sessione e `admin.access`; il PIN non è mai nei log né restituito).
 - Non portate dalla vecchia app: scheda Sensori (c'è già la schermata Sensori), link per tecnici esterni (Fase 4).
+
+### Accesso alle Impostazioni (PIN amministratore)
+- Come la vecchia app (`admin-gate`): **un solo PIN a 6 cifre**, senza scegliere il nome. È lo **stesso PIN** della vecchia app: sta (solo come hash bcrypt) in `public.edge_function_secrets`, chiave `ADMIN_PANEL_PIN_BCRYPT`. Nessun PIN nel repo.
+- Azione `admin_login` della funzione `randapp-pin-auth`: verifica il PIN sul server e apre la sessione dell'admin di sistema ("Randagio", admin attivo in tutte le strutture). Se quella persona non esiste/non è admin ovunque, l'accesso è rifiutato.
+- Tentativi sbagliati contati per origine (hash di IP + dispositivo, tabella `randapp.admin_gate_attempts`, migrazione 0025): 5 errori = blocco 10 minuti.
+- Il PIN si cambia nella vecchia app finché esiste; una scheda per cambiarlo qui non c'è ancora.
