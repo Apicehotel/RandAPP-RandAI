@@ -13,6 +13,16 @@ RandAPP-RandAI — vedi `README.md` per descrizione, stack e comandi. Il README 
 5. **Modifiche piccole e mirate**: non riscrivere file che non c'entrano con il compito.
 6. **Non toccare il lavoro in corso di un altro strumento**: controlla `docs/STATO.md` → sezione "In corso".
 
+## Skill (in `.agents/skills`)
+Le skill valgono per tutti gli strumenti. Elenco e installazione nel `README.md`, versioni in `skills-lock.json`.
+- **Lavoro in più passaggi**: prima un piano (`writing-plans`), poi esecuzione a tappe (`executing-plans`).
+- **Prima di dire "fatto"**: `verification-before-completion` (test, build, `npm run check`).
+- **Più strumenti insieme**: `using-git-worktrees`, un branch per strumento.
+- **Fine lavoro**: `finishing-a-development-branch` (test, commit, PR), poi aggiorna `docs/STATO.md`.
+- **Lavori grandi divisi in sotto-agenti**: `subagent-driven-development`.
+- Le skill **non sostituiscono** le regole di questo file: in caso di conflitto valgono le "Regole obbligatorie" (anche per piani e registri: mai dati sensibili).
+- Gli script delle skill sono bash: su Windows servono Git Bash o WSL.
+
 ## Branch
 | Strumento | Prefisso branch |
 |-----------|-----------------|
