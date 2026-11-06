@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { HOTELS, apiceLogo } from '../lib/hotels.js'
-import { searchUsersAcrossHotels, loginUser, loadContext } from '../lib/auth.js'
+import { searchUsersAcrossHotels, loginUser, loginAdminPin, loadContext } from '../lib/auth.js'
 import { Button, ErrorText, Field, Spinner } from '../ui/kit.jsx'
 import { LocalErrors } from './ErrorLog.jsx'
 import { testConnection } from '../lib/auth.js'
@@ -10,6 +10,7 @@ import { can, PERM } from '../lib/permissions.js'
 export const ADMIN_INTENT_KEY = 'randapp.adminIntent'
 
 const PIN_LENGTH = 4
+const ADMIN_PIN_LENGTH = 6
 const MIN_QUERY = 2
 const norm = (s) => String(s || '').trim().toLocaleLowerCase('it')
 
@@ -62,19 +63,35 @@ export default function Login({ initialHotel, onLoggedIn }) {
     setTimeout(() => pinRef.current?.focus(), 0)
   }
 
+  // Impostazioni: solo PIN amministratore (6 cifre), come la vecchia app.
+  const submitAdmin = async (value) => {
+    if (value.length !== ADMIN_PIN_LENGTH) return setError('Inserisci il PIN amministratore (6 cifre)')
+    busyRef.current = true
+    setBusy(true)
+    try {
+      const ctx = await loginAdminPin({ pin: value, preferredHotel: initialHotel })
+      if (!can(ctx.permissions, PERM.ADMIN)) throw new Error('Accesso amministratore non disponibile')
+      try { sessionStorage.setItem(ADMIN_INTENT_KEY, '1') } catch { /* nessun problema */ }
+      onLoggedIn(ctx)
+    } catch (e) {
+      setError(e.message)
+      setPin('')
+    } finally {
+      busyRef.current = false
+      setBusy(false)
+    }
+  }
+
   const submit = async (value = pin) => {
     if (busyRef.current) return
     setError('')
+    if (adminMode) return submitAdmin(value)
     if (!user) return setError(query.trim().length < MIN_QUERY ? 'Scrivi almeno 2 lettere del nome' : 'Seleziona il tuo nome dalla lista')
     if (value.length !== PIN_LENGTH) return setError('Inserisci un PIN di 4 cifre')
     busyRef.current = true
     setBusy(true)
     try {
       const ctx = await loginUser({ user, pin: value, preferredHotel: initialHotel })
-      if (adminMode) {
-        if (!can(ctx.permissions, PERM.ADMIN)) throw new Error('Questo utente non è amministratore')
-        try { sessionStorage.setItem(ADMIN_INTENT_KEY, '1') } catch { /* nessun problema */ }
-      }
       if (user.hotels.length > 1) setPicking({ user, ctx })
       else onLoggedIn(ctx)
     } catch (e) {
@@ -134,12 +151,12 @@ export default function Login({ initialHotel, onLoggedIn }) {
 
         <form className="card stack login-card" onSubmit={(e) => { e.preventDefault(); submit() }} autoComplete="off">
           <header>
-            {adminMode && <button type="button" className="login-back" data-testid="admin-back" onClick={() => { setAdminMode(false); setError('') }}>‹ RandApp</button>}
+            {adminMode && <button type="button" className="login-back" data-testid="admin-back" onClick={() => { setAdminMode(false); setError(''); setPin('') }}>‹ RandApp</button>}
             <h2>{adminMode ? 'Impostazioni' : 'Bentornato'}</h2>
             <p className="muted">{adminMode ? 'Accesso protetto amministratore' : 'Accedi per continuare'}</p>
           </header>
 
-          <Field label="Utente" id="login-user">
+          {!adminMode && <Field label="Utente" id="login-user">
             <div className="suggest-wrap">
               <input
                 id="login-user" className="input" value={query} placeholder="Scrivi il tuo nome" autoComplete="username"
@@ -164,17 +181,18 @@ export default function Login({ initialHotel, onLoggedIn }) {
             {!searching && !user && query.trim().length >= MIN_QUERY && users.length === 0 && !error && (
               <small className="muted">Nessun utente trovato.</small>
             )}
-          </Field>
+          </Field>}
 
-          <Field label="PIN" id="login-pin">
+          <Field label={adminMode ? 'PIN amministratore' : 'PIN'} id="login-pin">
             <input
-              id="login-pin" ref={pinRef} className="input pin-input" type="password" value={pin} placeholder="••••"
-              inputMode="numeric" enterKeyHint="go" autoComplete="current-password" maxLength={PIN_LENGTH} data-testid="login-pin-input"
+              id="login-pin" ref={pinRef} className="input pin-input" type="password" value={pin} placeholder={adminMode ? '••••••' : '••••'}
+              inputMode="numeric" enterKeyHint="go" autoComplete="current-password" maxLength={adminMode ? ADMIN_PIN_LENGTH : PIN_LENGTH} data-testid="login-pin-input"
               onChange={(e) => {
-                const next = e.target.value.replace(/\D/g, '').slice(0, PIN_LENGTH)
+                const max = adminMode ? ADMIN_PIN_LENGTH : PIN_LENGTH
+                const next = e.target.value.replace(/\D/g, '').slice(0, max)
                 setPin(next)
                 setError('')
-                if (next.length === PIN_LENGTH) submit(next)
+                if (next.length === max) submit(next)
               }}
             />
           </Field>
@@ -187,7 +205,7 @@ export default function Login({ initialHotel, onLoggedIn }) {
           {!adminMode && (
             <>
               <div className="login-divider"><span>oppure</span></div>
-              <button type="button" className="login-settings" data-testid="open-settings-link" onClick={() => { setAdminMode(true); setError('') }}>
+              <button type="button" className="login-settings" data-testid="open-settings-link" onClick={() => { setAdminMode(true); setError(''); setPin(''); setTimeout(() => pinRef.current?.focus(), 0) }}>
                 <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4z" />
                   <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" />

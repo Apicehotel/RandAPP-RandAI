@@ -61,6 +61,20 @@ export async function loginUser({ user, pin, preferredHotel = null }) {
   return ctx
 }
 
+// Impostazioni: come la vecchia app, un solo PIN amministratore (6 cifre), nessun nome. Entra come admin di sistema.
+export async function loginAdminPin({ pin, preferredHotel = null }) {
+  const payload = await callPinAuth({ action: 'admin_login', pin })
+  const { access_token, refresh_token } = payload.session || {}
+  if (!access_token || !refresh_token) throw new Error('Sessione non disponibile')
+  const { error } = await supabase.auth.setSession({ access_token, refresh_token })
+  if (error) throw new Error('Sessione non valida. Riprova.')
+  const mine = await listMyHotels()
+  const first = mine.find((m) => m.hotel_id === preferredHotel) || mine[0]
+  const ctx = first ? await loadContext(first.hotel_id) : null
+  if (!ctx) throw new Error('Accesso amministratore non disponibile')
+  return ctx
+}
+
 export async function loginWithPin({ hotelId, userId, pin }) {
   const payload = await callPinAuth({ action: 'login', hotel_id: hotelId, user_id: userId, pin })
   const { access_token, refresh_token } = payload.session || {}
