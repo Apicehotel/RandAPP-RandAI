@@ -2,6 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import * as W from '../src/lib/warehouse.js'
 import * as S from '../src/lib/supplies.js'
 import * as H from '../src/lib/housekeeping.js'
@@ -196,7 +197,7 @@ test('menu Gestione: ogni voce compare solo col suo permesso', () => {
 })
 
 // ---- Schema
-const dir = new URL('../supabase/migrations/', import.meta.url).pathname
+const dir = fileURLToPath(new URL('../supabase/migrations/', import.meta.url))
 const sql = readdirSync(dir).filter((f) => f.endsWith('.sql')).sort().map((f) => readFileSync(join(dir, f), 'utf8')).join('\n')
 const policiesOf = (table) => [...sql.matchAll(new RegExp(`create policy\\s+\\w+\\s+on randapp\\.${table}[\\s\\S]*?;`, 'gi'))].map((m) => m[0])
 

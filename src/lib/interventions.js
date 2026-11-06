@@ -1,3 +1,5 @@
+import { staffNames } from './forms.js'
+
 // Logica pura (testabile) per gli interventi.
 
 export const INTERVENTION_STATUSES = [
@@ -53,4 +55,32 @@ export function localInputToIso(value) {
   if (!value) return null
   const d = new Date(value)
   return Number.isNaN(d.getTime()) ? null : d.toISOString()
+}
+
+// Camere dell'intervento con lo stato "fatta" letto da rooms_done ({ "<camera>": { at, by } }).
+// L'elenco e l'ordine sono quelli di rooms: una camera presente solo in rooms_done si ignora.
+export function roomsProgress(item) {
+  const rooms = Array.isArray(item?.rooms) ? item.rooms : []
+  const raw = item?.rooms_done
+  const doneMap = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {}
+  const list = rooms.map((room) => {
+    const v = Object.prototype.hasOwnProperty.call(doneMap, room) ? doneMap[room] : null
+    const done = typeof v === 'object' && v !== null
+    return {
+      room,
+      done,
+      at: done && typeof v.at === 'string' ? v.at : null,
+      by: done && typeof v.by === 'string' ? v.by : null,
+    }
+  })
+  return { total: list.length, done: list.filter((r) => r.done).length, rooms: list }
+}
+
+// Chi ha creato e chi ha chiuso l'intervento. created_by_name arriva dalla vecchia app;
+// per quelli creati dall'app il nome si ricava da created_by e dalla lista colleghi.
+export function interventionPeople(item, staff) {
+  const own = typeof item?.created_by_name === 'string' ? item.created_by_name.trim() : ''
+  const createdBy = own || staffNames(staff, item?.created_by ? [item.created_by] : [])[0] || null
+  const closer = typeof item?.completed_by_name === 'string' ? item.completed_by_name.trim() : ''
+  return { createdBy, completedBy: item?.status === 'fatto' && closer ? closer : null }
 }
