@@ -237,3 +237,16 @@ Obiettivo: oggi nessun modello a pagamento obbligatorio; intanto si **raccolgono
 - Invio con **Gmail SMTP (porta 465)**. Segreti della funzione (Supabase → Edge Functions → Secrets, mai nel repo): `GMAIL_USER`, `GMAIL_APP_PASSWORD` (password per le app di Google), facoltativo `APP_URL` (default `https://randapp.netlify.app`; con Vercel va cambiato).
 - Impostazioni → Diagnostica mostra se il recupero è "attivo" o "non configurato".
 
+
+## Skill per gli agenti (Claude, Cursor, GPT, ecc.)
+
+Le skill sono in `.agents/skills` e valgono per tutti gli agenti che le supportano.
+Installate da obra/superpowers (versioni in `skills-lock.json`):
+
+- writing-plans: scrivere un piano a passi prima di toccare il codice
+- executing-plans: eseguire il piano con controlli a ogni tappa
+- verification-before-completion: verificare prima di dichiarare un lavoro finito
+- using-git-worktrees: sessioni parallele su branch separati
+- finishing-a-development-branch: chiusura branch con test, commit e PR
+
+Installazione: `npx skills add obra/superpowers --skill <nome>` dalla cartella del repo.
