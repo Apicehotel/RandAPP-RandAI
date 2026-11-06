@@ -6,6 +6,7 @@ import { can, roleLabel, PERM } from '../lib/permissions.js'
 import { buildTiles, buildTodo, isPresentNow, presentNow, timeLabel, todayTitle } from '../lib/home.js'
 import { todayIso } from '../lib/planning.js'
 import { Badge, Button, ErrorText, Icon, Spinner } from '../ui/kit.jsx'
+import PhonePrompt from '../ui/PhonePrompt.jsx'
 
 const TILE_ORDER = ['alerts', 'issues', 'interventions', 'works', 'sale', 'reminders']
 
@@ -83,6 +84,8 @@ export default function Home({ ctx }) {
         <h1>Oggi</h1>
         <p className="muted">{todayTitle()}</p>
       </div>
+
+      <PhonePrompt ctx={ctx} />
 
       {failed.length > 0 && (
         <div className="card muted" role="status">Alcune sezioni non si sono caricate. Riapri la Home per riprovare.</div>

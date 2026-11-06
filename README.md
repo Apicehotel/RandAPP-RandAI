@@ -226,3 +226,7 @@ Obiettivo: oggi nessun modello a pagamento obbligatorio; intanto si **raccolgono
 - **Esempi verificati**: Impostazioni → IA → "Scarica esempi verificati (.jsonl)" (`ai_training_export`, solo admin): giudizi positivi, correzioni, scelte umane + storico dei casi chiusi (circa 600). Sono la materia prima per allenare un modello locale.
 - **Chat RandAI**: resta spenta (`askRandAI` non collegato). Quando si collega, deve passare dal percorso unico e registrare con `logAi`.
 - Regole per l'allenamento futuro: solo esempi verificati da persone, a lotti e con prova su casi noti prima dell'uso; niente allenamento automatico; il modello locale gira su una macchina nostra (da decidere), non su Supabase.
+
+### Numero WhatsApp: lo scrive ciascuno
+- Non serve che l'admin sappia a chi appartiene ogni numero. Dopo l'accesso, in **Home**, chi non ha ancora il numero vede la scheda "Il tuo numero WhatsApp" (`src/ui/PhonePrompt.jsx`): lo scrive e salva; "Più tardi" la nasconde 7 giorni. Si può cambiare sempre da Profilo → Il mio numero WhatsApp.
+- "Numeri non assegnati" (admin) è solo informativo: i numeri senza persona si collegano da soli quando ciascuno inserisce il proprio.
