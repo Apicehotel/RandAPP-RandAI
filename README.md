@@ -248,5 +248,6 @@ Installate da obra/superpowers (versioni in `skills-lock.json`):
 - verification-before-completion: verificare prima di dichiarare un lavoro finito
 - using-git-worktrees: sessioni parallele su branch separati
 - finishing-a-development-branch: chiusura branch con test, commit e PR
+- subagent-driven-development: lavoro diviso tra sotto-agenti, con revisione a ogni passo
 
 Installazione: `npx skills add obra/superpowers --skill <nome>` dalla cartella del repo.
