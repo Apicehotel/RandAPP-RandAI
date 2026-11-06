@@ -9,6 +9,7 @@ import { adminSetPhone } from '../data/profile.js'
 import { aiStats, aiTrainingExport } from '../data/ai.js'
 import { localShare, toJsonl } from '../lib/ai.js'
 import { Button, ErrorText, Spinner, formatDate } from '../ui/kit.jsx'
+import PhoneField from '../ui/PhoneField.jsx'
 
 const TABS = [
   { id: 'users', label: 'Utenti' },
@@ -53,7 +54,7 @@ function NewUser({ ctx, onDone }) {
       </select>
       <input className="input" inputMode="numeric" type="password" maxLength={4} placeholder="PIN di 4 cifre" value={f.pin}
         onChange={(e) => setF({ ...f, pin: e.target.value.replace(/\D/g, '').slice(0, 4) })} aria-label="PIN" autoComplete="new-password" />
-      <input className="input" inputMode="tel" placeholder="Numero WhatsApp (facoltativo)" value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} aria-label="Numero WhatsApp" />
+      <PhoneField value={f.phone} label="Numero WhatsApp (facoltativo)" onChange={(v) => setF({ ...f, phone: v })} />
       <ErrorText>{err}</ErrorText>
       <Button variant="primary" type="submit" disabled={busy}>{busy ? 'Salvo…' : 'Crea utente'}</Button>
     </form>
@@ -88,7 +89,7 @@ function UserRow({ ctx, u, onChanged }) {
           <select className="input" value={f.role} onChange={(e) => setF({ ...f, role: e.target.value })} aria-label="Ruolo">
             {ROLES.map((r) => <option key={r} value={r}>{roleLabel(r)}</option>)}
           </select>
-          <input className="input" inputMode="tel" placeholder="Numero WhatsApp" value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} aria-label="Numero WhatsApp" />
+          <PhoneField value={f.phone} label="Numero WhatsApp" onChange={(v) => setF({ ...f, phone: v })} />
           {u.phone && <span className="muted">Ora: {shown(u.phone)}</span>}
           <label className="row" style={{ justifyContent: 'flex-start', gap: 8 }}>
             <input type="checkbox" checked={f.active} disabled={self} onChange={(e) => setF({ ...f, active: e.target.checked })} /> Attivo

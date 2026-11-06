@@ -7,6 +7,7 @@ import { logout } from '../lib/auth.js'
 import { hotelById } from '../lib/hotels.js'
 import { roleLabel, can, PERM } from '../lib/permissions.js'
 import { Button, ErrorText, Spinner } from '../ui/kit.jsx'
+import PhoneField from '../ui/PhoneField.jsx'
 
 function MyPhone() {
   const { data, loading, error } = useAsync(() => getMyPhone(), [])
@@ -35,8 +36,7 @@ function MyPhone() {
       <p className="muted">Serve per riconoscerti quando scrivi su WhatsApp: le segnalazioni compaiono con il tuo nome. Lo vedi solo tu.</p>
       {loading && <Spinner />}
       <ErrorText>{error}</ErrorText>
-      <input className="input" type="tel" inputMode="tel" autoComplete="tel" placeholder="+39 340 1234567"
-        value={shown} onChange={(e) => { setValue(e.target.value); setMsg('') }} aria-label="Il mio numero WhatsApp" />
+      <PhoneField value={shown} label="Il mio numero WhatsApp" onChange={(v) => { setValue(v); setMsg('') }} />
       <Button variant="primary" disabled={busy} onClick={save}>Salva numero</Button>
       <ErrorText>{err}</ErrorText>
       {msg && <p role="status">{msg}</p>}

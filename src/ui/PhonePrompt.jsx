@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { getMyPhone, setMyPhone } from '../data/profile.js'
 import { Button, ErrorText } from './kit.jsx'
+import PhoneField from './PhoneField.jsx'
 
 const SKIP_DAYS = 7
 const skipKey = (userId) => `randapp.phoneSkip.${userId}`
@@ -44,8 +45,7 @@ export default function PhonePrompt({ ctx }) {
     <form className="card stack" onSubmit={save} data-testid="phone-prompt">
       <h2>Il tuo numero WhatsApp</h2>
       <p className="muted">Scrivilo una volta: quando mandi una segnalazione su WhatsApp comparirai con il tuo nome. Lo vedi solo tu e gli admin.</p>
-      <input className="input" type="tel" inputMode="tel" autoComplete="tel" placeholder="+39 340 1234567" value={value}
-        onChange={(e) => setValue(e.target.value)} aria-label="Il mio numero WhatsApp" />
+      <PhoneField value={value} label="Il mio numero WhatsApp" onChange={setValue} />
       <ErrorText>{err}</ErrorText>
       <div className="row" style={{ gap: 8 }}>
         <Button variant="primary" type="submit" disabled={busy}>Salva</Button>
