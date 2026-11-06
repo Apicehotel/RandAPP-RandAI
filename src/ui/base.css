@@ -486,3 +486,8 @@ a.btn, .hub-link, .card.issue, a.card, .drawer a, nav a { color: inherit; }
 .login-back { border: 0; background: none; color: var(--accent); font-weight: 600; padding: 0 0 6px; }
 .login-tools { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap-list); }
 .login-tools .btn { min-width: 0; font-size: var(--fs-sm); padding-inline: 6px; }
+
+/* Login: rotella impostazioni accanto allo switch chiaro/scuro, in alto a destra */
+.login-corner { position: fixed; z-index: 40; top: max(10px, calc(env(safe-area-inset-top) + 6px)); right: max(10px, calc(env(safe-area-inset-right) + 6px)); display: flex; align-items: center; gap: 2px; }
+.login-gear { width: 44px; height: 44px; display: grid; place-items: center; border: 0; background: transparent; color: var(--text-2); border-radius: 50%; -webkit-tap-highlight-color: transparent; }
+.login-gear.is-on { color: var(--accent); background: var(--surface-2); }

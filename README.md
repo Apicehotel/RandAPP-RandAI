@@ -214,3 +214,6 @@ Come la vecchia app, adattate a PIN per persona e WhatsApp. Si apre da Profilo �
 - Azione `admin_login` della funzione `randapp-pin-auth`: verifica il PIN sul server e apre la sessione dell'admin di sistema ("Randagio", admin attivo in tutte le strutture). Se quella persona non esiste/non è admin ovunque, l'accesso è rifiutato.
 - Tentativi sbagliati contati per origine (hash di IP + dispositivo, tabella `randapp.admin_gate_attempts`, migrazione 0025): 5 errori = blocco 10 minuti.
 - Il PIN si cambia nella vecchia app finché esiste; una scheda per cambiarlo qui non c'è ancora.
+
+### Login pulito: rotella accanto al tema
+- In alto a destra: **rotella Impostazioni** + switch sole/luna. La rotella apre l'accesso con PIN amministratore (la scheda mostra solo il PIN a 6 cifre); toccala di nuovo o "‹ RandApp" per tornare al login normale. La riga "Impostazioni" nella scheda non c'è più.

@@ -141,7 +141,16 @@ export default function Login({ initialHotel, onLoggedIn }) {
   return (
     <div className="center">
       <div className="auth-box login">
-        <ThemeSwitch className="themeswitch-corner" />
+        <div className="login-corner">
+          <button type="button" className={`login-gear ${adminMode ? 'is-on' : ''}`} aria-label="Impostazioni" aria-pressed={adminMode} data-testid="open-settings-link"
+            title="Impostazioni (accesso amministratore)" onClick={() => { setAdminMode((v) => !v); setError(''); setPin(''); setTimeout(() => pinRef.current?.focus(), 0) }}>
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4z" />
+              <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" />
+            </svg>
+          </button>
+          <ThemeSwitch />
+        </div>
         <div className="login-brand">
           <img className="brand-logo" src={apiceLogo} alt="ApiceHotel" width="132" height="132" />
           <h1>RandApp</h1>
@@ -202,19 +211,6 @@ export default function Login({ initialHotel, onLoggedIn }) {
             {busy ? 'ACCESSO…' : adminMode ? 'ENTRA →' : 'ACCEDI →'}
           </Button>
 
-          {!adminMode && (
-            <>
-              <div className="login-divider"><span>oppure</span></div>
-              <button type="button" className="login-settings" data-testid="open-settings-link" onClick={() => { setAdminMode(true); setError(''); setPin(''); setTimeout(() => pinRef.current?.focus(), 0) }}>
-                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4z" />
-                  <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" />
-                </svg>
-                <span><b>Impostazioni</b><small>Configura l'app e le preferenze</small></span>
-                <i aria-hidden="true">›</i>
-              </button>
-            </>
-          )}
           <div className="login-tools">
             <Button type="button" onClick={() => setShowLog((v) => !v)}>{showLog ? 'Nascondi errori' : 'Registro errori'}</Button>
             <Button type="button" onClick={async () => { setProbe({ text: 'Provo…' }); setProbe(await testConnection()) }}>Prova collegamento</Button>
