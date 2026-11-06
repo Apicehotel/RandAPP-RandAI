@@ -2,9 +2,10 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
 import { readFileSync, existsSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 
 // Nessun dato sensibile nel repo: token JWT, chiavi, password/PIN scritti nei file.
-const root = new URL('../', import.meta.url).pathname
+const root = fileURLToPath(new URL('../', import.meta.url))
 const files = execFileSync('git', ['ls-files', '-co', '--exclude-standard'], { cwd: root, encoding: 'utf8' })
   .split('\n')
   .filter((f) => f && existsSync(root + f) && !f.endsWith('package-lock.json') && !f.startsWith('test/'))
