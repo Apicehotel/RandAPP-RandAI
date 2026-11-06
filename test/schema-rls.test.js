@@ -2,8 +2,9 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-const dir = new URL('../supabase/migrations/', import.meta.url).pathname
+const dir = fileURLToPath(new URL('../supabase/migrations/', import.meta.url))
 const sql = readdirSync(dir)
   .filter((f) => f.endsWith('.sql'))
   .sort()

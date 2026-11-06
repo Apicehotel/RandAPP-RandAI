@@ -1,7 +1,7 @@
 import { supabase } from '../lib/supabase.js'
 
 const COLUMNS =
-  'id,hotel_id,title,location,notes,status,scheduled_at,scheduled_until,category,rooms,assignee_ids,issue_id,created_by,assigned_to,created_at,updated_at,completed_at'
+  'id,hotel_id,title,location,notes,status,scheduled_at,scheduled_until,category,rooms,assignee_ids,issue_id,created_by,assigned_to,created_at,updated_at,completed_at,created_by_name,completed_by_name,rooms_done'
 
 // Sempre filtrato per hotel_id (la RLS lo impone comunque).
 export async function listInterventions(hotelId, { limit = 200 } = {}) {
