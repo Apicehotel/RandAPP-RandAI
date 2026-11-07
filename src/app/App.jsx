@@ -1,6 +1,6 @@
 import { Suspense, useEffect, useState } from 'react'
 import { isConfigured, missingConfig } from '../lib/supabase.js'
-import { hasActiveSession, loadContext } from '../lib/auth.js'
+import { hasActiveSession, loadContext, onSessionLost, verifySession } from '../lib/auth.js'
 import { lazyWithRetry } from '../lib/lazy-retry.js'
 import { useRoute } from '../lib/hooks.js'
 import { can, PERM } from '../lib/permissions.js'
@@ -208,6 +208,7 @@ export default function App() {
   const route = useRoute()
   const [ctx, setCtx] = useState(null)
   const [booting, setBooting] = useState(isConfigured)
+  const [expired, setExpired] = useState(false)
 
   // All'avvio riprende la sessione salvata (se c'è) senza chiedere di nuovo il PIN.
   useEffect(() => {
@@ -229,6 +230,18 @@ export default function App() {
     return () => { cancelled = true }
   }, [])
 
+  // Se la sessione finisce (altro dispositivo, rinnovo fallito) si torna al login con un avviso, senza richieste 401 ogni minuto.
+  useEffect(() => {
+    if (!isConfigured || !ctx) return undefined
+    const lost = () => { setCtx(null); setExpired(true) }
+    const stop = onSessionLost(lost)
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') verifySession().then((ok) => { if (!ok) lost() }).catch(() => {})
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => { stop(); document.removeEventListener('visibilitychange', onVisible) }
+  }, [ctx])
+
   // Cambio struttura senza rifare il PIN: stessa sessione, nuova iscrizione (ruolo e permessi si rileggono).
   const changeHotel = async (hotelId) => {
     const next = await loadContext(hotelId)
@@ -244,6 +257,8 @@ export default function App() {
 
   if (!ctx) {
     return (
+      <>
+      {expired && <div className="banner" role="status">Sessione scaduta: hai fatto l'accesso su un altro dispositivo oppure è passato troppo tempo. Rientra con il PIN.</div>}
       <Login
         initialHotel={readHotel()}
         onLoggedIn={(c) => {
@@ -251,8 +266,10 @@ export default function App() {
           let admin = false
           try { admin = sessionStorage.getItem('randapp.adminIntent') === '1'; sessionStorage.removeItem('randapp.adminIntent') } catch { /* nessun problema */ }
           window.location.hash = admin && can(c.permissions, PERM.ADMIN) ? '/settings' : '/home'
+          setExpired(false)
         }}
       />
+      </>
     )
   }
 

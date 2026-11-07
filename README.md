@@ -164,6 +164,10 @@ scripts/               create-user, check-bundle
 test/                  test automatici (permessi, coda, schema RLS, niente segreti)
 ```
 
+## Sessione scaduta
+
+Se la sessione finisce (per esempio perché lo stesso utente accede da un altro dispositivo, o il rinnovo del token non riesce) l'app torna al login con l'avviso "Sessione scaduta" (`onSessionLost` e `verifySession` in `src/lib/auth.js`, gestiti in `App.jsx`). Il controllo col server avviene quando si torna sull'app. Se si è solo offline non si viene disconnessi.
+
 ## Hosting: Netlify provvisorio, poi Vercel
 
 - **Netlify è solo provvisorio** (per provare l'app sul telefono): sito https://randapp.netlify.app. **Si torna su Vercel** (decisione dell'utente del 2026-11-05; prima si era parlato di DigitalOcean). Al passaggio: stesso build (`npm ci && npm run build`, cartella `dist`) con le variabili `VITE_*` impostate PRIMA del build, poi aggiornare `app_url` in `edge_function_secrets` e questa sezione.
