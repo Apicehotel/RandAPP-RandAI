@@ -57,3 +57,22 @@ export function deliverySummary(rows) {
 }
 
 export const CHANNEL_LABELS = { whatsapp: 'WhatsApp', ntfy: 'ntfy', push: 'Notifiche push' }
+
+// Consumi: percentuale (0-100, intera) per le barre; senza massimo o con massimo 0 non c'è barra.
+export function usagePercent(used, max) {
+  const u = Number(used), m = Number(max)
+  if (!Number.isFinite(u) || !Number.isFinite(m) || m <= 0) return null
+  return Math.max(0, Math.min(100, Math.round((u / m) * 100)))
+}
+
+// Attività degli ultimi 30 giorni: altezze delle barre (0-100) sul giorno più alto, e totali.
+export function activityBars(days) {
+  const list = Array.isArray(days) ? days : []
+  const rows = list.map((d) => ({ date: String(d?.date || ''), issues: Number(d?.issues) || 0, interventions: Number(d?.interventions) || 0 }))
+  const peak = Math.max(1, ...rows.map((r) => r.issues + r.interventions))
+  return {
+    bars: rows.map((r) => ({ ...r, height: Math.round(((r.issues + r.interventions) / peak) * 100) })),
+    issues: rows.reduce((a, r) => a + r.issues, 0),
+    interventions: rows.reduce((a, r) => a + r.interventions, 0),
+  }
+}

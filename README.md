@@ -208,7 +208,7 @@ Come la vecchia app, adattate a PIN per persona e WhatsApp. Si apre da Profilo �
 - **Utenti**: elenco e ricerca; crea utente (nome, ruolo, PIN 4 cifre, numero WhatsApp facoltativo); modifica nome/ruolo/attivo; numero WhatsApp (assorbe "Numeri WhatsApp", che resta per i numeri non assegnati); cambia PIN; sblocca dopo troppi tentativi. Non puoi toglierti da solo il ruolo admin né disattivarti.
 - **Ruoli**: matrice ruolo → permessi con interruttori (valgono per tutte le strutture; `admin` tiene sempre `admin.access`).
 - **Notifiche**: canali WhatsApp / ntfy / push attivabili per struttura, invii ultimi 7 giorni, ultimi falliti, destinazioni registrate, quante persone hanno il numero. (Per ora tutti i canali sono spenti: si accendono qui quando i segreti del server sono configurati.)
-- **Consumi**: conteggi della struttura, foto e peso, dimensione database, connessioni.
+- **Consumi**: dimensione database, connessioni usate su massimo (barra), foto e peso, grafico segnalazioni/interventi degli ultimi 30 giorni, conteggi della struttura, destinazioni notifiche (funzione `admin_usage`, migrazione `0030`; helper `usagePercent` e `activityBars` in `src/lib/admin.js`).
 - **Diagnostica**: errori ultimi 7 giorni (registro con la causa), invii falliti, numeri non assegnati.
 - Server: migrazione `0024_admin_settings.sql` (RPC `admin_*`, tutte con controllo permesso, mai PIN o hash) e funzione edge `randapp-admin` (crea utente e cambia PIN con bcrypt, verifica sessione e `admin.access`; il PIN non è mai nei log né restituito).
 - Non portate dalla vecchia app: scheda Sensori (c'è già la schermata Sensori), link per tecnici esterni (Fase 4).
