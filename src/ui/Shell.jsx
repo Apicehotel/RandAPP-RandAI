@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { bottomNavFor, initialsFor, isActivePath } from '../lib/permissions.js'
 import { hotelById } from '../lib/hotels.js'
 import { logout } from '../lib/auth.js'
@@ -8,6 +8,8 @@ import { countUnread } from '../data/notifications.js'
 import { useUnread } from '../lib/hooks.js'
 import { badgeText } from '../lib/notifications.js'
 import { Icon } from './kit.jsx'
+import { applyPalette } from '../lib/palette.js'
+import { useKeyboardOpen } from '../lib/use-keyboard.js'
 
 // Unica fonte del "chrome" dell'app: nessuna schermata costruisce la propria barra.
 // In alto: struttura a sinistra, cerchio del profilo a destra. In basso: 5 sezioni.
@@ -17,10 +19,13 @@ export default function Shell({ route, ctx, onLogout, onSwitchHotel, onChangeHot
   const items = bottomNavFor(ctx.permissions)
   const hotel = hotelById(ctx.hotelId)
   const hotelName = hotel?.name || ctx.hotelId
+  const keyboard = useKeyboardOpen()
+  // Ogni struttura ha la sua palette: cambia con la struttura scelta.
+  useEffect(() => { applyPalette(ctx.hotelId) }, [ctx.hotelId])
   const unread = useUnread(() => countUnread(ctx.hotelId, ctx.userId), [ctx.hotelId, ctx.userId])
 
   return (
-    <div className="shell">
+    <div className={`shell${keyboard ? ' kb' : ''}`}>
       <header className="shell-top">
         <button
           type="button"
