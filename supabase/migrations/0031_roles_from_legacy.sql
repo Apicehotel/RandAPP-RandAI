@@ -30,7 +30,8 @@ declare
 begin
   for f in
     select p.oid from pg_proc p join pg_namespace n on n.oid = p.pronamespace
-     where n.nspname = 'randapp' and pg_get_functiondef(p.oid) like '%' || old_list || '%'
+     where n.nspname = 'randapp'
+       and (case when p.prokind = 'f' then pg_get_functiondef(p.oid) end) like '%' || old_list || '%'
   loop
     def := pg_get_functiondef(f.oid);
     -- "array[...]" = destinatari di default dei promemoria; "in (...)" = validazione di un ruolo

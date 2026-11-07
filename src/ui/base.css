@@ -497,3 +497,92 @@ a.btn, .hub-link, .card.issue, a.card, .drawer a, nav a { color: inherit; }
 .meter > span { display: block; height: 100%; background: var(--accent); border-radius: 99px; }
 .bars { display: flex; align-items: flex-end; gap: 2px; height: 64px; }
 .bars > span { flex: 1; min-width: 2px; background: var(--accent); border-radius: 2px 2px 0 0; opacity: .85; }
+
+/* ===== Stile glass: vetro su barre e pannelli, bordi sicuri (notch, isola, Android a gesti o tre tasti) ===== */
+/* ---------- Sfondo sfumato ---------- */
+body {
+  background:
+    radial-gradient(120% 60% at 0% 0%, var(--g1) 0%, transparent 60%),
+    radial-gradient(100% 60% at 100% 100%, var(--g3) 0%, transparent 62%),
+    var(--g2);
+  background-color: var(--g2);
+}
+
+/* ---------- Vetro: sfocatura SOLO su barre e pannelli sovrapposti ---------- */
+.shell-top, .shell-nav, .drawer, .picker {
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--blur);
+  backdrop-filter: var(--blur);
+}
+.shell-top { border-bottom-color: var(--glass-line); }
+.drawer, .picker { border-color: var(--glass-line); }
+.drawer-head, .drawer-foot { border-color: var(--glass-line); }
+
+/* Intestazione fissa delle pagine: prima era piena (--bg), ora vetro. */
+.page > :is(h1, :has(> h1), :has(> * > h1)) {
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--blur);
+  backdrop-filter: var(--blur);
+}
+
+/* Schede e riquadri: tinta e bordo di vetro, senza sfocatura (nelle liste lunghe pesa sui telefoni lenti
+   e su uno sfondo morbido non cambia l'aspetto). */
+.card, .hotel-pick, .pad button {
+  background: var(--glass-bg);
+  border-color: var(--glass-line);
+  box-shadow: var(--glass-shadow);
+}
+.btn { background: var(--glass-strong); border-color: var(--glass-line); }
+.btn.primary { background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 65%, #fff)); border-color: transparent; }
+.chip { border-color: var(--glass-line); }
+.hotel-chip { background: var(--glass-strong); }
+
+/* ---------- Bordi sicuri (notch, isola, Android a gesti o a tre tasti) ---------- */
+/* Lati: in orizzontale il notch non copre testo e tasti. */
+.shell-top {
+  padding-left: max(var(--pad-page), var(--safe-left));
+  padding-right: max(var(--pad-page), var(--safe-right));
+}
+.shell-stage {
+  padding-left: max(var(--pad-page), var(--safe-left));
+  padding-right: max(var(--pad-page), var(--safe-right));
+}
+.drawer { padding-right: var(--safe-right); }
+.picker { left: max(12px, var(--safe-left)); right: max(12px, var(--safe-right)); }
+
+/* Barra in basso: sospesa, con uno stacco minimo dal bordo anche quando il sistema dichiara 0
+   (Android con i tre tasti). Le altezze restano quelle del telefono (dvh in .shell). */
+@media (max-width: 899px) {
+  .shell-nav {
+    margin: 0 max(var(--gap-tight), var(--safe-right)) max(var(--gap-tight), var(--safe-bottom)) max(var(--gap-tight), var(--safe-left));
+    padding-bottom: 0;
+    border: 1px solid var(--glass-line);
+    border-radius: calc(var(--radius) * 1.4);
+    box-shadow: var(--glass-shadow);
+  }
+  /* Con la tastiera aperta la barra lascia lo spazio ai campi. */
+  .shell.kb .shell-nav { display: none; }
+}
+
+/* Desktop: barra laterale in vetro a tutta altezza. */
+@media (min-width: 900px) {
+  .shell-nav {
+    margin: 0; border: 0; border-right: 1px solid var(--glass-line); border-radius: 0; box-shadow: none;
+  }
+  .nav-item[aria-current='page'] { background: var(--glass-strong); }
+  .shell-stage { padding-left: calc(var(--pad-page) * 1.5); padding-right: calc(var(--pad-page) * 1.5); }
+}
+
+/* ---------- Glass: campi, filtri, selettori, login e impostazioni ---------- */
+.input, .select, .textarea, .chip, .staff, .checkpill, .suggest {
+  background: var(--glass-strong);
+  border-color: var(--field-line);
+}
+.suggest { -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); border-color: var(--glass-line); }
+.chip[aria-pressed='true'] { background: var(--accent); border-color: transparent; }
+.staff[aria-pressed='true'] { background: color-mix(in srgb, var(--accent) 14%, var(--glass-strong)); }
+.seg button[aria-pressed='true'] { background: var(--glass-strong); }
+.nav-item.nav-home .ico { background: var(--glass-strong); border-color: var(--glass-line); }
+.login-card { -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); }
+.login-settings, .login-gear.is-on { border-color: var(--glass-line); }
+.themeswitch-track { border-color: var(--glass-line); }

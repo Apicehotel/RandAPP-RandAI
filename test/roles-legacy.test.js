@@ -55,3 +55,8 @@ test('il seme copia le strutture com\'erano: una riga per persona e struttura, s
   assert.match(seed, /on conflict \(auth_user_id, hotel_id\) do nothing/)
   assert.ok(!/pin\s*=\s*'\d/.test(seed))
 })
+
+test('0031: non chiede la definizione delle funzioni aggregate (pg_get_functiondef fallisce)', () => {
+  const sql = readFileSync(new URL('../supabase/migrations/0031_roles_from_legacy.sql', import.meta.url), 'utf8');
+  assert.match(sql, /case when p\.prokind = 'f' then pg_get_functiondef\(p\.oid\) end/);
+});
