@@ -125,6 +125,8 @@ html { font-size: 16px; }
   --glass-shadow: 0 6px 24px rgba(40, 60, 110, 0.12);
   --blur: blur(16px) saturate(150%);
   --glass-bg: var(--glass);
+  --surface-2: rgba(27, 31, 36, 0.06); /* riempimenti secondari: velo sul vetro, non grigio pieno */
+  --field-line: rgba(27, 31, 36, 0.2);
 }
 
 /* ---------- Palette, tema chiaro ---------- */
@@ -137,6 +139,7 @@ html { font-size: 16px; }
 :root[data-theme='dark'] {
   --glass: rgba(30, 36, 52, 0.58); --glass-strong: rgba(34, 41, 60, 0.82);
   --glass-line: rgba(255, 255, 255, 0.14); --glass-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
+  --surface-2: rgba(255, 255, 255, 0.09); --field-line: rgba(255, 255, 255, 0.28);
 }
 :root[data-theme='dark'][data-pal='ghiaccio'] { --g1: #1c2a4a; --g2: #141a26; --g3: #2a2145; --accent: #8fb2ff; }
 :root[data-theme='dark'][data-pal='salvia'] { --g1: #17352c; --g2: #121c1a; --g3: #16303a; --accent: #6fd3ae; }
@@ -147,6 +150,7 @@ html { font-size: 16px; }
   :root:not([data-theme='light']):not([data-theme='dark']) {
     --glass: rgba(30, 36, 52, 0.58); --glass-strong: rgba(34, 41, 60, 0.82);
     --glass-line: rgba(255, 255, 255, 0.14); --glass-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
+    --surface-2: rgba(255, 255, 255, 0.09); --field-line: rgba(255, 255, 255, 0.28);
   }
   :root[data-pal='ghiaccio']:not([data-theme='light']):not([data-theme='dark']) { --g1: #1c2a4a; --g2: #141a26; --g3: #2a2145; --accent: #8fb2ff; }
   :root[data-pal='salvia']:not([data-theme='light']):not([data-theme='dark']) { --g1: #17352c; --g2: #121c1a; --g3: #16303a; --accent: #6fd3ae; }
