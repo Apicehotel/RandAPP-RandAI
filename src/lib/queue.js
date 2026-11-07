@@ -14,12 +14,18 @@ export const URGENCIES = [
   { id: 'bassa', label: 'Bassa', rank: 1 },
 ]
 
+// Unione delle categorie della vecchia app (segnalazioni: arredo, varie, idraulico, elettrico, edilizio, clima;
+// interventi: filtri, varie, idromassaggio, edilizio, extrapiani, arredo) più Serramenti. "Altro" resta ultima.
 export const CATEGORIES = [
   'Idraulica',
   'Elettrico',
   'Climatizzazione',
   'Arredi',
+  'Edilizio',
   'Serramenti',
+  'Filtri',
+  'Idromassaggio',
+  'Extrapiani',
   'Altro',
 ]
 
