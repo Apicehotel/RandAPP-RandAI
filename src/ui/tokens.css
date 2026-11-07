@@ -37,6 +37,8 @@
   --tile-cols: 2;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
 
   /* Tema chiaro: nessuna superficie scura */
   --bg: #f4f5f7;
@@ -112,3 +114,50 @@
 }
 
 html { font-size: 16px; }
+
+/* Stile glass: sfondo sfumato in due tinte + vetro. La palette (data-pal) cambia con la struttura (src/lib/palette.js);
+   chiaro/scuro (data-theme) è una scelta a parte. Le regole che li usano sono in fondo a base.css. */
+:root {
+  --g1: #dbe7fb; --g2: #eaf0f7; --g3: #e3ddf6;
+  --glass: rgba(255, 255, 255, 0.62);
+  --glass-strong: rgba(255, 255, 255, 0.8);
+  --glass-line: rgba(255, 255, 255, 0.75);
+  --glass-shadow: 0 6px 24px rgba(40, 60, 110, 0.12);
+  --blur: blur(16px) saturate(150%);
+  --glass-bg: var(--glass);
+}
+
+/* ---------- Palette, tema chiaro ---------- */
+:root[data-pal='ghiaccio'] { --g1: #dbe7fb; --g2: #eaf0f7; --g3: #e3ddf6; --accent: #3b6fe0; }
+:root[data-pal='salvia'] { --g1: #d6ecdf; --g2: #e9f2ee; --g3: #d9e9f0; --accent: #1b7f61; }
+:root[data-pal='sera'] { --g1: #e0dcf5; --g2: #eeeaf5; --g3: #f3dfe6; --accent: #6a58d6; }
+:root[data-pal='cacao'] { --g1: #efe0d2; --g2: #f4ede7; --g3: #e8dacb; --accent: #8a5a3c; }
+
+/* ---------- Tema scuro: stessi nomi, valori scuri (sia scelto sia dal sistema) ---------- */
+:root[data-theme='dark'] {
+  --glass: rgba(30, 36, 52, 0.58); --glass-strong: rgba(34, 41, 60, 0.82);
+  --glass-line: rgba(255, 255, 255, 0.14); --glass-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
+}
+:root[data-theme='dark'][data-pal='ghiaccio'] { --g1: #1c2a4a; --g2: #141a26; --g3: #2a2145; --accent: #8fb2ff; }
+:root[data-theme='dark'][data-pal='salvia'] { --g1: #17352c; --g2: #121c1a; --g3: #16303a; --accent: #6fd3ae; }
+:root[data-theme='dark'][data-pal='sera'] { --g1: #2a2349; --g2: #17142a; --g3: #3a1f33; --accent: #aa9bff; }
+:root[data-theme='dark'][data-pal='cacao'] { --g1: #3a2a20; --g2: #1c1613; --g3: #2e2118; --accent: #d9a37a; }
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']):not([data-theme='dark']) {
+    --glass: rgba(30, 36, 52, 0.58); --glass-strong: rgba(34, 41, 60, 0.82);
+    --glass-line: rgba(255, 255, 255, 0.14); --glass-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
+  }
+  :root[data-pal='ghiaccio']:not([data-theme='light']):not([data-theme='dark']) { --g1: #1c2a4a; --g2: #141a26; --g3: #2a2145; --accent: #8fb2ff; }
+  :root[data-pal='salvia']:not([data-theme='light']):not([data-theme='dark']) { --g1: #17352c; --g2: #121c1a; --g3: #16303a; --accent: #6fd3ae; }
+  :root[data-pal='sera']:not([data-theme='light']):not([data-theme='dark']) { --g1: #2a2349; --g2: #17142a; --g3: #3a1f33; --accent: #aa9bff; }
+  :root[data-pal='cacao']:not([data-theme='light']):not([data-theme='dark']) { --g1: #3a2a20; --g2: #1c1613; --g3: #2e2118; --accent: #d9a37a; }
+}
+
+/* Dove il vetro non c'è (browser vecchi) o l'utente chiede meno trasparenza: pannello pieno, stesso layout. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  :root { --glass-bg: var(--glass-strong); --blur: none; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  :root { --glass-bg: var(--glass-strong); --blur: none; }
+}
