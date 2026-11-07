@@ -64,6 +64,12 @@ export const ROLE_LABELS = {
   manutentore: 'Manutentore',
   governante: 'Governante',
   reception: 'Reception',
+  capo_governante: 'Capo Governante',
+  portiere_notturno: 'Portiere Notturno',
+  direttore_congressi: 'Direttore Centro Congressi',
+  tecnico_esterno: 'Tecnico esterno',
+  supremo: 'Supremo',
+  randai: 'RandAI',
 }
 
 export const roleLabel = (role) => ROLE_LABELS[role] || role || ''

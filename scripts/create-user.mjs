@@ -7,7 +7,7 @@ import { randomUUID } from 'node:crypto'
 import { createClient } from '@supabase/supabase-js'
 import bcrypt from 'bcryptjs'
 
-const ROLES = ['admin', 'direzione', 'responsabile', 'manutentore', 'governante', 'reception']
+const ROLES = ['admin', 'direzione', 'responsabile', 'manutentore', 'governante', 'reception', 'capo_governante', 'portiere_notturno', 'direttore_congressi', 'tecnico_esterno', 'supremo', 'randai']
 const HOTELS = ['hotelgio', 'chocohotel', 'brigantino']
 
 function args(argv) {
