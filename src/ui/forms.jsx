@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { clampPax, locationOk, roomGroups, suggestLocations, toggleIn, togglePlan } from '../lib/forms.js'
 import { Icon } from './kit.jsx'
+import { roleLabel } from '../lib/permissions.js'
 
 // Scelta singola a "chip" (categoria, urgenza, turno…). Le icone sono facoltative.
 export function ChipPick({ options, value, onChange, label }) {
@@ -38,26 +39,35 @@ export function LocationInput({ id, locations, value, onChange, placeholder = 'e
   )
 }
 
-// Più camere insieme, a piani: tocca un piano per sceglierle tutte.
+// Più camere insieme, a piani: tocca un piano per aprirlo, "Tutte" per sceglierle tutte.
+// Le camere scelte restano SEMPRE visibili in alto (anche dei piani chiusi) e si tolgono con un tocco.
 export function RoomsPicker({ locations, selected, onChange }) {
   const groups = useMemo(() => roomGroups(locations), [locations])
   const [open, setOpen] = useState(groups[0]?.name || '')
   if (groups.length === 0) return <p className="muted">Nessun elenco camere per questa struttura: scrivi il luogo sopra.</p>
   return (
     <div className="stack">
+      {selected.length > 0 && (
+        <div className="chips wrap" role="group" aria-label="Camere scelte">
+          {selected.map((r) => (
+            <button type="button" key={r} className="chip" aria-pressed="true" aria-label={`Togli ${r}`} onClick={() => onChange(toggleIn(selected, r))}>{r} ✕</button>
+          ))}
+        </div>
+      )}
       {groups.map((g) => {
         const count = g.rooms.filter((r) => selected.includes(r)).length
+        const isOpen = open === g.name
         return (
           <div key={g.name} className="roomgroup">
             <div className="row">
-              <button type="button" className="chip" aria-pressed={open === g.name} onClick={() => setOpen(open === g.name ? '' : g.name)}>
-                {g.name}{count ? ` · ${count}` : ''}
+              <button type="button" className={`chip floor${count ? ' has-sel' : ''}`} aria-expanded={isOpen} onClick={() => setOpen(isOpen ? '' : g.name)}>
+                <Icon name="chevron" size={14} /> {g.name}{count ? ` · ${count} scelte` : ''}
               </button>
               <button type="button" className="linkbtn" onClick={() => onChange(togglePlan(selected, g.rooms))}>
                 {count === g.rooms.length ? 'Togli tutte' : 'Tutte'}
               </button>
             </div>
-            {open === g.name && (
+            {isOpen && (
               <div className="chips wrap">
                 {g.rooms.map((r) => (
                   <button type="button" key={r} className="chip" aria-pressed={selected.includes(r)} onClick={() => onChange(toggleIn(selected, r))}>{r}</button>
@@ -81,7 +91,7 @@ export function StaffPicker({ staff, selected, onChange }) {
         return (
           <button type="button" key={p.user_id} className="staff" aria-pressed={on} onClick={() => onChange(toggleIn(selected, p.user_id))}>
             <Icon name="user" size={18} />
-            <span><strong>{p.display_name}</strong><small>{p.role}</small></span>
+            <span><strong>{p.display_name}</strong><small>{roleLabel(p.role)}</small></span>
             <span aria-hidden="true">{on ? '✓' : ''}</span>
           </button>
         )
