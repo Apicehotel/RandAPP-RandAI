@@ -157,3 +157,25 @@ export async function testConnection() {
     return { ok: false, text: `Non riesco a raggiungere ${host} (${e?.message || 'errore di rete'}). Causa probabile: connessione del telefono, blocco del browser o rete aziendale.` }
   }
 }
+
+// Sessione persa: il server l'ha chiusa (per esempio un accesso dello stesso utente su un altro dispositivo) oppure
+// il rinnovo non è riuscito. supabase-js lo segnala con SIGNED_OUT: l'app torna al login invece di restare "dentro" con richieste 401.
+export const isSessionLost = (event, session) => event === 'SIGNED_OUT' && !session
+
+export function onSessionLost(callback) {
+  const { data } = supabase.auth.onAuthStateChange((event, session) => {
+    if (isSessionLost(event, session)) callback()
+  })
+  return () => data.subscription.unsubscribe()
+}
+
+// Quando si torna sull'app controlla col server che la sessione esista ancora; se non c'è, chiude in modo pulito.
+export async function verifySession() {
+  const { data, error } = await supabase.auth.getUser()
+  if (data?.user) return true
+  if (error && /session|jwt|token|403|401/i.test(`${error.status} ${error.code} ${error.message}`)) {
+    await supabase.auth.signOut({ scope: 'local' }).catch(() => {})
+    return false
+  }
+  return true // rete assente o errore temporaneo: non si butta fuori nessuno
+}
