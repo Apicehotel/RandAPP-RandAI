@@ -3,7 +3,10 @@
 const norm = (s) => String(s || '').trim().toLowerCase()
 
 // Icona per categoria (stesso elenco di segnalazioni, interventi e lavori).
-const CAT_ICON = { Idraulica: 'drop', Elettrico: 'bolt', Climatizzazione: 'thermo', Arredi: 'bed', Serramenti: 'door', Altro: 'wrench' }
+const CAT_ICON = {
+  Idraulica: 'drop', Elettrico: 'bolt', Climatizzazione: 'thermo', Arredi: 'bed', Edilizio: 'building',
+  Serramenti: 'door', Filtri: 'refresh', Idromassaggio: 'drop', Extrapiani: 'list', Altro: 'wrench',
+}
 export const categoryOptions = (categories) => categories.map((c) => ({ id: c, label: c, icon: CAT_ICON[c] || 'wrench' }))
 
 // ---- Luoghi (camere e zone) di una struttura
