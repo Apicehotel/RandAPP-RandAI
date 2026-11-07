@@ -31,3 +31,21 @@ export async function adminSetPhone(hotelId, userId, phone) {
   }
   return data || ''
 }
+
+// Username, nome e cognome: solo la persona stessa (funzioni sul server). Il nome di accesso (display_name) non cambia.
+export async function getMyProfile() {
+  const { data, error } = await supabase.rpc('get_my_profile')
+  if (error) throw new Error('Impossibile leggere i tuoi dati')
+  const row = Array.isArray(data) ? data[0] : data
+  return { username: row?.username || '', firstName: row?.first_name || '', lastName: row?.last_name || '' }
+}
+
+export async function setMyProfile({ username, firstName, lastName }) {
+  const { data, error } = await supabase.rpc('set_my_profile', { p_username: username, p_first_name: firstName, p_last_name: lastName })
+  if (error) {
+    if (/Username|già usato|troppo lungo/.test(error.message || '')) throw new Error(error.message)
+    throw new Error('Impossibile salvare i tuoi dati')
+  }
+  const row = Array.isArray(data) ? data[0] : data
+  return { username: row?.username || '', firstName: row?.first_name || '', lastName: row?.last_name || '' }
+}

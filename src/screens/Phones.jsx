@@ -3,6 +3,7 @@ import { adminPhoneOverview, adminSetPhone } from '../data/profile.js'
 import { useAsync } from '../lib/hooks.js'
 import { roleLabel } from '../lib/permissions.js'
 import { Button, ErrorText, Spinner, formatDate } from '../ui/kit.jsx'
+import PhoneField from '../ui/PhoneField.jsx'
 
 const shown = (p) => (p ? p.replace(/^\+39(\d{3})(\d{3})(\d+)$/, '+39 $1 $2 $3') : '')
 
@@ -33,7 +34,7 @@ function PersonRow({ ctx, row, onSaved }) {
       <div className="muted">
         {row.phone ? `${shown(row.phone)} · ${row.issues} segnalazioni WhatsApp` : 'Numero mancante'}
       </div>
-      <input className="input" inputMode="tel" placeholder="Es. 340 1234567" value={value} onChange={(e) => setValue(e.target.value)} aria-label={`Numero di ${row.name}`} />
+      <PhoneField value={value} label={`Numero di ${row.name}`} onChange={setValue} />
       <Button onClick={save} disabled={busy || value === (row.phone || '')}>Salva</Button>
       {msg && <p role="status">{msg}</p>}
       <ErrorText>{err}</ErrorText>

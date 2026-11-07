@@ -66,7 +66,7 @@ async function directory(req: Request, hotelId: string, rawQuery: string) {
     from randapp.hotel_memberships m
     join randapp.profiles p on p.auth_user_id = m.auth_user_id
     where m.hotel_id = ${hotelId} and m.active and p.active
-      and p.display_name ilike ${q + "%"}
+      and (p.display_name ilike ${q + "%"} or p.username = ${q.toLowerCase()})
     order by p.display_name limit ${MAX_RESULTS}`;
   const users = rows.map((row) => ({ id: String(row.auth_user_id), name: String(row.display_name || "") }));
   return json({ ok: true, users });

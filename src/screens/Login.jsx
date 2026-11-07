@@ -176,7 +176,7 @@ export default function Login({ initialHotel, onLoggedIn }) {
           {!adminMode && <Field label="Utente" id="login-user">
             <div className="suggest-wrap">
               <input
-                id="login-user" className="input" value={query} placeholder="Scrivi il tuo nome" autoComplete="username"
+                id="login-user" className="input" value={query} placeholder="Scrivi il tuo nome o username" autoComplete="username"
                 autoCapitalize="words" data-testid="login-user-input"
                 onFocus={() => setOpen(true)}
                 onBlur={() => setTimeout(() => setOpen(false), 150)}
