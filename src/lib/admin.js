@@ -1,5 +1,5 @@
 // Logica pura (testabile) delle Impostazioni admin: nomi leggibili dei permessi, raggruppamento, formati.
-export const ROLES = ['admin', 'direzione', 'responsabile', 'manutentore', 'governante', 'reception']
+export const ROLES = ['admin', 'direzione', 'responsabile', 'manutentore', 'governante', 'reception', 'capo_governante', 'portiere_notturno', 'direttore_congressi', 'tecnico_esterno', 'supremo', 'randai']
 
 export const PERM_GROUPS = {
   issues: 'Segnalazioni', interventions: 'Interventi', planning_work: 'Planning lavori', planning_sale: 'Planning sale',

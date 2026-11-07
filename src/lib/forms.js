@@ -72,7 +72,7 @@ export function prepDefaults(dateFrom, addDays) {
 export const prepOk = (prep, dateFrom) => Boolean(prep) && prep <= dateFrom
 
 // ---- Persone assegnabili
-export const ASSIGNABLE_ROLES = ['manutentore', 'responsabile', 'direzione', 'admin']
+export const ASSIGNABLE_ROLES = ['manutentore', 'tecnico_esterno', 'responsabile', 'direzione', 'admin']
 export const assignable = (staff) => (staff || []).filter((p) => ASSIGNABLE_ROLES.includes(p.role))
 export function staffNames(staff, ids) {
   const byId = new Map((staff || []).map((p) => [p.user_id, p.display_name]))

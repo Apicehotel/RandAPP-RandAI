@@ -19,7 +19,7 @@ const cors = {
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...cors, "Content-Type": "application/json", "Cache-Control": "no-store" } });
 
-const ROLES = ["admin", "direzione", "responsabile", "manutentore", "governante", "reception"];
+const ROLES = ["admin", "direzione", "responsabile", "manutentore", "governante", "reception", "capo_governante", "portiere_notturno", "direttore_congressi", "tecnico_esterno", "supremo", "randai"];
 
 async function caller(req: Request, hotelId: string) {
   const token = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
