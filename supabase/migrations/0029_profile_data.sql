@@ -66,3 +66,31 @@ $$;
 
 revoke all on function randapp.get_my_profile(), randapp.set_my_profile(text, text, text) from public, anon;
 grant execute on function randapp.get_my_profile(), randapp.set_my_profile(text, text, text) to authenticated;
+
+-- Sulle segnalazioni WhatsApp compare "Nome Cognome" (se la persona li ha messi) al posto del numero; altrimenti il nome di accesso.
+-- Il collegamento riparte anche quando cambiano nome o cognome.
+create or replace function randapp.link_issue_senders()
+returns integer language plpgsql security definer set search_path = randapp, pg_temp as $$
+declare n integer;
+begin
+  update randapp.issues i
+     set created_by      = p.auth_user_id,
+         created_by_name = coalesce(p.shown_name, 'WhatsApp ' || i.created_by_phone)
+    from (select distinct on (i2.id) i2.id, pr.auth_user_id,
+                 coalesce(nullif(btrim(concat_ws(' ', pr.first_name, pr.last_name)), ''), pr.display_name) as shown_name
+            from randapp.issues i2
+            left join randapp.profiles pr on pr.phone = i2.created_by_phone and pr.active
+           where i2.source = 'whatsapp' and i2.created_by_phone is not null
+           order by i2.id, pr.created_at nulls last, pr.auth_user_id) p
+   where i.id = p.id
+     and (i.created_by is distinct from p.auth_user_id
+          or i.created_by_name is distinct from coalesce(p.shown_name, 'WhatsApp ' || i.created_by_phone));
+  get diagnostics n = row_count;
+  return n;
+end;
+$$;
+revoke all on function randapp.link_issue_senders() from public, anon, authenticated;
+
+drop trigger if exists profiles_phone_link on randapp.profiles;
+create trigger profiles_phone_link after insert or update of phone, display_name, first_name, last_name, active on randapp.profiles
+  for each row execute function randapp.trg_profile_phone_link();
