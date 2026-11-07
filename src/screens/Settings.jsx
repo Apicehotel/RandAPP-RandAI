@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { HOTELS } from '../lib/hotels.js'
 import { useAsync } from '../lib/hooks.js'
 import { roleLabel } from '../lib/permissions.js'
-import { ROLES, groupPermissions, rolesMatrix, permActionLabel, formatBytes, isValidPin, deliverySummary, CHANNEL_LABELS } from '../lib/admin.js'
+import { ROLES, groupPermissions, rolesMatrix, permActionLabel, formatBytes, usagePercent, activityBars, isValidPin, deliverySummary, CHANNEL_LABELS } from '../lib/admin.js'
 import * as api from '../data/admin.js'
 import { recoveryStatus } from '../data/recovery.js'
 import { adminSetPhone } from '../data/profile.js'
@@ -261,16 +261,35 @@ function AiTab({ ctx }) {
 // ------------------------------------------------------------------ Consumi
 function UsageTab({ ctx }) {
   const { data, error, loading } = useAsync(() => api.usage(ctx.hotelId), [ctx.hotelId])
-  const items = data && [
+  const pct = data ? usagePercent(data.connections, data.max_connections) : null
+  const act = data ? activityBars(data.activity_30d) : null
+  const counts = data && [
     ['Utenti attivi', data.users], ['Segnalazioni', `${data.issues} (${data.issues_open} aperte)`], ['Interventi', data.interventions],
     ['Planning lavori', data.planning_works], ['Prenotazioni sale', data.sale_bookings], ['Urgenti', data.urgent],
-    ['Foto', `${data.photos} (${formatBytes(data.photos_bytes)})`], ['Database', formatBytes(data.db_bytes)], ['Connessioni database', data.connections],
+    ['Destinazioni notifiche attive', data.devices ?? 0],
   ]
   return (
     <div className="stack">
       {loading && !data && <Spinner />}
       <ErrorText>{error}</ErrorText>
-      {items && items.map(([k, v]) => <div key={k} className="card row"><span>{k}</span><strong>{v}</strong></div>)}
+      {data && (
+        <>
+          <div className="card stack">
+            <div className="row"><span>Database</span><strong>{formatBytes(data.db_bytes)}</strong></div>
+            <div className="row"><span>Connessioni</span><strong>{data.connections}{data.max_connections ? ` su ${data.max_connections}` : ''}</strong></div>
+            {pct !== null && <div className="meter" role="img" aria-label={`Connessioni usate: ${pct}%`}><span style={{ width: `${pct}%` }} /></div>}
+            <div className="row"><span>Foto</span><strong>{data.photos} ({formatBytes(data.photos_bytes)})</strong></div>
+          </div>
+          <div className="card stack">
+            <strong>Ultimi 30 giorni</strong>
+            <span className="muted">{act.issues} segnalazioni · {act.interventions} interventi</span>
+            <div className="bars" role="img" aria-label={`Attività: ${act.issues} segnalazioni e ${act.interventions} interventi in 30 giorni`}>
+              {act.bars.map((b) => <span key={b.date} title={`${b.date}: ${b.issues} segnalazioni, ${b.interventions} interventi`} style={{ height: `${Math.max(b.height, 3)}%` }} />)}
+            </div>
+          </div>
+          {counts.map(([k, v]) => <div key={k} className="card row"><span>{k}</span><strong>{v}</strong></div>)}
+        </>
+      )}
       <p className="muted">Il database è condiviso con la vecchia app; le foto e i conteggi sono della struttura scelta.</p>
     </div>
   )
