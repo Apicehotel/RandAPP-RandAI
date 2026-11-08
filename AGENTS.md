@@ -4,14 +4,16 @@ Questo file vale per **Claude, Cursor e Codex**. È l'unica fonte di regole: `CL
 
 ## Progetto
 RandAPP-RandAI — vedi `README.md` per descrizione, stack e comandi. Il README è la fonte di verità su come funziona l'app.
+Per **standardizzare** (ruoli, categorie, migrazioni DB, sicurezza multi-hotel, layout, edge functions): leggi e segui [`docs/STANDARD.md`](./docs/STANDARD.md).
 
 ## Regole obbligatorie
-1. **Prima di iniziare**: leggi `README.md` e `docs/STATO.md`.
-2. **Dopo ogni modifica**: aggiorna `README.md` (se cambia il funzionamento) e aggiungi una riga in `docs/STATO.md`.
+1. **Prima di iniziare**: leggi `README.md`, `docs/STATO.md` e `docs/STANDARD.md`.
+2. **Dopo ogni modifica**: aggiorna `README.md` (se cambia il funzionamento) e aggiungi una riga in `docs/STATO.md`. Se cambi una regola di standardizzazione (checklist ruoli/categorie, stato migrazioni, hosting), aggiorna anche `docs/STANDARD.md`.
 3. **Mai dati sensibili** (PIN, password, token, chiavi API) nel README, nei commit, nel codice o nei log. Usa variabili d'ambiente (`.env`, già in `.gitignore`) e documenta solo i *nomi* delle variabili.
 4. **Non lavorare su `main`**: ogni strumento usa il proprio branch (vedi sotto) e si integra con una Pull Request.
 5. **Modifiche piccole e mirate**: non riscrivere file che non c'entrano con il compito.
 6. **Non toccare il lavoro in corso di un altro strumento**: controlla `docs/STATO.md` → sezione "In corso".
+7. **Non dichiarare applicata una migrazione** se non lo è sul database reale; tieni allineati STATO + STANDARD §3 + README «Stato dell'aggancio».
 
 ## Skill (in `.agents/skills`)
 Le skill valgono per tutti gli strumenti. Elenco e installazione nel `README.md`, versioni in `skills-lock.json`.
