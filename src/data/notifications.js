@@ -18,10 +18,10 @@ export async function countUnread(hotelId, userId) {
   return count || 0
 }
 
-export async function markRead(userId, ids) {
+export async function markRead(hotelId, userId, ids) {
   if (!ids.length) return
   const { error } = await supabase.from('notifications').update({ read_at: new Date().toISOString() })
-    .eq('user_id', userId).in('id', ids).is('read_at', null)
+    .eq('hotel_id', hotelId).eq('user_id', userId).in('id', ids).is('read_at', null)
   if (error) throw new Error('Impossibile segnare come letta')
 }
 
@@ -61,7 +61,7 @@ export async function sendTest(hotelId) {
 
 // ---- Destinazioni dell'utente (telefono, ntfy, WhatsApp; in futuro app Android/iOS)
 export async function listDevices(hotelId, userId) {
-  const { data, error } = await supabase.from('notification_devices').select('id,platform,token,label,active')
+  const { data, error } = await supabase.from('notification_devices').select('id,hotel_id,platform,token,label,active')
     .eq('hotel_id', hotelId).eq('user_id', userId)
   if (error) throw new Error('Impossibile caricare i dispositivi')
   return data || []
@@ -72,11 +72,12 @@ export async function saveDevice({ hotelId, userId, platform, token, keys = null
     .select('id,platform,token,label,active').single()
   if (error) throw new Error('Impossibile salvare il dispositivo')
   // Il salvataggio su un dispositivo già noto lo riattiva.
-  if (data && data.active === false) await setDeviceActive(data.id, true)
+  if (data && data.active === false) await setDeviceActive(hotelId, data.id, true)
   return data
 }
-export async function setDeviceActive(id, active) {
-  const { error } = await supabase.from('notification_devices').update({ active }).eq('id', id)
+export async function setDeviceActive(hotelId, id, active) {
+  const { error } = await supabase.from('notification_devices').update({ active })
+    .eq('hotel_id', hotelId).eq('id', id)
   if (error) throw new Error('Impossibile aggiornare il dispositivo')
 }
 
@@ -107,5 +108,5 @@ export async function disableWebPush(device) {
   const reg = await navigator.serviceWorker.getRegistration('./sw.js').catch(() => null)
   const sub = await reg?.pushManager.getSubscription().catch(() => null)
   await sub?.unsubscribe().catch(() => {})
-  if (device) await setDeviceActive(device.id, false)
+  if (device) await setDeviceActive(device.hotel_id, device.id, false)
 }

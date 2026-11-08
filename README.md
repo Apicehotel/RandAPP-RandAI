@@ -126,7 +126,7 @@ Pianificazioni (pg_cron): `randapp-notify-run` ogni minuto, `randapp-notify-disp
 
 **Migrazioni sul DB reale** (dettaglio operativo in [`docs/STANDARD.md`](./docs/STANDARD.md) §3 e in `docs/STATO.md`):
 - Applicate nel tempo: da `0000` in avanti almeno fino alle funzioni admin/recovery/AI (`0024`–`0027` e precedenti; vedi Fatto in STATO).
-- **Ancora da applicare**: `0028` (telefoni condivisi), `0029` (username/profilo), `0030` (Consumi v2), `0031` (12 ruoli), `0032` (`edilizio` → Edilizio). Il codice e le edge le assumono già in parte: **non redeployare** `randapp-pin-auth` con ricerca `username` se `0029` manca; non assegnare i 6 ruoli nuovi finché manca `0031`.
+- **Ancora da applicare**: `0028` (telefoni condivisi), `0029` (username/profilo), `0030` (Consumi v2), `0031` (12 ruoli), `0032` (`edilizio` → Edilizio), `0033` (UPDATE colonnare senza `hotel_id`, foto legate alla segnalazione, unique slot sale). Il codice e le edge le assumono già in parte: **non redeployare** `randapp-pin-auth` con ricerca `username` se `0029` manca; non assegnare i 6 ruoli nuovi finché manca `0031`; dopo il deploy del client che salva `completed_by_name` conviene avere `0033` sul DB.
 
 Script seed (in ordine, dopo le migrazioni): `00_users_from_legacy.sql`, `01_locations.sql` / `01_users_from_legacy_roles.sql` (dopo `0031`), `02_sensors.sql` / `02_issue_categories_backfill.sql` (dopo `0032`), `03_cron.sql`, `04_phones_from_legacy.sql`, `05_sale_config.sql`. Nessun PIN, hash o chiave dentro.
 Nota sensori: eWeLink restituisce 30 dei 45 dispositivi; i 15 mancanti sono fermi anche nella vecchia app e la nuova li segnala come "Sensori che non arrivano più".

@@ -2,28 +2,30 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { logError } from './errorlog.js'
 
 // Piccolo hook di caricamento: niente librerie extra, si ricarica a mano o quando torni sull'app.
+// Ogni esecuzione ha un numero di generazione: una risposta vecchia non sovrascrive una più recente
+// (es. cambio hotel veloce).
 export function useAsync(fn, deps = []) {
   const [state, setState] = useState({ data: null, error: null, loading: true })
-  const alive = useRef(true)
+  const gen = useRef(0)
   const run = useCallback(async () => {
+    const mine = ++gen.current
     setState((s) => ({ ...s, loading: true, error: null }))
     try {
       const data = await fn()
-      if (alive.current) setState({ data, error: null, loading: false })
+      if (mine === gen.current) setState({ data, error: null, loading: false })
     } catch (error) {
       logError('schermata', error)
-      if (alive.current) setState({ data: null, error: error.message || 'Errore', loading: false })
+      if (mine === gen.current) setState({ data: null, error: error.message || 'Errore', loading: false })
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps)
 
   useEffect(() => {
-    alive.current = true
     run()
     const onVisible = () => document.visibilityState === 'visible' && run()
     document.addEventListener('visibilitychange', onVisible)
     return () => {
-      alive.current = false
+      gen.current += 1
       document.removeEventListener('visibilitychange', onVisible)
     }
   }, [run])
@@ -52,15 +54,21 @@ export const go = (path) => {
 export function useUnread(loader, deps = []) {
   const [count, setCount] = useState(0)
   useEffect(() => {
-    let alive = true
-    const run = () => Promise.resolve().then(loader).then((n) => alive && setCount(n)).catch(() => {})
+    let gen = 0
+    const run = () => {
+      const mine = ++gen
+      return Promise.resolve()
+        .then(loader)
+        .then((n) => { if (mine === gen) setCount(n) })
+        .catch(() => {})
+    }
     run()
     const timer = setInterval(run, 60000)
     const onVisible = () => document.visibilityState === 'visible' && run()
     document.addEventListener('visibilitychange', onVisible)
     window.addEventListener('notifications:changed', run)
     return () => {
-      alive = false
+      gen += 1
       clearInterval(timer)
       document.removeEventListener('visibilitychange', onVisible)
       window.removeEventListener('notifications:changed', run)

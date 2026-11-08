@@ -18,7 +18,7 @@ export default function Notifications({ ctx }) {
   const [err, setErr] = useState('')
   const unread = unreadCount(data)
   const open = async (n) => {
-    if (!n.read_at) { try { await markRead(ctx.userId, [n.id]); changed() } catch { /* si apre lo stesso */ } }
+    if (!n.read_at) { try { await markRead(ctx.hotelId, ctx.userId, [n.id]); changed() } catch { /* si apre lo stesso */ } }
   }
   const readAll = async () => {
     setErr('')
@@ -116,7 +116,7 @@ export function NotificationSettings({ ctx }) {
             <div className="copybox">{ntfy.token}</div>
             <div className="row">
               <a href={ntfyLink(ntfy.token)} target="_blank" rel="noreferrer">Apri su ntfy</a>
-              <Button disabled={busy} onClick={() => run(() => setDeviceActive(ntfy.id, false), 'ntfy disattivato')}>Disattiva</Button>
+              <Button disabled={busy} onClick={() => run(() => setDeviceActive(ctx.hotelId, ntfy.id, false), 'ntfy disattivato')}>Disattiva</Button>
             </div>
           </>
         ) : (
@@ -128,7 +128,7 @@ export function NotificationSettings({ ctx }) {
         <strong>WhatsApp</strong>
         {!hotelOn('whatsapp') && <p className="muted">WhatsApp non è ancora attivo per la struttura.</p>}
         {wa ? (
-          <div className="row"><span>{wa.token}</span><Button disabled={busy} onClick={() => run(() => setDeviceActive(wa.id, false), 'Numero rimosso')}>Rimuovi</Button></div>
+          <div className="row"><span>{wa.token}</span><Button disabled={busy} onClick={() => run(() => setDeviceActive(ctx.hotelId, wa.id, false), 'Numero rimosso')}>Rimuovi</Button></div>
         ) : (
           <div className="row">
             <input className="input" inputMode="tel" placeholder="+39 333 1234567" value={phone} onChange={(e) => setPhone(e.target.value)} aria-label="Numero WhatsApp" />
