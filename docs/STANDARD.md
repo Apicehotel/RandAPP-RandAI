@@ -36,7 +36,7 @@ Non duplicare matrici lunghe nel README: collega qui o al file sorgente.
 ## 3. Migrazioni e database
 
 ### Ordine
-1. Nuova migrazione = file successivo in `supabase/migrations/` (`0033_….sql`, …), mai modificare una migrazione già applicata in produzione se si può evitare: meglio una migrazione nuova.
+1. Nuova migrazione = file successivo in `supabase/migrations/` (`0034_….sql`, …), mai modificare una migrazione già applicata in produzione se si può evitare: meglio una migrazione nuova.
 2. Schema **solo** `randapp.*`. **Non creare né modificare oggetti in `public`** (vecchia app) senza ok esplicito dell'utente.
 3. Funzioni edge con nomi propri (`randapp-pin-auth`, `randapp-admin`, `randapp-pin-recovery`, `ewelink-sync`, `notify-dispatch`, `legacy-sync`): non sovrascrivere `pin-auth` / `presence-status` della vecchia app.
 
@@ -52,6 +52,7 @@ Aggiornare sempre questa tabella e la sezione equivalente del README dopo un dep
 | `0031` ruoli legacy | **Nel repo, NON applicata** |
 | `0032` categorie edilizio | **Nel repo, NON applicata** |
 | `0033` harden UPDATE / foto / slot sale | **Nel repo, NON applicata** (grant colonne senza `hotel_id`, trigger, `issue_photos` WITH CHECK, unique slot sale) |
+| `0034` verifica isolamento foto | **Nel repo; non applicata alla produzione**. Nuova migrazione incrementale che riapplica la policy corretta anche sulle preview che hanno già registrato `0033`. Verificare l'applicazione sulla preview nei log Supabase. |
 
 **Regola:** se il codice assume una migrazione non ancora applicata, **non redeployare** la funzione edge / non far entrare utenti sui nuovi ruoli finché la migrazione non è sul DB — oppure documenta lo scarto in STATO e lascia un fallback.
 
@@ -115,7 +116,7 @@ Filtri, Idromassaggio, Extrapiani, Altro
 4. Scritture sensibili (PIN, presenza, magazzino, sync, admin) solo via **RPC / Edge Function**, non insert/update diretti dal client.
 5. UI (`can(...)`, rotte): solo UX. La sicurezza vera è RLS + funzioni server.
 6. Segreti solo in Supabase Secrets / `public.edge_function_secrets` (vecchia app) / `.env` locale (gitignore). `netlify.toml` può contenere solo variabili `VITE_*` pubbliche (anon key). Preferire `NOTIFY_SYNC_SECRET` dedicato (non riusare il segreto sensori).
-7. Foto / `issue_photos`: `WITH CHECK` deve verificare che `issue_id` appartenga allo stesso `hotel_id` (`0033`).
+7. Foto / `issue_photos`: `WITH CHECK` deve verificare che `issue_id` appartenga allo stesso `hotel_id` (`0033` e `0034`).
 8. `admin_role_set` è **globale** (tutte le strutture): non dare `admin.access` a ruoli operativi senza ok utente. (Nota audit: resta un rischio multi-tenant; non cambiare senza ok utente.)
 9. Hook dati: `useAsync` / `useUnread` devono invalidare risposte vecchie (contatore di generazione) al cambio hotel.
 
