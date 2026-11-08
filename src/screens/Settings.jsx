@@ -133,17 +133,21 @@ function UsersTab({ ctx }) {
 // ------------------------------------------------------------------ Ruoli
 function RolesTab({ ctx }) {
   const { data, error, loading, reload } = useAsync(() => api.rolesOverview(ctx.hotelId), [ctx.hotelId])
+  const { data: canEditGlobal, error: globalError, loading: globalLoading } = useAsync(() => api.canManageGlobalRoles(ctx.hotelId), [ctx.hotelId])
   const [role, setRole] = useState('manutentore')
   const [err, setErr] = useState('')
   const matrix = useMemo(() => rolesMatrix(data), [data])
   const groups = useMemo(() => groupPermissions((data || []).map((r) => r.permission)), [data])
   const toggle = async (perm, on) => {
+    if (canEditGlobal !== true) return
     setErr('')
     try { await api.setRolePermission(ctx.hotelId, role, perm, on); reload() } catch (e) { setErr(e.message) }
   }
   return (
     <div className="stack">
       <p className="muted">I permessi di un ruolo valgono per <strong>tutte le strutture</strong>. Si applicano al prossimo accesso.</p>
+      {canEditGlobal === false && <p className="muted">Sola lettura: solo un amministratore di tutte le strutture attive può modificare questa matrice globale.</p>}
+      <ErrorText>{globalError}</ErrorText>
       <div className="chips" role="group" aria-label="Ruolo">
         {ROLES.map((r) => <button key={r} className="chip" aria-pressed={role === r} onClick={() => setRole(r)}>{roleLabel(r)}</button>)}
       </div>
@@ -154,7 +158,7 @@ function RolesTab({ ctx }) {
           <strong>{g.label}</strong>
           {g.perms.map((p) => (
             <label key={p} className="row" style={{ justifyContent: 'flex-start', gap: 8 }}>
-              <input type="checkbox" checked={matrix[role]?.has(p) || false} disabled={role === 'admin' && p === 'admin.access'} onChange={(e) => toggle(p, e.target.checked)} />
+              <input type="checkbox" checked={matrix[role]?.has(p) || false} disabled={globalLoading || canEditGlobal !== true || (role === 'admin' && p === 'admin.access')} onChange={(e) => toggle(p, e.target.checked)} />
               <span>Può {permActionLabel(p)}</span>
             </label>
           ))}

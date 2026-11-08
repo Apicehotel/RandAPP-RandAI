@@ -17,6 +17,7 @@ export const updateUser = (hotelId, userId, { name, role, active }) =>
   rpc('admin_user_update', { p_hotel: hotelId, p_user: userId, p_name: name, p_role: role, p_active: active }, 'Impossibile salvare l\'utente')
 export const unlockUser = (hotelId, userId) => rpc('admin_user_unlock', { p_hotel: hotelId, p_user: userId }, 'Impossibile sbloccare l\'utente')
 export const rolesOverview = async (hotelId) => (await rpc('admin_roles_overview', { p_hotel: hotelId }, 'Impossibile leggere i ruoli')) || []
+export const canManageGlobalRoles = async (hotelId) => (await rpc('can_manage_global_roles', { p_hotel: hotelId }, 'Impossibile verificare i permessi globali')) === true
 export const setRolePermission = (hotelId, role, permission, on) =>
   rpc('admin_role_set', { p_hotel: hotelId, p_role: role, p_permission: permission, p_on: on }, 'Impossibile salvare il permesso')
 export const usage = (hotelId) => rpc('admin_usage', { p_hotel: hotelId }, 'Impossibile leggere i consumi')
