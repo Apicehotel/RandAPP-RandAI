@@ -1,0 +1,25 @@
+# Edge Functions distribuite automaticamente nelle preview Supabase collegate a GitHub.
+# Nessun segreto in questo file. Le funzioni con verify_jwt=false
+# eseguono i controlli di autorizzazione nel proprio codice.
+#
+# Login e recupero PIN: devono funzionare prima di una sessione utente.
+[functions.randapp-pin-auth]
+verify_jwt = false
+
+[functions.randapp-pin-recovery]
+verify_jwt = false
+
+# Admin: richiede una sessione Supabase, poi controlla admin.access per hotel.
+[functions.randapp-admin]
+verify_jwt = true
+
+# Worker invocati da pg_cron con x-sync-secret (non con JWT utente).
+# ewelink-sync supporta anche sessione utente, verificata nel codice.
+[functions.ewelink-sync]
+verify_jwt = false
+
+[functions.notify-dispatch]
+verify_jwt = false
+
+[functions.legacy-sync]
+verify_jwt = false
