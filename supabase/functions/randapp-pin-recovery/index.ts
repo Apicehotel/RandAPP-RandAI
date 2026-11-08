@@ -2,7 +2,7 @@
 // Segreti della funzione (Supabase → Edge Functions → Secrets), MAI nel repo:
 //   GMAIL_USER          indirizzo Gmail mittente
 //   GMAIL_APP_PASSWORD  "password per le app" di Google (16 caratteri), non la password dell'account
-//   APP_URL             (facoltativo) indirizzo dell'app, default https://randapp.netlify.app
+//   APP_URL             (facoltativo) indirizzo dell'app, default https://randapphotel.vercel.app
 // Gmail SMTP sulla porta 465 (le porte 25 e 587 sono bloccate dalle Edge Function di Supabase).
 // Risposta di "request" sempre uguale (esista o no l'email) e con attesa minima: non si scopre chi ha un'email.
 import postgres from "npm:postgres@3.4.7";
@@ -12,7 +12,7 @@ import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
 const sql = postgres(Deno.env.get("SUPABASE_DB_URL")!, { prepare: false, max: 2, connect_timeout: 5, idle_timeout: 10 });
 const gmailUser = Deno.env.get("GMAIL_USER") || "";
 const gmailPass = (Deno.env.get("GMAIL_APP_PASSWORD") || "").replace(/\s+/g, "");
-const appUrl = (Deno.env.get("APP_URL") || "https://randapp.netlify.app").replace(/\/$/, "");
+const appUrl = (Deno.env.get("APP_URL") || "https://randapphotel.vercel.app").replace(/\/$/, "");
 const configured = Boolean(gmailUser && gmailPass);
 
 const cors = {
