@@ -72,7 +72,7 @@ export function IssueDetail({ ctx, id }) {
     setBusy(true)
     setActionError('')
     try {
-      await updateIssueStatus(ctx.hotelId, id, status)
+      await updateIssueStatus(ctx.hotelId, id, status, ctx.name)
       await reload()
     } catch (e) {
       setActionError(e.message)

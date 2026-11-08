@@ -51,8 +51,11 @@ Aggiornare sempre questa tabella e la sezione equivalente del README dopo un dep
 | `0030` Consumi v2 | **Da applicare** |
 | `0031` ruoli legacy | **Nel repo, NON applicata** |
 | `0032` categorie edilizio | **Nel repo, NON applicata** |
+| `0033` harden UPDATE / foto / slot sale | **Nel repo, NON applicata** (grant colonne senza `hotel_id`, trigger, `issue_photos` WITH CHECK, unique slot sale) |
 
 **Regola:** se il codice assume una migrazione non ancora applicata, **non redeployare** la funzione edge / non far entrare utenti sui nuovi ruoli finché la migrazione non è sul DB — oppure documenta lo scarto in STATO e lascia un fallback.
+
+**Dopo `0033`:** il client che chiude interventi/segnalazioni può scrivere `completed_by_name`; senza `0033` sul DB il grant colonnare manca e l’update potrebbe fallire se è già stato ristretto — applica `0033` prima o insieme al deploy che usa quei campi. I grant colonnari di `0033` **sostituiscono** l’UPDATE tabellare: senza applicare `0033` il comportamento resta quello precedente (UPDATE pieno, rischio `hotel_id`).
 
 ### Checklist dopo una migrazione applicata
 1. Aggiorna la tabella sopra + README «Stato dell'aggancio».
@@ -107,13 +110,14 @@ Filtri, Idromassaggio, Extrapiani, Altro
 ## 6. Sicurezza e multi-hotel (standard codice)
 
 1. **Ogni query client** su tabelle con `hotel_id` deve filtrare `.eq('hotel_id', hotelId)` (anche se c'è RLS). Stesso per update/delete logici.
-2. **Nuove policy UPDATE**: preferire grant a **colonne esplicite** che **escludono** `hotel_id`, `created_by` e campi legacy; modello buono in `0012_planning_ops.sql`. Evitare `grant update` sulla tabella intera.
+2. **Nuove policy UPDATE**: preferire grant a **colonne esplicite** che **escludono** `hotel_id`, `created_by` e campi legacy; modello in `0012_planning_ops.sql` e `0033_harden_updates.sql`. Evitare `grant update` sulla tabella intera. Trigger `forbid_hotel_id_change` su tabelle operative.
 3. **Niente DELETE** dal browser sulle tabelle operative (annulla / stato, non cancella).
 4. Scritture sensibili (PIN, presenza, magazzino, sync, admin) solo via **RPC / Edge Function**, non insert/update diretti dal client.
 5. UI (`can(...)`, rotte): solo UX. La sicurezza vera è RLS + funzioni server.
-6. Segreti solo in Supabase Secrets / `public.edge_function_secrets` (vecchia app) / `.env` locale (gitignore). `netlify.toml` può contenere solo variabili `VITE_*` pubbliche (anon key).
-7. Foto / `issue_photos`: `WITH CHECK` deve verificare che `issue_id` appartenga allo stesso `hotel_id`.
-8. `admin_role_set` è **globale** (tutte le strutture): non dare `admin.access` a ruoli operativi senza ok utente.
+6. Segreti solo in Supabase Secrets / `public.edge_function_secrets` (vecchia app) / `.env` locale (gitignore). `netlify.toml` può contenere solo variabili `VITE_*` pubbliche (anon key). Preferire `NOTIFY_SYNC_SECRET` dedicato (non riusare il segreto sensori).
+7. Foto / `issue_photos`: `WITH CHECK` deve verificare che `issue_id` appartenga allo stesso `hotel_id` (`0033`).
+8. `admin_role_set` è **globale** (tutte le strutture): non dare `admin.access` a ruoli operativi senza ok utente. (Nota audit: resta un rischio multi-tenant; non cambiare senza ok utente.)
+9. Hook dati: `useAsync` / `useUnread` devono invalidare risposte vecchie (contatore di generazione) al cambio hotel.
 
 ---
 

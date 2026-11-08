@@ -84,7 +84,7 @@ export function InterventionDetail({ ctx, id }) {
     setBusy(true)
     setActionError('')
     try {
-      await updateInterventionStatus(ctx.hotelId, id, status)
+      await updateInterventionStatus(ctx.hotelId, id, status, ctx.name)
       await reload()
     } catch (e) {
       setActionError(e.message)

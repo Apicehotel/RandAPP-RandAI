@@ -33,22 +33,33 @@ const MIN_QUERY = 2;
 const MAX_RESULTS = 12;
 const BAD_LOGIN = "Utente o PIN non validi";
 
-// Limite semplice per IP sulla ricerca nomi (per istanza della funzione).
-const RATE_LIMIT = 20;
+// Limite semplice per IP (per istanza della funzione): directory, login e admin_login.
 const RATE_WINDOW_MS = 60_000;
 const rate = new Map<string, { count: number; resetAt: number }>();
-function allowDirectory(req: Request, hotelId: string) {
-  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || req.headers.get("x-real-ip") || "unknown";
-  const key = `${ip}:${hotelId}`;
+function allowRate(req: Request, bucket: string, limit: number) {
+  const ip = req.headers.get("cf-connecting-ip")?.trim()
+    || req.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+    || req.headers.get("x-real-ip")
+    || "unknown";
+  const key = `${bucket}:${ip}`;
   const now = Date.now();
   const row = rate.get(key);
   if (!row || now >= row.resetAt) {
     rate.set(key, { count: 1, resetAt: now + RATE_WINDOW_MS });
     return true;
   }
-  if (row.count >= RATE_LIMIT) return false;
+  if (row.count >= limit) return false;
   row.count += 1;
   return true;
+}
+function allowDirectory(req: Request, hotelId: string) {
+  return allowRate(req, `dir:${hotelId}`, 20);
+}
+function allowLogin(req: Request) {
+  return allowRate(req, "login", 30);
+}
+function allowAdminLogin(req: Request) {
+  return allowRate(req, "admin_login", 10);
 }
 
 async function hotelExists(hotelId: string) {
@@ -72,7 +83,8 @@ async function directory(req: Request, hotelId: string, rawQuery: string) {
   return json({ ok: true, users });
 }
 
-async function login(hotelId: string, userId: string, pin: string) {
+async function login(req: Request, hotelId: string, userId: string, pin: string) {
+  if (!allowLogin(req)) return json({ ok: false, error: "Troppe richieste. Riprova tra un minuto." }, 429);
   // Controlli di base: l'utente deve essere attivo e membro attivo della struttura.
   const [[profile], [membership], [credential]] = await Promise.all([
     sql`select active from randapp.profiles where auth_user_id = ${userId}`,
@@ -146,6 +158,7 @@ async function sessionFor(userId: string) {
   return { access_token: s.access_token, refresh_token: s.refresh_token, expires_at: s.expires_at ?? null };
 }
 async function adminLogin(req: Request, pin: string) {
+  if (!allowAdminLogin(req)) return json({ ok: false, error: "Troppe richieste. Riprova tra un minuto." }, 429);
   if (!/^\d{6}$/.test(pin)) return json({ ok: false, error: "PIN amministratore non valido" }, 400);
   const key = await sourceHash(req);
   const [attempt] = await sql`select failed_attempts, locked_until from randapp.admin_gate_attempts where source_hash = ${key}`;
@@ -195,7 +208,7 @@ Deno.serve(async (req: Request) => {
     if (!/^[0-9a-f-]{36}$/i.test(userId) || !/^\d{4}$/.test(pin)) {
       return json({ ok: false, error: "Dati login non validi" }, 400);
     }
-    return await login(hotelId, userId, pin);
+    return await login(req, hotelId, userId, pin);
   } catch (error) {
     console.error("pin-auth", error instanceof Error ? error.message : "errore");
     return json({ ok: false, error: "Errore temporaneo di accesso" }, 500);

@@ -46,10 +46,17 @@ export async function createIntervention(hotelId, userId, input) {
   return data
 }
 
-export async function updateInterventionStatus(hotelId, id, status) {
+// closerName = nome di chi chiude (ctx.name); si salva solo passando a "fatto".
+export async function updateInterventionStatus(hotelId, id, status, closerName = '') {
+  const done = status === 'fatto'
+  const name = String(closerName || '').trim().slice(0, 80)
   const { data, error } = await supabase
     .from('interventions')
-    .update({ status, completed_at: status === 'fatto' ? new Date().toISOString() : null })
+    .update({
+      status,
+      completed_at: done ? new Date().toISOString() : null,
+      completed_by_name: done ? (name || null) : null,
+    })
     .eq('hotel_id', hotelId)
     .eq('id', id)
     .select(COLUMNS)

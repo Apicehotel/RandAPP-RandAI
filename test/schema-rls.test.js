@@ -75,6 +75,16 @@ test('task: hotel_id obbligatorio, 3 policy con has_permission ciascuna, niente 
   }
 })
 
+test('0033: UPDATE senza hotel_id e foto legate alla segnalazione', () => {
+  const harden = readFileSync(join(dir, '0033_harden_updates.sql'), 'utf8')
+  assert.match(harden, /function randapp\.forbid_hotel_id_change/)
+  assert.match(harden, /grant update \(\s*title, description[\s\S]*?\)\s*on randapp\.issues to authenticated/)
+  assert.doesNotMatch(harden.match(/grant update \(\s*title, description[\s\S]*?\)\s*on randapp\.issues to authenticated/)?.[0] || '', /hotel_id/)
+  assert.match(harden, /grant update \(\s*title, location[\s\S]*completed_by_name\s*\)\s*on randapp\.interventions to authenticated/)
+  assert.match(harden, /create policy issue_photos_insert[\s\S]*exists \(\s*select 1 from randapp\.issues/)
+  assert.match(harden, /sale_bookings_active_slot_uidx/)
+})
+
 test('presenza: si legge con has_permission, si scrive solo con la funzione del server', () => {
   const policies = [...sql.matchAll(/create policy\s+\w+\s+on randapp\.presence[\s\S]*?;/gi)].map((m) => m[0])
   assert.equal(policies.length, 1)

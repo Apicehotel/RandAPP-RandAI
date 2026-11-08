@@ -44,12 +44,16 @@ export async function createIssue(hotelId, userId, input) {
   return data
 }
 
-export async function updateIssueStatus(hotelId, id, status) {
+// closerName = nome di chi chiude (ctx.name); si salva solo passando a "completata".
+export async function updateIssueStatus(hotelId, id, status, closerName = '') {
+  const done = status === 'completata'
+  const name = String(closerName || '').trim().slice(0, 80)
   const { data, error } = await supabase
     .from('issues')
     .update({
       status,
-      completed_at: status === 'completata' ? new Date().toISOString() : null,
+      completed_at: done ? new Date().toISOString() : null,
+      completed_by_name: done ? (name || null) : null,
     })
     .eq('hotel_id', hotelId)
     .eq('id', id)
