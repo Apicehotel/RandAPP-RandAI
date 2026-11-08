@@ -1,3 +1,4 @@
+# Preview: test autorizzazioni multi-hotel in supabase/tests/global_roles_preview.sql (manuale, rollback).
 # Edge Functions distribuite automaticamente nelle preview Supabase collegate a GitHub.
 # Nessun segreto in questo file. Le funzioni con verify_jwt=false
 # eseguono i controlli di autorizzazione nel proprio codice.
