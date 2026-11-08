@@ -9,9 +9,10 @@ verify_jwt = false
 [functions.randapp-pin-recovery]
 verify_jwt = false
 
-# Admin: richiede una sessione Supabase, poi controlla admin.access per hotel.
+# Admin: verifica internamente JWT utente e permesso admin.access per hotel.
+# Mantiene verify_jwt=false come nel deployment esistente (evita cambi al gateway).
 [functions.randapp-admin]
-verify_jwt = true
+verify_jwt = false
 
 # Worker invocati da pg_cron con x-sync-secret (non con JWT utente).
 # ewelink-sync supporta anche sessione utente, verificata nel codice.
