@@ -53,6 +53,7 @@ Aggiornare sempre questa tabella e la sezione equivalente del README dopo un dep
 | `0032` categorie edilizio | **Nel repo, NON applicata** |
 | `0033` harden UPDATE / foto / slot sale | **Nel repo, NON applicata** (grant colonne senza `hotel_id`, trigger, `issue_photos` WITH CHECK, unique slot sale) |
 | `0034` verifica isolamento foto | **Nel repo; non applicata alla produzione**. Nuova migrazione incrementale che riapplica la policy corretta anche sulle preview che hanno già registrato `0033`. Verificare l'applicazione sulla preview nei log Supabase. |
+| `0035` protezione permessi globali | **Nel repo; non applicata alla produzione**. Solo un admin di tutte le strutture attive può modificare `role_permissions`; gli altri admin possono consultare la matrice. |
 
 **Regola:** se il codice assume una migrazione non ancora applicata, **non redeployare** la funzione edge / non far entrare utenti sui nuovi ruoli finché la migrazione non è sul DB — oppure documenta lo scarto in STATO e lascia un fallback.
 
@@ -117,7 +118,7 @@ Filtri, Idromassaggio, Extrapiani, Altro
 5. UI (`can(...)`, rotte): solo UX. La sicurezza vera è RLS + funzioni server.
 6. Segreti solo in Supabase Secrets / `public.edge_function_secrets` (vecchia app) / `.env` locale (gitignore). `netlify.toml` può contenere solo variabili `VITE_*` pubbliche (anon key). Preferire `NOTIFY_SYNC_SECRET` dedicato (non riusare il segreto sensori).
 7. Foto / `issue_photos`: `WITH CHECK` deve verificare che `issue_id` appartenga allo stesso `hotel_id` (`0033` e `0034`).
-8. `admin_role_set` è **globale** (tutte le strutture): non dare `admin.access` a ruoli operativi senza ok utente. (Nota audit: resta un rischio multi-tenant; non cambiare senza ok utente.)
+8. `admin_role_set` modifica la matrice **globale**: dalla migrazione `0035` solo gli utenti con ruolo `admin` attivo in **tutte le strutture attive** e `admin.access` nella struttura richiesta possono modificarla. Gli admin di singola struttura hanno sola lettura; non attribuire `admin.access` a ruoli operativi senza approvazione.
 9. Hook dati: `useAsync` / `useUnread` devono invalidare risposte vecchie (contatore di generazione) al cambio hotel.
 
 ---
