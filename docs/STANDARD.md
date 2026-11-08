@@ -46,14 +46,14 @@ Aggiornare sempre questa tabella e la sezione equivalente del README dopo un dep
 | Intervallo | Stato sul progetto condiviso |
 |------------|------------------------------|
 | `0000`–`0027` | Trattare come **applicate** (aggancio + admin + recovery + AI; vedi Fatto in STATO) |
-| `0028` telefoni condivisi | **Da applicare** (codice già pronto) |
-| `0029` username / profilo | **Da applicare** (edge `randapp-pin-auth` usa già `p.username`) |
-| `0030` Consumi v2 | **Da applicare** |
-| `0031` ruoli legacy | **Nel repo, NON applicata** |
-| `0032` categorie edilizio | **Nel repo, NON applicata** |
-| `0033` harden UPDATE / foto / slot sale | **Nel repo, NON applicata** (grant colonne senza `hotel_id`, trigger, `issue_photos` WITH CHECK, unique slot sale) |
-| `0034` verifica isolamento foto | **Nel repo; non applicata alla produzione**. Nuova migrazione incrementale che riapplica la policy corretta anche sulle preview che hanno già registrato `0033`. Verificare l'applicazione sulla preview nei log Supabase. |
-| `0035` protezione permessi globali | **Nel repo; non applicata alla produzione**. Solo un admin di tutte le strutture attive può modificare `role_permissions`; gli altri admin possono consultare la matrice. |
+| `0028` telefoni condivisi | **Applicata** su Apice MultiHotel (cronologia 2026-11-07) |
+| `0029` username / profilo | **Applicata** su Apice MultiHotel (cronologia 2026-11-07) |
+| `0030` Consumi v2 | **Applicata** su Apice MultiHotel (cronologia 2026-11-07) |
+| `0031` ruoli legacy | **Applicata** su Apice MultiHotel (2026-11-08) |
+| `0032` categorie edilizio | **Applicata** su Apice MultiHotel (2026-11-08) |
+| `0033` harden UPDATE / foto / slot sale | **Applicata** su Apice MultiHotel (2026-11-08) |
+| `0034` isolamento foto | **Applicata** su Apice MultiHotel (2026-11-08) |
+| `0035` protezione permessi globali | **Applicata** su Apice MultiHotel (2026-11-08): funzione `can_manage_global_roles` verificata, 2 admin globali su 3 hotel attivi. |
 
 **Regola:** se il codice assume una migrazione non ancora applicata, **non redeployare** la funzione edge / non far entrare utenti sui nuovi ruoli finché la migrazione non è sul DB — oppure documenta lo scarto in STATO e lascia un fallback.
 
