@@ -65,10 +65,11 @@ drop policy if exists issue_photos_insert on randapp.issue_photos;
 create policy issue_photos_insert on randapp.issue_photos
   for insert to authenticated
   with check (
-    randapp.has_permission(hotel_id, 'issues.update')
+    randapp.has_permission(issue_photos.hotel_id, 'issues.update')
     and exists (
       select 1 from randapp.issues i
-      where i.id = issue_id and i.hotel_id = hotel_id
+      where i.id = issue_photos.issue_id
+        and i.hotel_id = issue_photos.hotel_id
     )
   );
 

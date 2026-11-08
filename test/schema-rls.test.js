@@ -82,7 +82,23 @@ test('0033: UPDATE senza hotel_id e foto legate alla segnalazione', () => {
   assert.doesNotMatch(harden.match(/grant update \(\s*title, description[\s\S]*?\)\s*on randapp\.issues to authenticated/)?.[0] || '', /hotel_id/)
   assert.match(harden, /grant update \(\s*title, location[\s\S]*completed_by_name\s*\)\s*on randapp\.interventions to authenticated/)
   assert.match(harden, /create policy issue_photos_insert[\s\S]*exists \(\s*select 1 from randapp\.issues/)
+  // La sottoquery deve confrontare esplicitamente l'hotel della foto con quello della segnalazione.
+  const photoInsert = harden.match(/create policy issue_photos_insert[\s\S]*?\);/)?.[0] || ''
+  assert.match(photoInsert, /randapp\.has_permission\(issue_photos\.hotel_id,\s*'issues\.update'\)/)
+  assert.match(photoInsert, /i\.id\s*=\s*issue_photos\.issue_id/)
+  assert.match(photoInsert, /i\.hotel_id\s*=\s*issue_photos\.hotel_id/)
+  assert.doesNotMatch(photoInsert, /i\.hotel_id\s*=\s*hotel_id\b/)
   assert.match(harden, /sale_bookings_active_slot_uidx/)
+})
+
+test('0034: policy foto riapplicata da migrazione incrementale e vincolata allo stesso hotel', () => {
+  const fix = readFileSync(join(dir, '0034_issue_photos_hotel_guard.sql'), 'utf8')
+  assert.match(fix, /drop policy if exists issue_photos_insert on randapp\.issue_photos/)
+  assert.match(fix, /create policy issue_photos_insert on randapp\.issue_photos/)
+  assert.match(fix, /randapp\.has_permission\(issue_photos\.hotel_id,\s*'issues\.update'\)/)
+  assert.match(fix, /i\.id\s*=\s*issue_photos\.issue_id/)
+  assert.match(fix, /i\.hotel_id\s*=\s*issue_photos\.hotel_id/)
+  assert.doesNotMatch(fix, /i\.hotel_id\s*=\s*hotel_id\b/)
 })
 
 test('presenza: si legge con has_permission, si scrive solo con la funzione del server', () => {
