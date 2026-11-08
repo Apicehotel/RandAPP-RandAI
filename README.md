@@ -24,6 +24,12 @@ npm run check          # test + build + peso bundle
 npm run user:create    # crea un utente con PIN (vedi sotto)
 ```
 
+## Verifiche automatiche e sicurezza multi-hotel
+Le PR e gli aggiornamenti a `main` eseguono `npm ci` e `npm run check` tramite GitHub Actions (`.github/workflows/randapp-check.yml`): test unitari/regressione, build e controllo bundle.
+Le autorizzazioni globali degli amministratori sono protette nel database dalla migrazione `0035`; non basta nascondere i controlli nella UI.
+Il test con utenti sintetici `supabase/tests/global_roles_preview.sql` si esegue **solo in una preview Supabase**, all'interno di una transazione che termina con `ROLLBACK`. Non eseguirlo su produzione.
+Il check CI **non sostituisce** una verifica con sessioni Supabase valide e utenti di prova.
+
 ## Variabili d'ambiente
 Solo i **nomi** (i valori non vanno mai nel repo). Modello in `.env.example`.
 
