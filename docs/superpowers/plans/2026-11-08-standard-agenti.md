@@ -19,4 +19,4 @@
 - [x] Task 1: Scrivere `docs/STANDARD.md`
 - [x] Task 2: Correggere README (presenza, login, ruoli, migrazioni, hosting, categorie, APP_URL)
 - [x] Task 3: Collegare AGENTS.md → STANDARD.md; aggiornare STATO; fix commento `home.js`
-- [ ] Task 4: Verifica greps di coerenza, commit, push, PR
+- [x] Task 4: Verifica greps di coerenza, commit, push, PR
