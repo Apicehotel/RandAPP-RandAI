@@ -91,6 +91,16 @@ test('0033: UPDATE senza hotel_id e foto legate alla segnalazione', () => {
   assert.match(harden, /sale_bookings_active_slot_uidx/)
 })
 
+test('0034: policy foto riapplicata da migrazione incrementale e vincolata allo stesso hotel', () => {
+  const fix = readFileSync(join(dir, '0034_issue_photos_hotel_guard.sql'), 'utf8')
+  assert.match(fix, /drop policy if exists issue_photos_insert on randapp\.issue_photos/)
+  assert.match(fix, /create policy issue_photos_insert on randapp\.issue_photos/)
+  assert.match(fix, /randapp\.has_permission\(issue_photos\.hotel_id,\s*'issues\.update'\)/)
+  assert.match(fix, /i\.id\s*=\s*issue_photos\.issue_id/)
+  assert.match(fix, /i\.hotel_id\s*=\s*issue_photos\.hotel_id/)
+  assert.doesNotMatch(fix, /i\.hotel_id\s*=\s*hotel_id\b/)
+})
+
 test('presenza: si legge con has_permission, si scrive solo con la funzione del server', () => {
   const policies = [...sql.matchAll(/create policy\s+\w+\s+on randapp\.presence[\s\S]*?;/gi)].map((m) => m[0])
   assert.equal(policies.length, 1)
