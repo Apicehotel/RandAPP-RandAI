@@ -101,6 +101,20 @@ test('0034: policy foto riapplicata da migrazione incrementale e vincolata allo 
   assert.doesNotMatch(fix, /i\.hotel_id\s*=\s*hotel_id\b/)
 })
 
+test('0035: solo admin di tutti gli hotel attivi puo cambiare permessi globali', () => {
+  const harden = readFileSync(join(dir, '0035_global_role_admin_guard.sql'), 'utf8')
+  assert.match(harden, /function randapp\.can_manage_global_roles\(p_hotel text\)/)
+  assert.match(harden, /randapp\.has_permission\(p_hotel,\s*'admin\.access'\)/)
+  assert.match(harden, /m\.auth_user_id\s*=\s*auth\.uid\(\)/)
+  assert.match(harden, /m\.hotel_id\s*=\s*h\.id/)
+  assert.match(harden, /h\.active/)
+  assert.match(harden, /m\.active/)
+  assert.match(harden, /m\.role\s*=\s*'admin'/)
+  assert.match(harden, /function randapp\.admin_role_set\(/)
+  assert.match(harden, /if not randapp\.can_manage_global_roles\(p_hotel\) then/)
+  assert.match(harden, /revoke all on function randapp\.admin_role_set\(text, text, text, boolean\) from public, anon/)
+})
+
 test('presenza: si legge con has_permission, si scrive solo con la funzione del server', () => {
   const policies = [...sql.matchAll(/create policy\s+\w+\s+on randapp\.presence[\s\S]*?;/gi)].map((m) => m[0])
   assert.equal(policies.length, 1)
