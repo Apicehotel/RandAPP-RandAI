@@ -246,6 +246,17 @@ Obiettivo: oggi nessun modello a pagamento obbligatorio; intanto si **raccolgono
 - Non serve che l'admin sappia a chi appartiene ogni numero. Dopo l'accesso, in **Home**, chi non ha ancora il numero vede la scheda "Il tuo numero WhatsApp" (`src/ui/PhonePrompt.jsx`): lo scrive e salva; "Più tardi" la nasconde 7 giorni. Si può cambiare sempre da Profilo → Il mio numero WhatsApp.
 - "Numeri non assegnati" (admin) è solo informativo: i numeri senza persona si collegano da soli quando ciascuno inserisce il proprio.
 
+## Recupero PIN via email o WhatsApp (Twilio)
+La schermata di accesso offre la scelta **email** (link monouso valido 15 minuti) o **WhatsApp** (OTP di 6 cifre valido 15 minuti). Il canale WhatsApp compare disabilitato fino alla configurazione e all'approvazione del template; l'email continua a funzionare senza Twilio.
+
+**Template preparato (non ancora creato nell'account Twilio):** `twilio/templates/randapp_pin_recovery_it.json`, tipo `whatsapp/authentication`, italiano, pulsante copia codice, scadenza 15 minuti. Meta non consente di personalizzare liberamente il testo dei template Authentication.
+- Anteprima senza rete e senza invii: `node scripts/create-twilio-pin-template.mjs`
+- Creazione effettiva su account Twilio, **solo dopo esplicita approvazione e configurazione**: `TWILIO_ACCOUNT_SID=... TWILIO_AUTH_TOKEN=... node scripts/create-twilio-pin-template.mjs --create`
+- Dal Content Template Builder inviare il nuovo template alla **revisione WhatsApp/Meta**; copiare il Content SID che inizia con `HX`.
+- Impostare solo nei secrets della Edge Function `randapp-pin-recovery`: `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_WHATSAPP_FROM` (`whatsapp:+...`), `TWILIO_PIN_CONTENT_SID` (`HX...`), `TWILIO_OTP_PEPPER` (valore casuale segreto di almeno 32 caratteri).
+- **Non** attivare `TWILIO_RECOVERY_ENABLED=true` prima dell'approvazione esplicita dei costi dei messaggi, dei test di consegna e della verifica del sender.
+- Il PIN non è mai spedito; si riceve solo un OTP e lo si inserisce nella schermata di cambio PIN. Gli OTP sono registrati solo come digest, con massimo 5 tentativi di convalida per ora per utente e consumo atomico del token.
+
 ## Recupero PIN via email (migrazione `0027`, funzione `randapp-pin-recovery`)
 - Ognuno scrive la **propria email** in Profilo → "La mia email" (la vede solo lui; dopo `0029` l'email **non è più unica** tra profili: il recupero parte dall'utente scelto al login).
 - Al login, scelto il nome, "**PIN dimenticato?**" manda un link (vale 15 minuti, una sola volta) con la pagina `#/recover?token=…` dove si sceglie il nuovo PIN. La risposta è sempre la stessa, con o senza email nel profilo; il token è salvato solo come hash; limiti: 3 richieste/ora per utente e 10/ora per origine. Il nuovo PIN azzera blocco e tentativi.
