@@ -4,7 +4,7 @@ import { useAsync, go } from '../lib/hooks.js'
 import { can, PERM } from '../lib/permissions.js'
 import {
   DEFAULT_SETTINGS, SEASONS, STATE_LABELS, SWITCH_GROUPS, formatHumidity, formatTemp, groupSwitches, hiddenSensors,
-  agoText, missingSensors, seasonLabel, sensorKindLabel, syncHealth, sensorState, sortSensors, summarizeSensors, switchLabel, temperatureSensors, thresholdsFor,
+  agoText, missingSensors, seasonLabel, sensorKindLabel, syncHealth, sensorState, splitTemperatureSensors, summarizeSensors, switchLabel, temperatureSensors, thresholdsFor,
 } from '../lib/sensors.js'
 import { StatRow } from '../ui/hub.jsx'
 import { Badge, Button, ErrorText, Icon, Spinner, formatDate } from '../ui/kit.jsx'
@@ -25,6 +25,7 @@ export default function Sensors({ ctx }) {
   const [tab, setTab] = useState('temperature')
   const [showHidden, setShowHidden] = useState(false)
   const [showMissing, setShowMissing] = useState(false)
+  const [showOutdated, setShowOutdated] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
   const [refreshNote, setRefreshNote] = useState('')
   const [busy, setBusy] = useState(false)
@@ -33,7 +34,8 @@ export default function Sensors({ ctx }) {
   const settings = { ...DEFAULT_SETTINGS, ...(settingsState.data || {}) }
   const all = data || []
   const now = Date.now()
-  const temps = sortSensors(temperatureSensors(all), now, settings)
+  const { current: temps, outdated } = splitTemperatureSensors(all, now, settings)
+  const temperatureCount = temps.length + outdated.length
   const groups = groupSwitches(all, now)
   const switchCount = groups.reduce((n, g) => n + g.items.length, 0)
   const sum = summarizeSensors(temperatureSensors(all), now, settings)
@@ -60,6 +62,26 @@ export default function Sensors({ ctx }) {
   const setActive = (id, active) => run(async () => { await updateSensor(ctx.hotelId, id, { active }); await reload() })
   const changeSeason = (season) => run(async () => { await setSeason(ctx.hotelId, ctx.userId, season); await settingsState.reload() })
 
+  const renderTemperature = (s) => {
+    const state = sensorState(s, now, settings)
+    const limit = limitText(thresholdsFor(s, settings))
+    return (
+      <div key={s.id} className={`card stile ${state}`}>
+        <div className="stile-name">{s.name}</div>
+        <div className="stile-temp">{formatTemp(s.temperature)}</div>
+        <div className="stile-meta">
+          <Badge kind={BADGE[state]}>{STATE_LABELS[state]}</Badge>
+          <span className="muted">Umidità {formatHumidity(s.humidity)}</span>
+        </div>
+        {limit && <div className="muted stile-small">{limit}</div>}
+        <div className="stile-foot muted">
+          <span>{s.last_seen ? `Ultima lettura ${agoText(s.last_seen, now)}` : 'Mai aggiornato'}</span>
+          {canManage && <button className="link-btn" disabled={busy} onClick={() => setActive(s.id, false)}>Nascondi</button>}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="page">
       <div className="row">
@@ -84,7 +106,7 @@ export default function Sensors({ ctx }) {
 
       <div className="sensbar">
         <div className="chips seg" role="group" aria-label="Sezione">
-          <button className="chip" aria-pressed={tab === 'temperature'} onClick={() => setTab('temperature')}><span className="full">Temperature</span><span className="abbr">Temp.</span> {temps.length}</button>
+          <button className="chip" aria-pressed={tab === 'temperature'} onClick={() => setTab('temperature')}><span className="full">Temperature</span><span className="abbr">Temp.</span> {temperatureCount}</button>
           <button className="chip" aria-pressed={tab === 'switches'} onClick={() => setTab('switches')}><span className="full">Interruttori</span><span className="abbr">Interr.</span> {switchCount}</button>
         </div>
         {canManage ? (
@@ -107,27 +129,20 @@ export default function Sensors({ ctx }) {
       <ErrorText>{error || actionError}</ErrorText>
       {error && <Button onClick={reload}>Riprova</Button>}
       {tab === 'temperature' && (
-        <div className="sgrid">
-          {temps.map((s) => {
-            const state = sensorState(s, now, settings)
-            const limit = limitText(thresholdsFor(s, settings))
-            return (
-              <div key={s.id} className={`card stile ${state}`}>
-                <div className="stile-name">{s.name}</div>
-                <div className="stile-temp">{formatTemp(s.temperature)}</div>
-                <div className="stile-meta">
-                  <Badge kind={BADGE[state]}>{STATE_LABELS[state]}</Badge>
-                  <span className="muted">Umidità {formatHumidity(s.humidity)}</span>
-                </div>
-                {limit && <div className="muted stile-small">{limit}</div>}
-                <div className="stile-foot muted">
-                  <span>{s.last_seen ? formatDate(s.last_seen) : 'Mai aggiornato'}</span>
-                  {canManage && <button className="link-btn" disabled={busy} onClick={() => setActive(s.id, false)}>Nascondi</button>}
-                </div>
-              </div>
-            )
-          })}
-          {data && temps.length === 0 && <div className="card muted">Nessun sensore di temperatura{canManage ? ': aggiungi il primo.' : '.'}</div>}
+        <div className="list">
+          {data && <p className="muted">Letture attuali: {temps.length} · Da verificare: {outdated.length}</p>}
+          <div className="sgrid">{temps.map(renderTemperature)}</div>
+          {data && temperatureCount === 0 && <div className="card muted">Nessun sensore di temperatura{canManage ? ': aggiungi il primo.' : '.'}</div>}
+          {outdated.length > 0 && (
+            <div className="card stack">
+              <button type="button" className="chip sensor-outdated-toggle" aria-expanded={showOutdated}
+                onClick={() => setShowOutdated((value) => !value)}>
+                {showOutdated ? 'Nascondi dispositivi da verificare' : `Mostra dispositivi da verificare (${outdated.length})`}
+              </button>
+              <p className="muted">Questi dispositivi non inviano dati recenti. Rimangono registrati e non sono stati disattivati.</p>
+              {showOutdated && <div className="sgrid">{outdated.map(renderTemperature)}</div>}
+            </div>
+          )}
         </div>
       )}
 
