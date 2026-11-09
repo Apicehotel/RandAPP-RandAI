@@ -69,6 +69,18 @@ export const sortSensors = (sensors, now = Date.now(), settings = DEFAULT_SETTIN
       RANK[sensorState(a, now, settings)] - RANK[sensorState(b, now, settings)] ||
       a.sort_order - b.sort_order || a.name.localeCompare(b.name, 'it'))
 
+
+// Sul pannello principale mostriamo prima le letture utilizzabili.
+// I dispositivi mai aggiornati o scaduti restano consultabili in una sezione separata,
+// senza cancellarli, disattivarli o alterare il monitoraggio.
+export function splitTemperatureSensors(sensors, now = Date.now(), settings = DEFAULT_SETTINGS) {
+  const active = sortSensors(temperatureSensors(sensors), now, settings)
+  return {
+    current: active.filter((s) => sensorState(s, now, settings) !== 'offline'),
+    outdated: active.filter((s) => sensorState(s, now, settings) === 'offline'),
+  }
+}
+
 // Le due sezioni: temperature e interruttori.
 export const temperatureSensors = (sensors) => sensors.filter((s) => s.kind === 'temperatura')
 export const switchSensors = (sensors) => sensors.filter((s) => s.kind === 'relay')
