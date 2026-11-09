@@ -593,3 +593,12 @@ body {
 .login-card { -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); }
 .login-settings, .login-gear.is-on { border-color: var(--glass-line); }
 .themeswitch-track { border-color: var(--glass-line); }
+
+
+/* Mobile: schede sensori leggibili senza due colonne troppo strette.
+   Intervento limitato a questa schermata: i tre template restano invariati. */
+@media (max-width: 420px) {
+  :root:not([data-size='small']) .sgrid { grid-template-columns: minmax(0, 1fr); }
+  :root[data-size='small'] .sgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+.sensor-outdated-toggle { width: 100%; text-align: center; white-space: normal; min-height: 42px; }

@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { switchGroupOf, groupSwitches, switchLabel } from '../src/lib/sensors.js'
+import { switchGroupOf, groupSwitches, switchLabel, splitTemperatureSensors } from '../src/lib/sensors.js'
 
 const now = new Date('2026-11-09T16:45:00Z').getTime()
 const recent = new Date(now - 5 * 60_000).toISOString()
@@ -28,4 +28,22 @@ test('Vista Sonoff raggruppa tutti gli interruttori senza mostrarli come comandi
   assert.match(screen, /Nessuna lettura disponibile per questa struttura/)
   assert.match(screen, /Aggiornati .* dispositivi su/)
   assert.doesNotMatch(screen, /sendSwitchCommand|toggleRelay|switchDevice\(/)
+})
+
+test('Temperature: dati attuali davanti, sensori mai aggiornati in sezione consultabile', () => {
+  const readings = [
+    { ...device('legacy', 'off'), kind: 'temperatura', temperature: null, last_seen: null },
+    { ...device('sanitaria', 'off'), kind: 'temperatura', temperature: 61.1 },
+    { ...device('cella', 'off'), kind: 'temperatura', temperature: -11.6 },
+  ]
+  const result = splitTemperatureSensors(readings, now)
+  assert.deepEqual(result.current.map(x => x.id).sort(), ['cella', 'sanitaria'])
+  assert.deepEqual(result.outdated.map(x => x.id), ['legacy'])
+  const screen = readFileSync(new URL('../src/screens/Sensors.jsx', import.meta.url), 'utf8')
+  assert.match(screen, /Mostra dispositivi da verificare/)
+  assert.match(screen, /Letture attuali:/)
+  assert.match(screen, /outdated\.map\(renderTemperature\)/)
+  const css = readFileSync(new URL('../src/ui/base.css', import.meta.url), 'utf8')
+  assert.match(css, /max-width: 420px/)
+  assert.match(css, /sensor-outdated-toggle/)
 })
