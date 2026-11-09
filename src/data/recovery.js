@@ -22,9 +22,10 @@ async function call(body) {
 }
 
 // La risposta è sempre la stessa: non dice se l'utente ha un'email.
-export const requestPinRecovery = (userId) => call({ action: 'request', user_id: userId })
-export const completePinRecovery = (token, newPin) => call({ action: 'complete', token, new_pin: newPin })
+export const requestPinRecovery = (userId, channel = 'email') => call({ action: 'request', user_id: userId, channel })
+export const completePinRecovery = (token, newPin, extra = {}) => call({ action: 'complete', token, new_pin: newPin, ...extra })
 export const recoveryStatus = async () => (await call({ action: 'status' })).configured === true
+export const recoveryChannels = async () => { const data = await call({ action: 'status' }); return { email: data.configured === true, whatsapp: data.whatsapp_enabled === true } }
 
 export async function getMyEmail() {
   const { data, error } = await supabase.rpc('get_my_email')
