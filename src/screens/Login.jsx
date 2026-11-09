@@ -6,7 +6,7 @@ import { LocalErrors } from './ErrorLog.jsx'
 import { testConnection } from '../lib/auth.js'
 import ThemeSwitch from '../ui/ThemeSwitch.jsx'
 import { can, PERM } from '../lib/permissions.js'
-import { requestPinRecovery } from '../data/recovery.js'
+import { requestPinRecovery, recoveryChannels } from '../data/recovery.js'
 
 export const ADMIN_INTENT_KEY = 'randapp.adminIntent'
 
@@ -29,7 +29,8 @@ export default function Login({ initialHotel, onLoggedIn }) {
   const [showLog, setShowLog] = useState(false)
   const [probe, setProbe] = useState(null)
   const [adminMode, setAdminMode] = useState(false) // 'Impostazioni': accesso protetto, poi Profilo
-  const [forgot, setForgot] = useState('') // '' | 'sending' | 'sent'
+  const [forgot, setForgot] = useState('') // '' | 'choose' | 'sending' | 'sent'
+  const [channels, setChannels] = useState({ email: true, whatsapp: false })
   const busyRef = useRef(false)
   const pinRef = useRef(null)
 
@@ -105,10 +106,20 @@ export default function Login({ initialHotel, onLoggedIn }) {
     }
   }
 
-  const sendRecovery = async () => {
+  const openRecovery = async () => {
     if (!user) return setError('Scrivi e seleziona prima il tuo nome, poi tocca "PIN dimenticato?"')
+    setForgot('choose'); setError('')
+    try { setChannels(await recoveryChannels()) } catch { setChannels({ email: true, whatsapp: false }) }
+  }
+  const sendRecovery = async (channel) => {
+    if (!user) return
     setForgot('sending'); setError('')
-    try { await requestPinRecovery(user.id); setForgot('sent') } catch (e) { setError(e.message); setForgot('') }
+    try {
+      await requestPinRecovery(user.id, channel)
+      if (channel === 'whatsapp') {
+        window.location.hash = `#/recover?channel=whatsapp&user_id=${encodeURIComponent(user.id)}`
+      } else setForgot('sent')
+    } catch (e) { setError(e.message); setForgot('choose') }
   }
 
   const enter = async (hotelId) => {
@@ -180,7 +191,7 @@ export default function Login({ initialHotel, onLoggedIn }) {
                 autoCapitalize="words" data-testid="login-user-input"
                 onFocus={() => setOpen(true)}
                 onBlur={() => setTimeout(() => setOpen(false), 150)}
-                onChange={(e) => { setQuery(e.target.value); setUser(null); setError(''); setOpen(true) }}
+                onChange={(e) => { setQuery(e.target.value); setUser(null); setForgot(''); setError(''); setOpen(true) }}
               />
               {searching && <Spinner />}
               {open && suggestions.length > 0 && (
@@ -220,8 +231,15 @@ export default function Login({ initialHotel, onLoggedIn }) {
           </Button>
 
           {!adminMode && (forgot === 'sent'
-            ? <p className="muted" role="status" data-testid="forgot-sent">Se nel tuo profilo c'è un'email, ti abbiamo mandato un link per scegliere un nuovo PIN (vale 15 minuti). Se non hai l'email nel profilo, chiedi a un admin di reimpostare il PIN.</p>
-            : <button type="button" className="login-back" data-testid="forgot-pin" disabled={forgot === 'sending'} onClick={sendRecovery}>PIN dimenticato?</button>)}
+            ? <p className="muted" role="status" data-testid="forgot-sent">Se hai un'email nel profilo, riceverai un link valido 15 minuti. Altrimenti chiedi all'amministratore di reimpostare il PIN.</p>
+            : forgot === 'choose' || forgot === 'sending'
+              ? <div className="stack" role="group" aria-label="Come ricevere il recupero PIN">
+                  <p className="muted">Come vuoi ricevere il recupero del PIN?</p>
+                  <button className="btn" type="button" disabled={forgot === 'sending'} onClick={() => sendRecovery('email')}>Tramite email</button>
+                  <button className="btn" type="button" disabled={forgot === 'sending' || !channels.whatsapp} onClick={() => sendRecovery('whatsapp')}>Tramite WhatsApp{!channels.whatsapp ? ' (non ancora attivo)' : ''}</button>
+                  <button className="login-back" type="button" disabled={forgot === 'sending'} onClick={() => setForgot('')}>Indietro</button>
+                </div>
+              : <button type="button" className="login-back" data-testid="forgot-pin" onClick={openRecovery}>PIN dimenticato?</button>)}
 
           <div className="login-tools">
             <Button type="button" onClick={() => setShowLog((v) => !v)}>{showLog ? 'Nascondi errori' : 'Registro errori'}</Button>
