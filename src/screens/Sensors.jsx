@@ -51,7 +51,7 @@ export default function Sensors({ ctx }) {
     try {
       const out = await refreshFromDevices(ctx.hotelId)
       await reload()
-      setRefreshNote(out.throttled ? 'Dati già aggiornati un attimo fa' : `Letti ${out.updated ?? 0} sensori`)
+      setRefreshNote(out.throttled ? 'Dati già aggiornati un attimo fa' : `Aggiornati ${out.updated ?? 0} dispositivi su ${out.found ?? 0} rilevati da eWeLink${out.missing?.length ? ` · ${out.missing.length} non restituiti` : ''}${out.unmatched?.length ? ` · ${out.unmatched.length} da associare` : ''}`)
     } catch (e) {
       await reload().catch(() => {})
       setActionError(e.message)
@@ -130,18 +130,19 @@ export default function Sensors({ ctx }) {
 
       {tab === 'switches' && (
         <div className="list">
-          {data && <p className="muted">{SWITCH_GROUPS.map((g) => `${groups.find((x) => x.id === g.id)?.items.length || 0} ${g.label.toLowerCase()}`).join(' · ')}</p>}
+          {data && <p className="muted">Stato rilevato da eWeLink (sola lettura) · {SWITCH_GROUPS.map((g) => `${groups.find((x) => x.id === g.id)?.items.length || 0} ${g.label.toLowerCase()}`).join(' · ')}</p>}
           {groups.map((g) => (
             <div key={g.id} className="card stack">
               <div className="row"><h2>{g.label}</h2><span className="muted">{g.items.length}</span></div>
               <ul className="people">
                 {g.items.map((s) => (
                   <li key={s.id}>
-                    <span>{s.name}</span>
-                    <span>
-                      {(g.id === 'unreachable' || g.id === 'mixed') && (
-                        <Badge kind={GROUP_BADGE[g.id]}>{g.id === 'unreachable' ? `Ultimo: ${switchLabel(s.switch_state)}` : switchLabel(s.switch_state)}</Badge>
-                      )}{' '}
+                    <span className="stack" style={{ gap: '0.15rem' }}>
+                      <strong>{s.name}</strong>
+                      <small className="muted">{s.last_seen ? `Ultima lettura: ${agoText(s.last_seen, now)}` : 'Nessuna lettura disponibile'}</small>
+                    </span>
+                    <span className="row" style={{ gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                      <Badge kind={GROUP_BADGE[g.id]}>{g.id === 'unreachable' ? `Non aggiornato · ultimo stato: ${switchLabel(s.switch_state)}` : switchLabel(s.switch_state)}</Badge>
                       {canManage && <button className="link-btn" disabled={busy} onClick={() => setActive(s.id, false)}>Nascondi</button>}
                     </span>
                   </li>
@@ -149,7 +150,7 @@ export default function Sensors({ ctx }) {
               </ul>
             </div>
           ))}
-          {data && switchCount === 0 && <div className="card muted">Nessun interruttore{canManage ? ': aggiungi il primo.' : '.'}</div>}
+          {data && switchCount === 0 && <div className="card muted">Nessun interruttore visibile{canManage ? ': verifica i dispositivi eWeLink associati oppure aggiungi il primo.' : '.'}</div>}
         </div>
       )}
 
