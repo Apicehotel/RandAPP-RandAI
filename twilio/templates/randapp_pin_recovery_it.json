@@ -1,0 +1,16 @@
+{
+  "friendly_name": "randapp_pin_recovery_it",
+  "language": "it",
+  "types": {
+    "whatsapp/authentication": {
+      "add_security_recommendation": true,
+      "code_expiration_minutes": 15,
+      "actions": [
+        {
+          "type": "COPY_CODE",
+          "copy_code_text": "Copia codice"
+        }
+      ]
+    }
+  }
+}
