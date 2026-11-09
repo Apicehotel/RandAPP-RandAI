@@ -101,7 +101,85 @@ async function requestRecovery(req: Request, userId: string, channel: string) {
       select p.auth_user_id, p.display_name, p.email, p.phone from randapp.profiles p
        where p.auth_user_id = ${userId} and p.active
          and (case when ${channel} = 'email' then p.email is not null
-                   else p.phone ~ '^\\+[1-9][0-9]{7,14}$' end)
+                   else p.phone ~ '^[+][1-9][0-9]{7,14} end)
+         and exists (select 1 from randapp.hotel_memberships m where m.auth_user_id = p.auth_user_id and m.active)`;
+    if (person && (channel === "whatsapp" ? whatsappEnabled : configured)) {
+      const raw = channel === "email" ? crypto.randomUUID() + crypto.randomUUID() : "";
+      const otp = channel === "whatsapp"
+        ? String(crypto.getRandomValues(new Uint32Array(1))[0] % 1_000_000).padStart(6, "0")
+        : "";
+      const digest = channel === "email"
+        ? await sha256(raw)
+        : await whatsappTokenHash(String(person.auth_user_id), otp);
+      await sql`update randapp.pin_recovery_requests set used_at = now() where auth_user_id = ${person.auth_user_id} and used_at is null`;
+      await sql`insert into randapp.pin_recovery_requests (auth_user_id, token_hash, expires_at) values (${person.auth_user_id}, ${digest}, ${new Date(Date.now() + TTL_MS)})`;
+      try {
+        if (channel === "email") {
+          await sendMail(String(person.email), String(person.display_name || ""), `${appUrl}/#/recover?token=${encodeURIComponent(raw)}`);
+        } else {
+          await sendWhatsapp(String(person.phone), otp);
+        }
+      } catch {
+        await sql`update randapp.pin_recovery_requests set used_at = now() where token_hash = ${digest} and used_at is null`;
+        console.error("pin-recovery delivery failed", channel);
+      }
+    }
+    await sql`delete from randapp.pin_recovery_requests where expires_at < now() - interval '1 day'`;
+  }
+  const wait = Math.max(0, 600 - (Date.now() - started));
+  if (wait) await new Promise((r) => setTimeout(r, wait));
+  return json({ ok: true });
+}
+
+async function complete(token: string, newPin: string, channel: string, userId: string, otp: string) {
+  if (!/^\\d{4}$/.test(newPin)) return json({ ok: false, error: "PIN non valido" }, 400);
+  let digest: string;
+  if (channel === "whatsapp") {
+    if (!whatsappEnabled || !/^[0-9a-f-]{36}$/i.test(userId) || !/^\\d{6}$/.test(otp)) {
+      return json({ ok: false, error: "Codice non valido" }, 400);
+    }
+    // Limite cumulativo tra richieste per lo stesso utente, contro tentativi di indovinare l'OTP.
+    if (!await consume(`verify:${userId}`, 5)) return json({ ok: false, error: "Troppi tentativi. Riprova più tardi." }, 429);
+    digest = await whatsappTokenHash(userId, otp);
+  } else if (channel === "email" && token.length >= 40) {
+    digest = await sha256(token);
+  } else {
+    return json({ ok: false, error: "Link o codice non valido" }, 400);
+  }
+  const hash = await bcrypt.hash(newPin, 10);
+  // Blocco della riga e consumo del token nella STESSA transazione: due chiamate concorrenti
+  // non possono usare lo stesso codice due volte o riscrivere di nuovo il PIN.
+  const updated = await sql.begin(async (tx) => {
+    const [rec] = await tx`select id, auth_user_id, expires_at, used_at
+      from randapp.pin_recovery_requests where token_hash = ${digest} for update`;
+    if (!rec || rec.used_at || new Date(rec.expires_at).getTime() <= Date.now()) return false;
+    if (channel === "whatsapp" && String(rec.auth_user_id) !== userId) return false;
+    await tx`update randapp.auth_pin_credentials
+       set pin_hash = ${hash}, failed_attempts = 0, locked_until = null,
+           must_change_pin = false, updated_at = now()
+       where auth_user_id = ${rec.auth_user_id}`;
+    await tx`update randapp.pin_recovery_requests set used_at = now() where id = ${rec.id}`;
+    return true;
+  });
+  return updated ? json({ ok: true }) : json({ ok: false, error: "Link o codice non valido o scaduto" }, 400);
+}
+
+Deno.serve(async (req: Request) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
+  if (req.method !== "POST") return json({ ok: false, error: "Metodo non consentito" }, 405);
+  try {
+    const body = await req.json().catch(() => null);
+    const action = String(body?.action || "");
+    if (action === "status") return json({ ok: true, configured, whatsapp_enabled: whatsappEnabled });
+    if (action === "request") return await requestRecovery(req, String(body?.user_id || "").trim(), String(body?.channel || "email"));
+    if (action === "complete") return await complete(String(body?.token || "").trim(), String(body?.new_pin || "").trim(), String(body?.channel || "email"), String(body?.user_id || "").trim(), String(body?.otp || "").trim());
+    return json({ ok: false, error: "Azione non valida" }, 400);
+  } catch (error) {
+    console.error("pin-recovery", error instanceof Error ? error.message : "errore");
+    return json({ ok: false, error: "Recupero PIN temporaneamente non disponibile" }, 503);
+  }
+});
+ end)
          and exists (select 1 from randapp.hotel_memberships m where m.auth_user_id = p.auth_user_id and m.active)`;
     if (person && (channel === "whatsapp" ? whatsappEnabled : configured)) {
       const raw = channel === "email" ? crypto.randomUUID() + crypto.randomUUID() : "";
