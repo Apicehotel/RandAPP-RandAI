@@ -42,3 +42,12 @@ test('Creatore template Twilio non fa richieste per default', () => {
   assert.match(script, /process\.argv\.includes\('--create'\)/)
   assert.match(script, /if \(!create\)/)
 })
+
+test('Edge Function: un solo handler e query telefono completa', () => {
+  const fn = read('supabase/functions/randapp-pin-recovery/index.ts')
+  assert.equal((fn.match(/Deno\\.serve\\(/g) || []).length, 1)
+  assert.equal((fn.match(/async function complete\\(/g) || []).length, 1)
+  assert.match(fn, /else p\\.phone ~ '[^']+' end\\)/)
+  assert.doesNotMatch(fn, /^ end\\)/m)
+  assert.doesNotMatch(fn, /\\n end\\)\\n/)
+})
