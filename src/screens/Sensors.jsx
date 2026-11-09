@@ -67,6 +67,9 @@ export default function Sensors({ ctx }) {
         {canManage && <Button variant="primary" onClick={() => go('/sensors/new')}>+ Nuovo</Button>}
       </div>
 
+      {data && all.some((item) => item.active !== false) && !newest && (
+        <div className="banner" role="alert">Nessuna lettura disponibile per questa struttura. Verifica l'associazione dei dispositivi a eWeLink e usa Aggiorna.</div>
+      )}
       {data && health.stopped && (
         <div className="banner" role="alert">Nessun sensore si aggiorna da {agoText(new Date(now - health.minutes * 60000).toISOString(), now).replace(' fa', '')}: la sincronizzazione sembra ferma.</div>
       )}
