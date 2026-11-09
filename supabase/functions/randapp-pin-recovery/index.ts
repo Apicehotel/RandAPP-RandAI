@@ -101,7 +101,7 @@ async function requestRecovery(req: Request, userId: string, channel: string) {
       select p.auth_user_id, p.display_name, p.email, p.phone from randapp.profiles p
        where p.auth_user_id = ${userId} and p.active
          and (case when ${channel} = 'email' then p.email is not null
-                   else p.phone ~ '^\\+[1-9][0-9]{7,14}
+                   else p.phone ~ '^\\+[1-9][0-9]{7,14}$' end)
          and exists (select 1 from randapp.hotel_memberships m where m.auth_user_id = p.auth_user_id and m.active)`;
     if (person && (channel === "whatsapp" ? whatsappEnabled : configured)) {
       const raw = channel === "email" ? crypto.randomUUID() + crypto.randomUUID() : "";
@@ -173,55 +173,6 @@ Deno.serve(async (req: Request) => {
     if (action === "status") return json({ ok: true, configured, whatsapp_enabled: whatsappEnabled });
     if (action === "request") return await requestRecovery(req, String(body?.user_id || "").trim(), String(body?.channel || "email"));
     if (action === "complete") return await complete(String(body?.token || "").trim(), String(body?.new_pin || "").trim(), String(body?.channel || "email"), String(body?.user_id || "").trim(), String(body?.otp || "").trim());
-    return json({ ok: false, error: "Azione non valida" }, 400);
-  } catch (error) {
-    console.error("pin-recovery", error instanceof Error ? error.message : "errore");
-    return json({ ok: false, error: "Recupero PIN temporaneamente non disponibile" }, 503);
-  }
-});
- end)
-         and exists (select 1 from randapp.hotel_memberships m where m.auth_user_id = p.auth_user_id and m.active)`;
-    if (person && configured) {
-      const raw = crypto.randomUUID() + crypto.randomUUID();
-      await sql`update randapp.pin_recovery_requests set used_at = now() where auth_user_id = ${person.auth_user_id} and used_at is null`;
-      await sql`insert into randapp.pin_recovery_requests (auth_user_id, token_hash, expires_at) values (${person.auth_user_id}, ${await sha256(raw)}, ${new Date(Date.now() + TTL_MS)})`;
-      try {
-        await sendMail(String(person.email), String(person.display_name || ""), `${appUrl}/#/recover?token=${encodeURIComponent(raw)}`);
-      } catch (e) {
-        console.error("pin-recovery mail", e instanceof Error ? e.message : "errore");
-      }
-    }
-    await sql`delete from randapp.pin_recovery_requests where expires_at < now() - interval '1 day'`;
-  }
-  const wait = Math.max(0, 600 - (Date.now() - started));
-  if (wait) await new Promise((r) => setTimeout(r, wait));
-  return json({ ok: true });
-}
-
-async function complete(token: string, newPin: string) {
-  if (token.length < 40 || !/^\d{4}$/.test(newPin)) return json({ ok: false, error: "Link non valido o PIN non valido" }, 400);
-  const [rec] = await sql`select id, auth_user_id, expires_at, used_at from randapp.pin_recovery_requests where token_hash = ${await sha256(token)}`;
-  if (!rec || rec.used_at || new Date(rec.expires_at).getTime() <= Date.now()) return json({ ok: false, error: "Link non valido o scaduto" }, 400);
-  const hash = await bcrypt.hash(newPin, 10);
-  await sql.begin(async (tx) => {
-    await tx`
-      insert into randapp.auth_pin_credentials (auth_user_id, pin_hash, failed_attempts, locked_until, must_change_pin, updated_at)
-      values (${rec.auth_user_id}, ${hash}, 0, null, false, now())
-      on conflict (auth_user_id) do update set pin_hash = excluded.pin_hash, failed_attempts = 0, locked_until = null, must_change_pin = false, updated_at = now()`;
-    await tx`update randapp.pin_recovery_requests set used_at = now() where auth_user_id = ${rec.auth_user_id} and used_at is null`;
-  });
-  return json({ ok: true });
-}
-
-Deno.serve(async (req: Request) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
-  if (req.method !== "POST") return json({ ok: false, error: "Metodo non consentito" }, 405);
-  try {
-    const body = await req.json().catch(() => null);
-    const action = String(body?.action || "");
-    if (action === "status") return json({ ok: true, configured });
-    if (action === "request") return await requestRecovery(req, String(body?.user_id || "").trim());
-    if (action === "complete") return await complete(String(body?.token || "").trim(), String(body?.new_pin || "").trim());
     return json({ ok: false, error: "Azione non valida" }, 400);
   } catch (error) {
     console.error("pin-recovery", error instanceof Error ? error.message : "errore");
