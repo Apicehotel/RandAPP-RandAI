@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase.js'
 import { fail, flushQueue, OUTBOX_FLUSHED } from '../lib/outbox.js'
+import { alertPatch } from '../lib/task.js'
 
 // Come si invia al server ogni tipo di voce della coda. Chi chiama (flushQueue) decide cosa fare degli errori:
 // rete assente → si ferma e riprova; rifiuto del server → «non inviata».
@@ -8,6 +9,15 @@ const RUNNERS = {
   'issue.create': async ({ payload }) => {
     const { error } = await supabase.from('issues').insert(payload.row)
     if (error && error.code !== '23505') throw fail('Impossibile inviare la segnalazione', error)
+  },
+  // «Preso in carico» parte solo se l'avviso è ancora aperto: se nel frattempo lo ha preso un collega, non lo si sovrascrive.
+  // L'ora è quella in cui la persona ha toccato il pulsante, non quella dell'invio.
+  'alert.status': async ({ hotelId, userId, payload, createdAt }) => {
+    let q = supabase.from('urgent_alerts').update(alertPatch(payload.status, userId, createdAt))
+      .eq('hotel_id', hotelId).eq('id', payload.alertId)
+    if (payload.status === 'in_carico') q = q.eq('status', 'aperto')
+    const { error } = await q.select('id').maybeSingle()
+    if (error) throw fail('Avviso non aggiornato', error)
   },
   'hk.status': async ({ hotelId, userId, payload }) => {
     const { error } = await supabase.from('hk_rooms').update({ status: payload.status, updated_by: userId })
