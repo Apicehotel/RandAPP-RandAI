@@ -3,14 +3,16 @@
 // Si chiama ogni minuto (pg_cron, vedi README) con l'intestazione x-sync-secret.
 // Postgres diretto (SUPABASE_DB_URL), come ewelink-sync. Segreti: variabili della funzione o `edge_function_secrets`.
 //   VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT (mailto:...), NTFY_BASE (default https://ntfy.sh), NTFY_TOKEN,
-//   WHATSAPP_TOKEN, WHATSAPP_PHONE_ID, APP_URL (indirizzo dell'app per aprire il link)
+//   TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_WHATSAPP_FROM (numero mittente, formato +39…), APP_URL (indirizzo dell'app per aprire il link)
+//   Il modello WhatsApp (ContentSid HX…) sta nella configurazione del canale: notification_channels.config → content_sid, variables, templates.
 import postgres from "npm:postgres@3.4.7";
 import webpush from "npm:web-push@3.6.7";
-import { isGone, payloadOf, planDelivery, sendNtfy, sendWhatsApp } from "../_shared/notify.js";
+import { isGone, payloadOf, pickTemplate, planDelivery, sendNtfy, sendWhatsApp, whatsappVariables } from "../_shared/notify.js";
 
 const sql = postgres(Deno.env.get("SUPABASE_DB_URL")!, { prepare: false, max: 2, connect_timeout: 5, idle_timeout: 10 });
 const MAX_ATTEMPTS = 3;
 const BATCH = 50;
+const HOTEL_NAMES: Record<string, string> = { hotelgio: "Hotel Giò", chocohotel: "Chocohotel", brigantino: "Hotel Il Brigantino" };
 
 async function secret(name: string): Promise<string | null> {
   const v = Deno.env.get(name);
@@ -42,11 +44,11 @@ Deno.serve(async (req) => {
     const expected = (await secret("NOTIFY_SYNC_SECRET")) ?? (await secret("SENSOR_SYNC_SECRET"));
     if (!provided || !expected || !sameSecret(provided, expected)) return json({ ok: false, error: "Non autorizzato" }, 401);
 
-    const [vapidPub, vapidPriv, vapidSub, ntfyBase, ntfyToken, waToken, waPhone, appUrl] = await Promise.all([
+    const [vapidPub, vapidPriv, vapidSub, ntfyBase, ntfyToken, twSid, twToken, twFrom, appUrl] = await Promise.all([
       secret("VAPID_PUBLIC_KEY"), secret("VAPID_PRIVATE_KEY"), secret("VAPID_SUBJECT"), secret("NTFY_BASE"),
-      secret("NTFY_TOKEN"), secret("WHATSAPP_TOKEN"), secret("WHATSAPP_PHONE_ID"), secret("APP_URL"),
+      secret("NTFY_TOKEN"), secret("TWILIO_ACCOUNT_SID"), secret("TWILIO_AUTH_TOKEN"), secret("TWILIO_WHATSAPP_FROM"), secret("APP_URL"),
     ]);
-    const env = { hasVapid: !!(vapidPub && vapidPriv), hasNtfy: true, hasWhatsApp: !!(waToken && waPhone) };
+    const env = { hasVapid: !!(vapidPub && vapidPriv), hasNtfy: true, hasWhatsApp: !!(twSid && twToken && twFrom) };
     if (env.hasVapid) webpush.setVapidDetails(vapidSub || "mailto:admin@example.com", vapidPub!, vapidPriv!);
 
     // Prende un blocco di consegne e le "prenota" (skip locked: due chiamate insieme non si pestano i piedi).
@@ -59,9 +61,9 @@ Deno.serve(async (req) => {
         update randapp.notification_deliveries d set attempts = d.attempts + 1
         from picked where d.id = picked.id returning d.id, d.attempts
       )
-      select d.id, d.channel, b.attempts, n.kind, n.title, n.body, n.link, n.priority,
+      select d.id, d.channel, b.attempts, n.kind, n.hotel_id, n.title, n.body, n.link, n.priority,
              v.platform, v.token, v.keys, v.id as device_id,
-             c.config->>'template' as template, c.config->>'language' as language
+             c.config as config
       from bumped b
       join randapp.notification_deliveries d on d.id = b.id
       join randapp.notifications n on n.id = d.notification_id
@@ -70,7 +72,8 @@ Deno.serve(async (req) => {
 
     let sent = 0, failed = 0, skipped = 0;
     for (const r of rows) {
-      const plan = planDelivery({ ...r }, env);
+      const tpl = pickTemplate(r.config, r.kind);
+      const plan = planDelivery({ ...r, content_sid: tpl.contentSid }, env);
       const payload = payloadOf(r, appUrl ?? "");
       try {
         if (plan.startsWith("skip:")) {
@@ -79,7 +82,12 @@ Deno.serve(async (req) => {
           continue;
         }
         if (plan === "ntfy") await sendNtfy({ base: ntfyBase ?? "https://ntfy.sh", topic: r.token, token: ntfyToken ?? undefined, payload });
-        else if (plan === "whatsapp") await sendWhatsApp({ token: waToken!, phoneId: waPhone!, to: r.token, template: r.template, language: r.language ?? "it", payload });
+        else if (plan === "whatsapp") {
+          await sendWhatsApp({
+            accountSid: twSid!, authToken: twToken!, from: twFrom!, to: r.token, contentSid: tpl.contentSid,
+            variables: whatsappVariables(tpl.variables, payload, { hotel: HOTEL_NAMES[r.hotel_id] ?? r.hotel_id }),
+          });
+        };
         else if (plan === "web") {
           await webpush.sendNotification({ endpoint: r.token, keys: r.keys }, JSON.stringify(payload), { TTL: 3600, urgency: payload.urgent ? "high" : "normal" });
         }

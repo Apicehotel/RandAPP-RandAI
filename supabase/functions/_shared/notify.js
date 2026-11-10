@@ -31,27 +31,45 @@ export async function sendNtfy({ base, topic, token, payload, fetchFn = fetch })
   if (!res.ok) throw new Error(`ntfy ${res.status}`);
 }
 
-// WhatsApp Cloud API (Meta): fuori dalle 24 ore serve un modello approvato.
-// Il modello ha 2 variabili: {{1}} titolo, {{2}} testo.
-export async function sendWhatsApp({ token, phoneId, to, template, language = 'it', payload, fetchFn = fetch }) {
-  const res = await fetchFn(`https://graph.facebook.com/v20.0/${encodeURIComponent(phoneId)}/messages`, {
+// ---- WhatsApp via Twilio (stesso account e stessi modelli «Content» di Multihotel)
+// Fuori dalle 24 ore dall'ultimo messaggio della persona WhatsApp accetta solo modelli approvati: si invia sempre un modello
+// (`ContentSid`) con le sue variabili {{1}}, {{2}}… Nessun segreto nei log né negli errori (nemmeno il testo libero di Twilio, che può contenere il numero).
+
+// WhatsApp non accetta a capo, tab o spazi ripetuti dentro le variabili, né variabili vuote.
+const oneLine = (s, n) => clip(String(s ?? '').replace(/\s+/g, ' ').trim(), n)
+
+// Quali campi della notifica riempiono {{1}}, {{2}}… del modello. Di default: titolo e testo (modello a 2 variabili).
+export const DEFAULT_VARIABLES = ['title', 'body'];
+const FIELD_LIMIT = { title: 60, body: 200, kind: 40, url: 200, hotel: 60 };
+export function whatsappVariables(spec, payload, ctx = {}) {
+  const fields = Array.isArray(spec) && spec.length ? spec : DEFAULT_VARIABLES;
+  const values = { title: payload.title, body: payload.body, kind: payload.tag, url: payload.url, hotel: ctx.hotel };
+  return Object.fromEntries(fields.map((f, i) => [String(i + 1), oneLine(values[f], FIELD_LIMIT[f] ?? 100) || '-']));
+}
+
+// Modello da usare: quello specifico del tipo di notifica (`templates.<kind>`) oppure quello della struttura.
+// `config` viene da notification_channels.config: { content_sid, variables?, templates?: { <kind>: { content_sid, variables? } } }
+export function pickTemplate(config, kind) {
+  const c = config && typeof config === 'object' ? config : {};
+  const own = c.templates && typeof c.templates === 'object' ? c.templates[kind] : null;
+  const sid = String((own && own.content_sid) || c.content_sid || '');
+  return { contentSid: /^HX[0-9a-f]{32}$/i.test(sid) ? sid : '', variables: (own && own.variables) || c.variables };
+}
+
+const waAddress = (n) => {
+  const d = String(n).replace(/^whatsapp:/i, '').replace(/[^\d+]/g, '');
+  return `whatsapp:${d.startsWith('+') ? d : `+${d}`}`;
+};
+
+export async function sendWhatsApp({ accountSid, authToken, from, to, contentSid, variables, fetchFn = fetch }) {
+  const res = await fetchFn(`https://api.twilio.com/2010-04-01/Accounts/${encodeURIComponent(accountSid)}/Messages.json`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-    body: JSON.stringify({
-      messaging_product: 'whatsapp',
-      to: String(to).replace(/[^\d]/g, ''),
-      type: 'template',
-      template: {
-        name: template,
-        language: { code: language },
-        components: [{ type: 'body', parameters: [
-          { type: 'text', text: clip(payload.title, 60) },
-          { type: 'text', text: clip(payload.body, 200).replace(/\s+/g, ' ') },
-        ] }],
-      },
-    }),
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded', Authorization: `Basic ${btoa(`${accountSid}:${authToken}`)}` },
+    body: new URLSearchParams({ From: waAddress(from), To: waAddress(to), ContentSid: contentSid, ContentVariables: JSON.stringify(variables) }),
   });
-  if (!res.ok) throw new Error(`whatsapp ${res.status}`);
+  const data = await res.json().catch(() => null);
+  if (!res.ok) throw new Error(`twilio ${res.status}${data?.code ? ` codice ${data.code}` : ''}`);
+  return { sid: data?.sid || null, status: data?.status || null };
 }
 
 // Esito di un errore di web push: abbonamento scaduto (410/404) = da disattivare.
@@ -60,7 +78,10 @@ export const isGone = (e) => e && (e.statusCode === 410 || e.statusCode === 404)
 // Decide cosa fare con una consegna (usato dal dispatcher).
 export function planDelivery(row, env) {
   if (row.channel === 'ntfy') return env.hasNtfy ? 'ntfy' : 'skip:ntfy non configurato';
-  if (row.channel === 'whatsapp') return env.hasWhatsApp && row.template ? 'whatsapp' : 'skip:WhatsApp non configurato';
+  if (row.channel === 'whatsapp') {
+    if (!env.hasWhatsApp) return 'skip:Twilio non configurato';
+    return row.content_sid ? 'whatsapp' : 'skip:modello WhatsApp non impostato';
+  }
   if (row.channel === 'push') {
     if (row.platform === 'web') return env.hasVapid ? 'web' : 'skip:chiavi web push mancanti';
     return 'skip:app nativa non ancora configurata'; // android/ios: FCM/APNs arriveranno con le app
