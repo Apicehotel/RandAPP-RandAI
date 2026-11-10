@@ -44,6 +44,9 @@ export function classify({ kind = '', message = '', detail = '', status = 0, onl
   if (has(/Utente disattivato|Accesso alla struttura non consentito|non autorizzato/i) || has(/"code":"42501"|row-level security|permission denied/i) || status === 403) {
     return out('utente', 'Non hai il permesso per questa azione: chiedi a un amministratore di abilitare il tuo ruolo.')
   }
+  if (has(/JWT issued at future/i)) {
+    return out('dispositivo', 'Orario del telefono o del server non allineato: la sessione risulta emessa nel futuro. Controlla data e ora automatiche del telefono; se resta, esci e rientra con il PIN.', true)
+  }
   if (status === 401 || has(/JWT expired|PGRST301|Invalid Refresh Token|sessione scaduta/i)) {
     return out('utente', 'Sessione scaduta: esci e rientra con il PIN.')
   }
