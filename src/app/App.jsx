@@ -1,6 +1,6 @@
 import { Suspense, useEffect, useState } from 'react'
 import { isConfigured, missingConfig } from '../lib/supabase.js'
-import { hasActiveSession, loadContext, onSessionLost, verifySession } from '../lib/auth.js'
+import { canResumeOffline, hasActiveSession, loadContext, onSessionLost, verifySession } from '../lib/auth.js'
 import { lazyWithRetry } from '../lib/lazy-retry.js'
 import { useRoute } from '../lib/hooks.js'
 import { can, PERM } from '../lib/permissions.js'
@@ -217,7 +217,7 @@ export default function App() {
     ;(async () => {
       try {
         const hotelId = readHotel()
-        if (hotelId && (await hasActiveSession())) {
+        if (hotelId && ((await hasActiveSession()) || canResumeOffline())) {
           const restored = await loadContext(hotelId)
           if (!cancelled && restored) setCtx(restored)
         }

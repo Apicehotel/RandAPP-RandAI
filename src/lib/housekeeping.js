@@ -40,3 +40,17 @@ export function groupByFloor(rooms, { onlyOpen = false } = {}) {
 // "204, 205, 301" -> ['204','205','301'] senza doppioni né vuoti.
 export const parseRoomList = (text) =>
   [...new Set(String(text || '').split(/[\s,;]+/).map((s) => s.trim()).filter(Boolean))]
+
+// Camere come le vede chi ha fatto modifiche senza rete: lo stato e la nota in coda si vedono subito, con il segno «pending».
+export function applyPendingRooms(rooms, entries) {
+  const byRoom = new Map()
+  for (const e of entries || []) {
+    if (e.status !== 'pending' || (e.kind !== 'hk.status' && e.kind !== 'hk.note')) continue
+    const cur = byRoom.get(e.payload.roomId) || {}
+    if (e.kind === 'hk.status') cur.status = e.payload.status
+    else cur.note = e.payload.note
+    byRoom.set(e.payload.roomId, cur)
+  }
+  if (!byRoom.size) return rooms
+  return rooms.map((r) => (byRoom.has(r.id) ? { ...r, ...byRoom.get(r.id), pending: true } : r))
+}

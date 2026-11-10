@@ -168,3 +168,4 @@ Dopo cambio sorgente: **pubblicare di nuovo** la funzione sul progetto Supabase.
 3. README aggiornato se cambia il funzionamento; riga in STATO.
 4. Se hai aggiunto ruolo/categoria/migrazione: checklist sezioni 3–5 di questo file.
 5. Non dichiarare migrazioni «applicate» se non lo sono sul DB reale.
+6. Se tocchi `public/sw.js` o `vite.config.js` (plugin `swPrecache`): tieni i segnaposto `__BUILD__` / `__PRECACHE__` e, se cambia la strategia di cache, incrementa `VERSION`. Una nuova scrittura che deve funzionare offline passa da `src/lib/outbox.js` (vedi README «Modifiche senza rete»): mai accodare un rifiuto del server, solo «server non raggiunto».

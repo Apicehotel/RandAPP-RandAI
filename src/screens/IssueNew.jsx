@@ -19,6 +19,7 @@ export default function IssueNew({ ctx }) {
   const [form, setForm] = useState({ ...EMPTY, ...(draft.current || {}) })
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [savedOffline, setSavedOffline] = useState(false)
   const { data: locations } = useAsync(() => listLocations(ctx.hotelId), [ctx.hotelId])
 
   // La bozza resta sul telefono mentre scrivi: se esci per sbaglio non perdi nulla.
@@ -39,6 +40,7 @@ export default function IssueNew({ ctx }) {
     try {
       const issue = await createIssue(ctx.hotelId, ctx.userId, form)
       clearDraft('issue', ctx.hotelId, ctx.userId)
+      if (issue.pending) { setSavedOffline(true); setBusy(false); return } // senza rete: salvata sul telefono, parte da sola
       // La scelta della persona (testo → categoria e urgenza) è un esempio verificato per l'IA locale futura. Non blocca mai l'invio.
       logAi(ctx.hotelId, { feature: 'classify', source: 'human', input: { title: scrubText(form.title).slice(0, 140), description: scrubText(form.description).slice(0, 500) }, output: { category: form.category, urgency: form.urgency } })
       go(`/issues/${issue.id}`)
@@ -46,6 +48,19 @@ export default function IssueNew({ ctx }) {
       setError(`${err.message}. La bozza resta sul telefono: riprova.`)
       setBusy(false)
     }
+  }
+
+  if (savedOffline) {
+    return (
+      <div className="page">
+        <h1>Segnalazione salvata sul telefono</h1>
+        <div className="card stack">
+          <p>Non c'è connessione: la segnalazione verrà inviata da sola appena torna la rete. Fino ad allora compare in elenco come «in attesa di invio».</p>
+          <Button variant="primary" onClick={() => go('/issues')}>Vai alle segnalazioni</Button>
+          <Button onClick={() => { setForm(EMPTY); setSavedOffline(false) }}>Nuova segnalazione</Button>
+        </div>
+      </div>
+    )
   }
 
   return (
