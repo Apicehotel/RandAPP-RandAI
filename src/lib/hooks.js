@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { logError } from './errorlog.js'
+import { readWithJwtRecovery } from './jwt-recovery.js'
 
 // Piccolo hook di caricamento: niente librerie extra, si ricarica a mano o quando torni sull'app.
 // Ogni esecuzione ha un numero di generazione: una risposta vecchia non sovrascrive una più recente
@@ -11,7 +12,7 @@ export function useAsync(fn, deps = []) {
     const mine = ++gen.current
     setState((s) => ({ ...s, loading: true, error: null }))
     try {
-      const data = await fn()
+      const data = await readWithJwtRecovery(fn) // solo letture: un solo rinnovo sessione se l'orario non è allineato
       if (mine === gen.current) setState({ data, error: null, loading: false })
     } catch (error) {
       logError('schermata', error)

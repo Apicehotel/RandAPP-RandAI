@@ -100,7 +100,10 @@ Funzione server `supabase/functions/ewelink-sync` (logica in `supabase/functions
 ## Loghi e icona dell'app
 Presi dalla vecchia app `Apicehotel-Manutenzione`.
 - `src/assets/logos/`: mascotte **ApiceHotel** (login) e loghi di **Hotel Giò, Choco Hotel, Il Brigantino** (scelta struttura e intestazione). Sono importati dal codice (`src/lib/hotels.js`), quindi vengono pubblicati con nome a prova di cache.
-- `public/icons/` + `public/manifest.webmanifest`: icona **RandApp** (192, 512, maskable, Apple) per aggiungere l'app alla schermata Home del telefono. Per ora c'è solo il manifest: il servizio di funzionamento offline arriva con la PWA completa.
+- `public/icons/` + `public/manifest.webmanifest`: icona **RandApp** (192, 512, maskable, Apple) per aggiungere l'app alla schermata Home del telefono. 
+- **Service worker** (`public/sw.js`, registrato da `src/lib/pwa.js` solo in produzione): oltre alle push, tiene in cache l'app (pagina + file `/assets/*` con hash + icone) così **si apre anche senza segnale**. Mai in cache i dati: Supabase è un altro dominio e il worker non lo intercetta. Pagina: prima la rete, poi l'ultima copia salvata. Se cambia la strategia di cache, incrementare `VERSION` in `sw.js` (le vecchie cache `randapp-shell-*` si cancellano da sole). Le scritture offline (coda segnalazioni/housekeeping) non ci sono ancora: sono il passo successivo.
+- **Sempre l'ultima versione** (`src/lib/pwa.js`): all'avvio, al ritorno sull'app e quando torna la rete, l'app confronta i suoi file con quelli del server; se è uscita una versione nuova ricarica **una sola volta** (mai mentre stai scrivendo in un campo).
+- **Sessione e orario** (`src/lib/jwt-recovery.js`, usato da `useAsync`): se una *lettura* fallisce con «JWT issued at future» (orologi non allineati) la sessione viene rinnovata e la lettura ripetuta una volta; le scritture non si ripetono mai. Se non basta, messaggio chiaro invece di errore tecnico.
 - Non ancora presi: le "card" grandi delle strutture, il gatto di RandAI (quando lo riattiviamo), l'icona degli avvisi urgenti.
 
 ## Notifiche
