@@ -311,6 +311,9 @@ button { cursor: pointer; }
 .urgent-btn.primary { background: #fff; color: var(--danger); }
 .urgent-btn:disabled { opacity: 0.6; }
 .urgent-more { opacity: 0.9; }
+.ready-bar { display: grid; gap: var(--gap-tight); padding: var(--gap-tight) var(--gap); background: var(--ok); color: #fff; font-size: var(--fs-sm); }
+.ready-item { display: flex; align-items: center; justify-content: space-between; gap: var(--gap); }
+.ready-btn { min-height: var(--chip-h); padding: 0 var(--gap); border: 1px solid #fff; border-radius: var(--radius-sm); background: transparent; color: #fff; font-weight: 600; }
 .outbox { display: grid; gap: var(--gap-tight); }
 .linkbtn { border: 0; background: none; color: var(--accent); font-size: var(--fs-sm); min-height: var(--chip-h); padding: 0 var(--gap-tight); }
 .staff-grid { display: grid; gap: var(--gap-tight); grid-template-columns: repeat(auto-fill, minmax(min(190px, 100%), 1fr)); }
