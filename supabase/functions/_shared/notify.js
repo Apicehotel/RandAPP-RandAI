@@ -56,6 +56,14 @@ export function pickTemplate(config, kind) {
   return { contentSid: /^HX[0-9a-f]{32}$/i.test(sid) ? sid : '', variables: (own && own.variables) || c.variables };
 }
 
+// Mittente WhatsApp della struttura (ogni struttura ha il suo numero): `config.from` in formato +39…; in mancanza, quello di riserva (`TWILIO_WHATSAPP_FROM`).
+export function pickSender(config, fallback) {
+  const own = config && typeof config === 'object' ? String(config.from || '').replace(/^whatsapp:/i, '').replace(/[\s-]/g, '') : '';
+  if (/^\+[1-9][0-9]{7,14}$/.test(own)) return own;
+  const alt = String(fallback || '').replace(/^whatsapp:/i, '').replace(/[\s-]/g, '');
+  return /^\+[1-9][0-9]{7,14}$/.test(alt) ? alt : '';
+}
+
 const waAddress = (n) => {
   const d = String(n).replace(/^whatsapp:/i, '').replace(/[^\d+]/g, '');
   return `whatsapp:${d.startsWith('+') ? d : `+${d}`}`;
@@ -80,6 +88,7 @@ export function planDelivery(row, env) {
   if (row.channel === 'ntfy') return env.hasNtfy ? 'ntfy' : 'skip:ntfy non configurato';
   if (row.channel === 'whatsapp') {
     if (!env.hasWhatsApp) return 'skip:Twilio non configurato';
+    if (!row.from) return 'skip:mittente WhatsApp non impostato';
     return row.content_sid ? 'whatsapp' : 'skip:modello WhatsApp non impostato';
   }
   if (row.channel === 'push') {
