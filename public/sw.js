@@ -109,6 +109,15 @@ self.addEventListener('fetch', (event) => {
 })
 
 // ---- Notifiche push
+// Dal tocco su una notifica si apre solo una pagina di QUESTO sito: un indirizzo di un altro sito (payload manomesso) ripiega sulle Notifiche.
+const DEFAULT_URL = new URL('./#/notifications', SCOPE).href
+function safeUrl(raw) {
+  try {
+    const u = new URL(raw || DEFAULT_URL, SCOPE)
+    return u.origin === self.location.origin ? u.href : DEFAULT_URL
+  } catch { return DEFAULT_URL }
+}
+
 self.addEventListener('push', (event) => {
   let d = {}
   try { d = event.data ? event.data.json() : {} } catch { d = { title: 'RandApp', body: event.data ? event.data.text() : '' } }
@@ -118,13 +127,13 @@ self.addEventListener('push', (event) => {
     badge: './icons/icon-192.png',
     tag: d.tag || undefined,
     requireInteraction: d.urgent === true,
-    data: { url: d.url || './#/notifications' },
+    data: { url: safeUrl(d.url) },
   }))
 })
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close()
-  const url = (event.notification.data && event.notification.data.url) || './#/notifications'
+  const url = safeUrl(event.notification.data && event.notification.data.url)
   event.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
     for (const c of list) { if ('focus' in c) { c.navigate && c.navigate(url).catch(() => {}); return c.focus() } }
     return self.clients.openWindow(url)
