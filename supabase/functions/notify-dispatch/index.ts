@@ -87,7 +87,7 @@ Deno.serve(async (req) => {
             accountSid: twSid!, authToken: twToken!, from: twFrom!, to: r.token, contentSid: tpl.contentSid,
             variables: whatsappVariables(tpl.variables, payload, { hotel: HOTEL_NAMES[r.hotel_id] ?? r.hotel_id }),
           });
-        };
+        }
         else if (plan === "web") {
           await webpush.sendNotification({ endpoint: r.token, keys: r.keys }, JSON.stringify(payload), { TTL: 3600, urgency: payload.urgent ? "high" : "normal" });
         }
