@@ -39,21 +39,14 @@ export function LocationInput({ id, locations, value, onChange, placeholder = 'e
   )
 }
 
-// Più camere insieme, a piani: tocca un piano per aprirlo, "Tutte" per sceglierle tutte.
-// Le camere scelte restano SEMPRE visibili in alto (anche dei piani chiusi) e si tolgono con un tocco.
+// Più camere insieme, raggruppate per piano: il conteggio rimane nella testata
+// e la selezione è visibile nel piano aperto. Evita il riepilogo duplicato in alto.
 export function RoomsPicker({ locations, selected, onChange }) {
   const groups = useMemo(() => roomGroups(locations), [locations])
   const [open, setOpen] = useState(groups[0]?.name || '')
   if (groups.length === 0) return <p className="muted">Nessun elenco camere per questa struttura: scrivi il luogo sopra.</p>
   return (
     <div className="stack">
-      {selected.length > 0 && (
-        <div className="chips wrap" role="group" aria-label="Camere scelte">
-          {selected.map((r) => (
-            <button type="button" key={r} className="chip" aria-pressed="true" aria-label={`Togli ${r}`} onClick={() => onChange(toggleIn(selected, r))}>{r} ✕</button>
-          ))}
-        </div>
-      )}
       {groups.map((g) => {
         const count = g.rooms.filter((r) => selected.includes(r)).length
         const isOpen = open === g.name
