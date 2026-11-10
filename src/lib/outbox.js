@@ -13,7 +13,9 @@ export const OUTBOX_MAX = 200
 export const OUTBOX_EVENT = 'outbox:changed'
 export const OUTBOX_FLUSHED = 'outbox:flushed'
 
-const COALESCE = new Set(['hk.status', 'hk.note'])
+const COALESCE = new Set(['hk.status', 'hk.note', 'alert.status'])
+// Elemento a cui si riferisce una modifica (camera o avviso): più modifiche allo stesso elemento diventano una.
+const targetOf = (payload) => payload?.roomId ?? payload?.alertId
 
 const defaultStorage = () => { try { return globalThis.localStorage || null } catch { return null } }
 
@@ -77,7 +79,7 @@ export function enqueue({ kind, hotelId, userId, payload }, { storage = defaultS
   if (!storage) return null
   let queue = read(storage)
   if (COALESCE.has(kind)) {
-    queue = queue.filter((e) => !(e.status === 'pending' && e.kind === kind && e.hotelId === hotelId && e.userId === userId && e.payload?.roomId === payload?.roomId))
+    queue = queue.filter((e) => !(e.status === 'pending' && e.kind === kind && e.hotelId === hotelId && e.userId === userId && targetOf(e.payload) === targetOf(payload)))
   }
   if (queue.length >= OUTBOX_MAX) return null
   const entry = { id: newId(), kind, hotelId, userId, payload, createdAt: new Date(now()).toISOString(), status: 'pending', attempts: 0, error: null }
@@ -98,10 +100,10 @@ export function removeEntry(id, { storage = defaultStorage() } = {}) {
 }
 
 // Dopo una scrittura riuscita in diretta, le modifiche vecchie in coda per la stessa camera non devono sovrascriverla.
-export function dropPending({ kind, hotelId, userId, roomId }, { storage = defaultStorage() } = {}) {
+export function dropPending({ kind, hotelId, userId, roomId, alertId }, { storage = defaultStorage() } = {}) {
   if (!storage) return
   const queue = read(storage)
-  const next = queue.filter((e) => !(e.status === 'pending' && e.kind === kind && e.hotelId === hotelId && e.userId === userId && e.payload?.roomId === roomId))
+  const next = queue.filter((e) => !(e.status === 'pending' && e.kind === kind && e.hotelId === hotelId && e.userId === userId && targetOf(e.payload) === (roomId ?? alertId)))
   if (next.length !== queue.length) { write(storage, next); changed() }
 }
 

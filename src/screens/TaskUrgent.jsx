@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { listAlerts, getAlert, updateAlertStatus } from '../data/task.js'
-import { useAsync, go } from '../lib/hooks.js'
+import { createIssue } from '../data/issues.js'
+import { applyPendingAlerts, issueFromAlert } from '../lib/urgent.js'
+import { useAsync, go, usePending } from '../lib/hooks.js'
 import { can, PERM } from '../lib/permissions.js'
 import { ALERT_STATUSES, agoLabel, alertStatusLabel, filterAlerts, sortAlerts } from '../lib/task.js'
 import { StatRow } from '../ui/hub.jsx'
@@ -32,7 +34,8 @@ export function AlertCard({ item }) {
 export function AlertList({ ctx }) {
   const [filter, setFilter] = useState('aperti')
   const { data, error, loading, reload } = useAsync(() => listAlerts(ctx.hotelId), [ctx.hotelId])
-  const visible = sortAlerts(filterAlerts(data || [], filter))
+  const pend = usePending(ctx)
+  const visible = sortAlerts(filterAlerts(applyPendingAlerts(data || [], pend), filter))
 
   return (
     <div className="page">
@@ -44,7 +47,7 @@ export function AlertList({ ctx }) {
         )}
       </div>
 
-      {data && (() => { const st = alertStats(data, todayIso()); return <StatRow stats={[{ value: st.waiting, label: 'Da prendere', tone: 'warn' }, { value: st.taken, label: 'In carico' }, { value: st.done, label: 'Risolti oggi', tone: 'ok' }]} /> })()}
+      {data && (() => { const st = alertStats(applyPendingAlerts(data, pend), todayIso()); return <StatRow stats={[{ value: st.waiting, label: 'Da prendere', tone: 'warn' }, { value: st.taken, label: 'In carico' }, { value: st.done, label: 'Risolti oggi', tone: 'ok' }]} /> })()}
 
       <div className="chips" role="group" aria-label="Filtro avvisi">
         {FILTERS.map((f) => (
@@ -67,7 +70,10 @@ export function AlertList({ ctx }) {
 }
 
 export function AlertDetail({ ctx, id }) {
-  const { data: item, error, loading, reload } = useAsync(() => getAlert(ctx.hotelId, id), [ctx.hotelId, id])
+  const { data: loaded, error, loading, reload } = useAsync(() => getAlert(ctx.hotelId, id), [ctx.hotelId, id])
+  const pend = usePending(ctx)
+  const item = loaded ? applyPendingAlerts([loaded], pend)[0] : loaded
+  const [info, setInfo] = useState('')
   const [busy, setBusy] = useState(false)
   const [actionError, setActionError] = useState('')
   const canUpdate = can(ctx.permissions, PERM.URGENT_UPDATE)
@@ -76,13 +82,23 @@ export function AlertDetail({ ctx, id }) {
     setBusy(true)
     setActionError('')
     try {
-      await updateAlertStatus(ctx.hotelId, ctx.userId, id, status)
-      await reload()
+      const r = await updateAlertStatus(ctx.hotelId, ctx.userId, id, status)
+      if (!r?.pending) await reload()
     } catch (e) {
       setActionError(e.message)
     } finally {
       setBusy(false)
     }
+  }
+
+  // Dall'avviso nasce una segnalazione normale (alta urgenza, categoria Altro): l'avviso resta com'è.
+  const toIssue = async () => {
+    setBusy(true); setActionError(''); setInfo('')
+    try {
+      const issue = await createIssue(ctx.hotelId, ctx.userId, issueFromAlert(item))
+      if (issue.pending) setInfo('Segnalazione salvata sul telefono: verrà inviata da sola appena torna la rete.')
+      else go(`/issues/${issue.id}`)
+    } catch (e) { setActionError(e.message) } finally { setBusy(false) }
   }
 
   if (loading && !item) return <Spinner />
@@ -114,6 +130,15 @@ export function AlertDetail({ ctx, id }) {
             ))}
           </div>
           <ErrorText>{actionError}</ErrorText>
+        </div>
+      )}
+
+      {can(ctx.permissions, PERM.ISSUES_CREATE) && (
+        <div className="card stack">
+          <h2>Segnalazione</h2>
+          <p className="muted">Crea una segnalazione con il testo di questo avviso, per seguirla come un guasto.</p>
+          <Button disabled={busy} onClick={toIssue}>Trasforma in segnalazione</Button>
+          {info && <p className="muted">{info}</p>}
         </div>
       )}
     </div>

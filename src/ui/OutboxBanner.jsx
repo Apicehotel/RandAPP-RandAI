@@ -3,7 +3,7 @@ import { flushOutbox } from '../data/outbox.js'
 import { removeEntry } from '../lib/outbox.js'
 import { useOnline, usePending } from '../lib/hooks.js'
 
-const KIND = { 'issue.create': 'Segnalazione', 'hk.status': 'Stato camera', 'hk.note': 'Nota camera' }
+const KIND = { 'issue.create': 'Segnalazione', 'alert.status': 'Avviso urgente', 'hk.status': 'Stato camera', 'hk.note': 'Nota camera' }
 const label = (e) => `${KIND[e.kind] || 'Modifica'}${e.payload?.row?.title ? `: ${e.payload.row.title}` : ''}`
 
 // Invia da solo le modifiche fatte senza rete (all'apertura, quando torna la rete, ogni 30 secondi) e dice cosa è in attesa.
