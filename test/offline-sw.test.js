@@ -87,6 +87,8 @@ test('readWithJwtRecovery: senza sessione da rinnovare dà un messaggio chiaro; 
 
 test('sw.js: cache solo dello stesso sito, push mantenute, nessun dato Supabase', () => {
   assert.match(sw, /const VERSION = '/)
+  assert.match(sw, /const BUILD = '__BUILD__'/) // sostituiti dal build (vite.config.js)
+  assert.match(sw, /const PRECACHE = '__PRECACHE__'/)
   assert.match(sw, /url\.origin !== self\.location\.origin/) // l'API Supabase è un altro dominio: mai intercettata
   assert.match(sw, /request\.method !== 'GET'/)
   assert.match(sw, /addEventListener\('push'/)

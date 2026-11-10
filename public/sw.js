@@ -2,11 +2,17 @@
 // - Solo richieste GET dello stesso sito. Supabase (altro dominio) non passa mai di qui: nessun dato viene messo in cache.
 // - Pagina: prima la rete; se manca la rete, l'ultima copia salvata (l'app si apre anche senza segnale).
 // - File /assets/*-hash.* : immutabili, cache-first.
-// - Quando cambia la strategia di cache, incrementare VERSION.
-const VERSION = 'v1'
+// - Installazione: salva pagina + TUTTI i file dell'app (anche le schermate caricate a richiesta), così si apre offline anche una schermata mai visitata.
+// - Quando cambia la strategia di cache, incrementare VERSION. A ogni build cambia BUILD e la cache vecchia viene cancellata.
+const VERSION = 'v2'
+// Segnaposto sostituiti a ogni build da vite.config.js: id della versione e elenco di tutti i file dell'app.
+const BUILD = '__BUILD__'
+const PRECACHE = '__PRECACHE__'
 const PREFIX = 'randapp-shell-'
-const CACHE = `${PREFIX}${VERSION}`
+const CACHE = `${PREFIX}${VERSION}-${BUILD}`
 const SCOPE = self.registration.scope
+// Le copie fatte in installazione non hanno le intestazioni «Vary» della richiesta vera (es. Accept-Encoding): senza questo non si ritroverebbero.
+const MATCH = { ignoreVary: true }
 const STATIC = ['manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/apple-touch-icon.png']
 
 const isHashedAsset = (url) => /\/assets\/.+-[A-Za-z0-9_-]{8,}\.(?:js|css|woff2?)$/.test(url.pathname)
@@ -33,17 +39,12 @@ self.addEventListener('install', (event) => {
     const cache = await caches.open(CACHE)
     try {
       const shell = await fetch(SCOPE, { cache: 'no-store' })
-      if (shell.ok) {
-        const html = await shell.clone().text()
-        await cache.put(SCOPE, shell)
-        const assets = [...html.matchAll(/(?:src|href)="([^"#]+)"/g)]
-          .map((m) => new URL(m[1], SCOPE))
-          .filter((u) => u.origin === self.location.origin && u.pathname.startsWith('/assets/'))
-          .map((u) => u.href)
-        for (const href of new Set(assets)) await precache(cache, href)
-      }
+      if (shell.ok) await cache.put(SCOPE, shell)
     } catch { /* installazione senza rete: la cache si riempie dopo */ }
-    for (const path of STATIC) await precache(cache, new URL(path, SCOPE).href)
+    const files = (Array.isArray(PRECACHE) ? PRECACHE : []).map((f) => new URL(f, SCOPE).href)
+    const todo = [...files, ...STATIC.map((p) => new URL(p, SCOPE).href)]
+    // Pochi file alla volta, per non intasare un telefono con poco segnale.
+    for (let i = 0; i < todo.length; i += 6) await Promise.all(todo.slice(i, i + 6).map((href) => precache(cache, href)))
   })())
   self.skipWaiting()
 })
@@ -79,14 +80,14 @@ self.addEventListener('fetch', (event) => {
         }
         return response
       } catch {
-        return (await caches.match(SCOPE)) || new Response('Offline', { status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' } })
+        return (await caches.match(SCOPE, MATCH)) || new Response('Offline', { status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' } })
       }
     })())
     return
   }
 
   event.respondWith((async () => {
-    const cached = await caches.match(request)
+    const cached = await caches.match(request, MATCH)
     if (cached && isValid(request, cached)) {
       // File con hash: mai cambiano. Gli altri (icone, manifest) si rinfrescano in secondo piano.
       if (!isHashedAsset(url)) {

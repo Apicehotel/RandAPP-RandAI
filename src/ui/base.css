@@ -302,6 +302,8 @@ button { cursor: pointer; }
 .chip.floor[aria-expanded='true'] svg { transform: none; }
 .chip.floor[aria-expanded='true'] { border-color: var(--accent); color: var(--text); }
 .chip.floor.has-sel { color: var(--accent); font-weight: 650; }
+.pending-dot { display: inline-block; width: 8px; height: 8px; margin-left: 4px; border-radius: 50%; background: var(--warn); }
+.outbox { display: grid; gap: var(--gap-tight); }
 .linkbtn { border: 0; background: none; color: var(--accent); font-size: var(--fs-sm); min-height: var(--chip-h); padding: 0 var(--gap-tight); }
 .staff-grid { display: grid; gap: var(--gap-tight); grid-template-columns: repeat(auto-fill, minmax(min(190px, 100%), 1fr)); }
 .staff {

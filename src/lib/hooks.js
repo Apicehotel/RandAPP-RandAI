@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { logError } from './errorlog.js'
 import { readWithJwtRecovery } from './jwt-recovery.js'
+import { listOutbox, OUTBOX_EVENT } from './outbox.js'
 
 // Piccolo hook di caricamento: niente librerie extra, si ricarica a mano o quando torni sull'app.
 // Ogni esecuzione ha un numero di generazione: una risposta vecchia non sovrascrive una più recente
@@ -25,9 +26,11 @@ export function useAsync(fn, deps = []) {
     run()
     const onVisible = () => document.visibilityState === 'visible' && run()
     document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('outbox:flushed', run) // le modifiche fatte offline sono arrivate al server
     return () => {
       gen.current += 1
       document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('outbox:flushed', run)
     }
   }, [run])
 
@@ -77,4 +80,31 @@ export function useUnread(loader, deps = []) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps)
   return count
+}
+
+// Modifiche in attesa di invio dell'utente collegato (si aggiorna da sola quando la coda cambia).
+export function usePending(ctx) {
+  const read = () => listOutbox({ userId: ctx.userId })
+  const [list, setList] = useState(read)
+  useEffect(() => {
+    const update = () => setList(read())
+    update()
+    window.addEventListener(OUTBOX_EVENT, update)
+    return () => window.removeEventListener(OUTBOX_EVENT, update)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ctx.userId])
+  return list
+}
+
+// true = il telefono dice di avere la rete.
+export function useOnline() {
+  const [online, setOnline] = useState(() => globalThis.navigator?.onLine !== false)
+  useEffect(() => {
+    const on = () => setOnline(true)
+    const off = () => setOnline(false)
+    window.addEventListener('online', on)
+    window.addEventListener('offline', off)
+    return () => { window.removeEventListener('online', on); window.removeEventListener('offline', off) }
+  }, [])
+  return online
 }

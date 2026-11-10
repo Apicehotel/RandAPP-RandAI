@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { addRooms, listRooms, resetDay, setRoomActive, setRoomNote, setRoomStatus } from '../data/housekeeping.js'
-import { useAsync } from '../lib/hooks.js'
+import { useAsync, usePending } from '../lib/hooks.js'
 import { can, PERM } from '../lib/permissions.js'
-import { ROOM_STATUSES, groupByFloor, parseRoomList, roomStatusLabel, summarizeRooms } from '../lib/housekeeping.js'
+import { ROOM_STATUSES, applyPendingRooms, groupByFloor, parseRoomList, roomStatusLabel, summarizeRooms } from '../lib/housekeeping.js'
 import { Badge, Button, ErrorText, Field, Spinner } from '../ui/kit.jsx'
 
 const BADGE = { dafare: 'aperto', in_corso: 'in_corso', fatto: 'fatto' }
@@ -50,14 +50,14 @@ export default function Housekeeping({ ctx }) {
   const [actionError, setActionError] = useState('')
   const canUpdate = can(ctx.permissions, PERM.HOUSEKEEPING_UPDATE)
   const canManage = can(ctx.permissions, PERM.HOUSEKEEPING_MANAGE)
-  const rooms = data || []
+  const rooms = applyPendingRooms(data || [], usePending(ctx).filter((e) => e.hotelId === ctx.hotelId))
   const sum = summarizeRooms(rooms)
   const floors = groupByFloor(rooms, { onlyOpen })
   const current = rooms.find((r) => r.id === selected)
 
   const run = async (fn) => {
     setBusy(true); setActionError('')
-    try { await fn(); await reload() } catch (e) { setActionError(e.message) } finally { setBusy(false) }
+    try { const r = await fn(); if (!r?.pending) await reload() } catch (e) { setActionError(e.message) } finally { setBusy(false) }
   }
   const open = (r) => { setSelected(r.id); setNote(r.note || '') }
 
@@ -82,8 +82,8 @@ export default function Housekeeping({ ctx }) {
             {f.rooms.map((r) => (
               <button key={r.id} className="chip" aria-pressed={selected === r.id}
                 onClick={() => open(r)}
-                aria-label={`Camera ${r.room}: ${roomStatusLabel(r.status)}`} disabled={busy}>
-                {r.room} <Badge kind={BADGE[r.status]}>{roomStatusLabel(r.status)}</Badge>
+                aria-label={`Camera ${r.room}: ${roomStatusLabel(r.status)}${r.pending ? ' (in attesa di invio)' : ''}`} disabled={busy}>
+                {r.room} <Badge kind={BADGE[r.status]}>{roomStatusLabel(r.status)}</Badge>{r.pending && <span className="pending-dot" aria-hidden="true" />}
               </button>
             ))}
           </div>
@@ -104,6 +104,7 @@ export default function Housekeeping({ ctx }) {
               ))}
             </div>
           )}
+          {current.pending && <p className="muted">Modifica salvata sul telefono: parte da sola appena torna la rete.</p>}
           <Field label="Nota" id="note"><input id="note" className="input" value={note} onChange={(e) => setNote(e.target.value)} maxLength={200} readOnly={!canUpdate} /></Field>
           {canUpdate && <Button disabled={busy} onClick={() => run(() => setRoomNote(ctx.hotelId, ctx.userId, current.id, note))}>Salva nota</Button>}
           {canManage && <Button disabled={busy} onClick={() => run(async () => { await setRoomActive(current.id, false); setSelected(null) })}>Togli la camera dall'elenco</Button>}
