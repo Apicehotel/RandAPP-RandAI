@@ -54,3 +54,15 @@ export function applyPendingRooms(rooms, entries) {
   if (!byRoom.size) return rooms
   return rooms.map((r) => (byRoom.has(r.id) ? { ...r, ...byRoom.get(r.id), pending: true } : r))
 }
+
+// Chi segue le camere ma non le pulisce (reception, portiere notturno) vuole sapere quando una è pronta.
+export const READY_ALERT_ROLES = ['reception', 'portiere_notturno']
+export const wantsReadyAlerts = (role) => READY_ALERT_ROLES.includes(role)
+
+// Camere passate a «fatta» tra due letture. Alla prima lettura (prev = null) non si annuncia nulla:
+// sarebbero tutte le camere già pronte da ore. «Riparti da zero» (tutte da fare) non genera avvisi.
+export function newlyReady(prev, rooms) {
+  if (!prev) return []
+  const before = new Map(prev.map((r) => [r.id, r.status]))
+  return rooms.filter((r) => r.active !== false && r.status === 'fatto' && before.has(r.id) && before.get(r.id) !== 'fatto')
+}

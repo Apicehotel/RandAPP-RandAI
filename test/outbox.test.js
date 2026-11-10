@@ -197,3 +197,20 @@ test('applyPendingRooms mostra subito le modifiche in coda e le segna', () => {
   assert.deepEqual(out[1], { id: 'r2', status: 'dafare' }) // le «non inviate» non cambiano la vista
   assert.equal(applyPendingRooms(rooms, []), rooms)
 })
+
+import { newlyReady, wantsReadyAlerts } from '../src/lib/housekeeping.js'
+
+test('newlyReady: solo le camere passate a «fatta» tra due letture', () => {
+  const R = (id, status, extra = {}) => ({ id, room: id, status, active: true, ...extra })
+  const before = [R('1', 'dafare'), R('2', 'in_corso'), R('3', 'fatto'), R('4', 'dafare')]
+  const after = [R('1', 'fatto'), R('2', 'fatto'), R('3', 'fatto'), R('4', 'in_corso'), R('5', 'fatto')]
+  assert.deepEqual(newlyReady(before, after).map((r) => r.id), ['1', '2']) // 3 era già pronta, 5 è nuova nell'elenco
+  assert.deepEqual(newlyReady(null, after), []) // prima lettura: niente annunci
+  const reset = before.map((r) => ({ ...r, status: 'dafare' }))
+  assert.deepEqual(newlyReady(after, reset), []) // «Riparti da zero»
+  assert.deepEqual(newlyReady(before, [R('1', 'fatto', { active: false })]), []) // camera tolta dall'elenco
+})
+
+test('wantsReadyAlerts: reception e portiere notturno, non chi pulisce', () => {
+  assert.deepEqual(['reception', 'portiere_notturno', 'governante', 'manutentore', 'admin'].map(wantsReadyAlerts), [true, true, false, false, false])
+})

@@ -11,6 +11,7 @@ import { Icon } from './kit.jsx'
 import OutboxBanner from './OutboxBanner.jsx'
 
 const UrgentAlert = lazy(() => import('./UrgentAlert.jsx')) // a richiesta: non pesa sull'avvio
+const RoomReadyAlert = lazy(() => import('./RoomReadyAlert.jsx'))
 import { applyPalette } from '../lib/palette.js'
 import { useKeyboardOpen } from '../lib/use-keyboard.js'
 
@@ -58,7 +59,7 @@ export default function Shell({ route, ctx, onLogout, onSwitchHotel, onChangeHot
         </div>
       </header>
 
-      <Suspense fallback={null}><UrgentAlert ctx={ctx} /></Suspense>
+      <Suspense fallback={null}><UrgentAlert ctx={ctx} /><RoomReadyAlert ctx={ctx} /></Suspense>
       <OutboxBanner ctx={ctx} />
       <main className="shell-stage">{children}</main>
 
