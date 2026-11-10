@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { payloadOf, planDelivery, sendNtfy, sendWhatsApp, isGone, whatsappVariables, pickTemplate, DEFAULT_VARIABLES } from '../supabase/functions/_shared/notify.js';
+import { payloadOf, planDelivery, sendNtfy, sendWhatsApp, isGone, whatsappVariables, pickTemplate, pickSender, DEFAULT_VARIABLES } from '../supabase/functions/_shared/notify.js';
 
 const ok = (calls) => async (url, init) => { calls.push({ url, init }); return { ok: true, status: 200 }; };
 
@@ -73,9 +73,10 @@ test('pickTemplate: modello della struttura, con eccezioni per tipo di notifica;
 test('piano: canali non configurati sono saltati, native in attesa', () => {
   const env = { hasVapid: false, hasNtfy: true, hasWhatsApp: false };
   assert.equal(planDelivery({ channel: 'ntfy' }, env), 'ntfy');
-  assert.match(planDelivery({ channel: 'whatsapp', content_sid: SID }, env), /Twilio non configurato/);
-  assert.match(planDelivery({ channel: 'whatsapp' }, { ...env, hasWhatsApp: true }), /modello WhatsApp non impostato/);
-  assert.equal(planDelivery({ channel: 'whatsapp', content_sid: SID }, { ...env, hasWhatsApp: true }), 'whatsapp');
+  assert.match(planDelivery({ channel: 'whatsapp', content_sid: SID, from: '+39061234567' }, env), /Twilio non configurato/);
+  assert.match(planDelivery({ channel: 'whatsapp', from: '+39061234567' }, { ...env, hasWhatsApp: true }), /modello WhatsApp non impostato/);
+  assert.match(planDelivery({ channel: 'whatsapp', content_sid: SID }, { ...env, hasWhatsApp: true }), /mittente WhatsApp non impostato/);
+  assert.equal(planDelivery({ channel: 'whatsapp', content_sid: SID, from: '+39061234567' }, { ...env, hasWhatsApp: true }), 'whatsapp');
   assert.match(planDelivery({ channel: 'push', platform: 'web' }, env), /^skip:/);
   assert.equal(planDelivery({ channel: 'push', platform: 'web' }, { ...env, hasVapid: true }), 'web');
   assert.match(planDelivery({ channel: 'push', platform: 'android' }, { ...env, hasVapid: true }), /nativa/);
@@ -91,4 +92,13 @@ test('dispatcher: Postgres diretto, niente service_role, niente log di segreti',
   assert.doesNotMatch(src, /service_role|createClient/);
   assert.doesNotMatch(src, /console\.(log|error)/);
   assert.match(src, /skip locked/);
+});
+
+test('pickSender: il mittente è della struttura; quello di riserva solo se manca; valori non validi non si usano', () => {
+  assert.equal(pickSender({ from: '+39 075 9970 000' }, '+39061111111'), '+390759970000');
+  assert.equal(pickSender({ from: 'whatsapp:+390759970000' }, ''), '+390759970000');
+  assert.equal(pickSender({}, '+39061111111'), '+39061111111'); // nessun mittente della struttura: riserva
+  assert.equal(pickSender({ from: '0759970000' }, '+39061111111'), '+39061111111'); // senza + non è internazionale
+  assert.equal(pickSender({ from: 'abc' }, 'xyz'), '');
+  assert.equal(pickSender(null, undefined), '');
 });

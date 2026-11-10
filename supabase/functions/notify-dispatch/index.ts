@@ -3,11 +3,11 @@
 // Si chiama ogni minuto (pg_cron, vedi README) con l'intestazione x-sync-secret.
 // Postgres diretto (SUPABASE_DB_URL), come ewelink-sync. Segreti: variabili della funzione o `edge_function_secrets`.
 //   VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT (mailto:...), NTFY_BASE (default https://ntfy.sh), NTFY_TOKEN,
-//   TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_WHATSAPP_FROM (numero mittente, formato +39…), APP_URL (indirizzo dell'app per aprire il link)
-//   Il modello WhatsApp (ContentSid HX…) sta nella configurazione del canale: notification_channels.config → content_sid, variables, templates.
+//   TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_WHATSAPP_FROM (mittente di riserva), APP_URL (indirizzo dell'app per aprire il link)
+//   Il modello WhatsApp (ContentSid HX…) sta nella configurazione del canale: notification_channels.config → from (mittente della struttura), content_sid, variables, templates.
 import postgres from "npm:postgres@3.4.7";
 import webpush from "npm:web-push@3.6.7";
-import { isGone, payloadOf, pickTemplate, planDelivery, sendNtfy, sendWhatsApp, whatsappVariables } from "../_shared/notify.js";
+import { isGone, payloadOf, pickSender, pickTemplate, planDelivery, sendNtfy, sendWhatsApp, whatsappVariables } from "../_shared/notify.js";
 
 const sql = postgres(Deno.env.get("SUPABASE_DB_URL")!, { prepare: false, max: 2, connect_timeout: 5, idle_timeout: 10 });
 const MAX_ATTEMPTS = 3;
@@ -48,7 +48,7 @@ Deno.serve(async (req) => {
       secret("VAPID_PUBLIC_KEY"), secret("VAPID_PRIVATE_KEY"), secret("VAPID_SUBJECT"), secret("NTFY_BASE"),
       secret("NTFY_TOKEN"), secret("TWILIO_ACCOUNT_SID"), secret("TWILIO_AUTH_TOKEN"), secret("TWILIO_WHATSAPP_FROM"), secret("APP_URL"),
     ]);
-    const env = { hasVapid: !!(vapidPub && vapidPriv), hasNtfy: true, hasWhatsApp: !!(twSid && twToken && twFrom) };
+    const env = { hasVapid: !!(vapidPub && vapidPriv), hasNtfy: true, hasWhatsApp: !!(twSid && twToken) };
     if (env.hasVapid) webpush.setVapidDetails(vapidSub || "mailto:admin@example.com", vapidPub!, vapidPriv!);
 
     // Prende un blocco di consegne e le "prenota" (skip locked: due chiamate insieme non si pestano i piedi).
@@ -73,7 +73,8 @@ Deno.serve(async (req) => {
     let sent = 0, failed = 0, skipped = 0;
     for (const r of rows) {
       const tpl = pickTemplate(r.config, r.kind);
-      const plan = planDelivery({ ...r, content_sid: tpl.contentSid }, env);
+      const from = pickSender(r.config, twFrom);
+      const plan = planDelivery({ ...r, content_sid: tpl.contentSid, from }, env);
       const payload = payloadOf(r, appUrl ?? "");
       try {
         if (plan.startsWith("skip:")) {
@@ -84,7 +85,7 @@ Deno.serve(async (req) => {
         if (plan === "ntfy") await sendNtfy({ base: ntfyBase ?? "https://ntfy.sh", topic: r.token, token: ntfyToken ?? undefined, payload });
         else if (plan === "whatsapp") {
           await sendWhatsApp({
-            accountSid: twSid!, authToken: twToken!, from: twFrom!, to: r.token, contentSid: tpl.contentSid,
+            accountSid: twSid!, authToken: twToken!, from, to: r.token, contentSid: tpl.contentSid,
             variables: whatsappVariables(tpl.variables, payload, { hotel: HOTEL_NAMES[r.hotel_id] ?? r.hotel_id }),
           });
         }
