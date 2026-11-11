@@ -275,6 +275,12 @@ La schermata di accesso offre la scelta **email** (link monouso valido 15 minuti
 - **Non** attivare `TWILIO_RECOVERY_ENABLED=true` prima dell'approvazione esplicita dei costi dei messaggi, dei test di consegna e della verifica del sender.
 - Il PIN non è mai spedito; si riceve solo un OTP e lo si inserisce nella schermata di cambio PIN. Gli OTP sono registrati solo come digest, con massimo 5 tentativi di convalida per ora per utente e consumo atomico del token.
 
+## Modello WhatsApp generico per le notifiche (`twilio/templates/randapp_avviso_it.json`)
+Un solo modello a **2 variabili** per tutte le notifiche di RandApp (avviso urgente, promemoria, sensori…): `{{1}}` = titolo, `{{2}}` = testo (è il default del dispatcher: `variables: ["title","body"]`). Testo: «RandApp - notifica di servizio: {{1}}. Dettaglio: {{2}} Apri l'app RandApp per i dettagli.» Rispetta le regole WhatsApp (variabili in sequenza, non adiacenti, né all'inizio né alla fine, campioni presenti); `test/twilio-avviso-template.test.js` lo verifica.
+- **Come crearlo** (Console Twilio → Messaging → Content Template Builder → Create new): nome `randapp_avviso_it`, lingua **Italiano**, tipo **Text**, testo come sopra, campioni `{{1}}` = «Avviso urgente» e `{{2}}` = «Allagamento al piano 2.», poi **Save and submit for WhatsApp approval** con categoria **Utility**. Va fatto sull'account (e sull'account WhatsApp Business) a cui appartengono i numeri delle strutture: se i tre numeri stanno in account WhatsApp Business diversi serve **un'approvazione per ciascuno**.
+- **Rischio**: Meta può riclassificarlo come Marketing se lo giudica promozionale; il testo è volutamente di servizio. Tempi di approvazione: da minuti ad alcuni giorni.
+- **Dopo l'approvazione**: copiare il Content SID (`HX…`) in `notification_channels.config.content_sid` di ogni struttura, insieme a `from` (vedi «Come accenderle»). Nessuna chiave o numero va scritto nel repo.
+
 ## Recupero PIN via email (migrazione `0027`, funzione `randapp-pin-recovery`)
 - Ognuno scrive la **propria email** in Profilo → "La mia email" (la vede solo lui; dopo `0029` l'email **non è più unica** tra profili: il recupero parte dall'utente scelto al login).
 - Al login, scelto il nome, "**PIN dimenticato?**" manda un link (vale 15 minuti, una sola volta) con la pagina `#/recover?token=…` dove si sceglie il nuovo PIN. La risposta è sempre la stessa, con o senza email nel profilo; il token è salvato solo come hash; limiti: 3 richieste/ora per utente e 10/ora per origine. Il nuovo PIN azzera blocco e tentativi.
