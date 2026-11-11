@@ -7,7 +7,7 @@
 //   Il modello WhatsApp (ContentSid HX…) sta nella configurazione del canale: notification_channels.config → from (mittente della struttura), content_sid, variables, templates.
 import postgres from "npm:postgres@3.4.7";
 import webpush from "npm:web-push@3.6.7";
-import { isGone, payloadOf, pickSender, pickTemplate, planDelivery, sendNtfy, sendWhatsApp, whatsappVariables } from "../_shared/notify.js";
+import { isGone, payloadOf, pickSender, pickTemplate, planDelivery, romeTime, sendNtfy, sendWhatsApp, whatsappVariables } from "../_shared/notify.js";
 
 const sql = postgres(Deno.env.get("SUPABASE_DB_URL")!, { prepare: false, max: 2, connect_timeout: 5, idle_timeout: 10 });
 const MAX_ATTEMPTS = 3;
@@ -61,18 +61,23 @@ Deno.serve(async (req) => {
         update randapp.notification_deliveries d set attempts = d.attempts + 1
         from picked where d.id = picked.id returning d.id, d.attempts
       )
-      select d.id, d.channel, b.attempts, n.kind, n.hotel_id, n.title, n.body, n.link, n.priority,
+      select d.id, d.channel, b.attempts, n.kind, n.hotel_id, n.title, n.body, n.link, n.priority, n.created_at as notified_at,
+             ua.created_at as alert_created_at, pr.display_name as sender,
+             iss.room as issue_room, iss.category as issue_category, iss.urgency as issue_urgency, iss.created_at as issue_created_at,
              v.platform, v.token, v.keys, v.id as device_id,
              c.config as config
       from bumped b
       join randapp.notification_deliveries d on d.id = b.id
       join randapp.notifications n on n.id = d.notification_id
+      left join randapp.urgent_alerts ua on ua.id = n.ref_id and n.kind in ('urgent_alert', 'urgent_reminder')
+      left join randapp.profiles pr on pr.auth_user_id = ua.created_by
+      left join randapp.issues iss on iss.id = n.ref_id and n.kind = 'issue_urgent'
       left join randapp.notification_devices v on v.id = d.device_id
       left join randapp.notification_channels c on c.hotel_id = n.hotel_id and c.channel = d.channel`;
 
     let sent = 0, failed = 0, skipped = 0;
     for (const r of rows) {
-      const tpl = pickTemplate(r.config, r.kind);
+      const tpl = pickTemplate(r.config, r.kind, r.priority);
       const from = pickSender(r.config, twFrom);
       const plan = planDelivery({ ...r, content_sid: tpl.contentSid, from }, env);
       const payload = payloadOf(r, appUrl ?? "");
@@ -86,7 +91,15 @@ Deno.serve(async (req) => {
         else if (plan === "whatsapp") {
           await sendWhatsApp({
             accountSid: twSid!, authToken: twToken!, from, to: r.token, contentSid: tpl.contentSid,
-            variables: whatsappVariables(tpl.variables, payload, { hotel: HOTEL_NAMES[r.hotel_id] ?? r.hotel_id }),
+            variables: whatsappVariables(tpl.variables, payload, {
+              hotel: HOTEL_NAMES[r.hotel_id] ?? r.hotel_id,
+              sender: r.sender || "RandApp", // chi ha creato l'avviso (per i promemoria: l'autore originale)
+              time: romeTime(r.alert_created_at ?? r.issue_created_at ?? r.notified_at), // ora di CREAZIONE dell'avviso/segnalazione, anche nei promemoria
+              room: r.issue_room || "non indicata",
+              category: String(r.issue_category ?? "").toLowerCase(),
+              urgency: r.issue_urgency ?? "",
+              note: (r.kind === "urgent_reminder" ? "PROMEMORIA - " : "") + (r.body ?? ""),
+            }),
           });
         }
         else if (plan === "web") {

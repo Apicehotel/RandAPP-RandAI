@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { payloadOf, planDelivery, sendNtfy, sendWhatsApp, isGone, whatsappVariables, pickTemplate, pickSender, DEFAULT_VARIABLES } from '../supabase/functions/_shared/notify.js';
+import { payloadOf, planDelivery, sendNtfy, sendWhatsApp, isGone, whatsappVariables, pickTemplate, pickSender, romeTime, DEFAULT_VARIABLES } from '../supabase/functions/_shared/notify.js';
 
 const ok = (calls) => async (url, init) => { calls.push({ url, init }); return { ok: true, status: 200 }; };
 
@@ -101,4 +101,43 @@ test('pickSender: il mittente è della struttura; quello di riserva solo se manc
   assert.equal(pickSender({ from: '0759970000' }, '+39061111111'), '+39061111111'); // senza + non è internazionale
   assert.equal(pickSender({ from: 'abc' }, 'xyz'), '');
   assert.equal(pickSender(null, undefined), '');
+});
+
+const URGENTE = 'HXde245c8f1e09471518ab61cc1c6022b7'; // richiesta_urgente_manutenzione_v3 (HotelGio): {{1}} mittente, {{2}} ora, {{3}} nota
+
+test('romeTime: ora italiana, con ora solare e legale', () => {
+  assert.equal(romeTime('2026-11-11T09:21:00Z'), '10:21'); // CET (UTC+1)
+  assert.equal(romeTime('2026-07-01T09:21:00Z'), '11:21'); // CEST (UTC+2)
+  assert.equal(romeTime('non è una data'), '');
+});
+
+test('modello «richiesta urgente» (3 variabili): mittente, ora di creazione, nota', () => {
+  const v = whatsappVariables(['sender', 'time', 'note'], { title: 'Avviso urgente', body: 'Allagamento piano 2' }, { sender: 'Marco R.', time: '10:21', note: 'PROMEMORIA - Allagamento piano 2' });
+  assert.deepEqual(v, { 1: 'Marco R.', 2: '10:21', 3: 'PROMEMORIA - Allagamento piano 2' });
+  assert.equal(whatsappVariables(['note'], { body: 'x'.repeat(400) })[1].length, 255); // come nella funzione di HotelGio
+  assert.equal(whatsappVariables(['note'], { body: 'solo testo' })[1], 'solo testo'); // senza ctx.note si usa il testo
+  assert.equal(whatsappVariables(['sender'], { title: 'T' }, {})[1], '-');
+});
+
+test('pickTemplate con priorità: il modello «urgente» non si usa per «preso in carico»', () => {
+  const cfg = {
+    content_sid: SID, variables: ['title', 'body'],
+    templates: { urgent_alert: { content_sid: URGENTE, priority: 'urgent', variables: ['sender', 'time', 'note'] }, urgent_reminder: { content_sid: URGENTE, variables: ['sender', 'time', 'note'] } },
+  };
+  assert.deepEqual(pickTemplate(cfg, 'urgent_alert', 'urgent'), { contentSid: URGENTE, variables: ['sender', 'time', 'note'] });
+  assert.deepEqual(pickTemplate(cfg, 'urgent_alert', 'normal'), { contentSid: SID, variables: ['title', 'body'] }); // conferma: modello generico
+  assert.equal(pickTemplate({ templates: cfg.templates }, 'urgent_alert', 'normal').contentSid, ''); // senza generico: consegna saltata
+  assert.equal(pickTemplate(cfg, 'urgent_reminder', 'urgent').contentSid, URGENTE);
+  assert.equal(pickTemplate(cfg, 'urgent_reminder', undefined).contentSid, URGENTE); // senza priorità indicata nel modello vale sempre
+});
+
+const SEGNALAZIONE = 'HX001cfd925c0023ceb3f1b45cdb2aa557'; // nuova_segnalazione_manutenzione_v2 (Utility): camera, categoria, urgenza, ora
+
+test('modello «nuova segnalazione» (4 variabili): camera, categoria, urgenza, ora', () => {
+  const v = whatsappVariables(['room', 'category', 'urgency', 'time'], { title: 'Segnalazione urgente', body: 'Rubinetto · 204' }, { room: '204', category: 'idraulica', urgency: 'urgente', time: '18:35' });
+  assert.deepEqual(v, { 1: '204', 2: 'idraulica', 3: 'urgente', 4: '18:35' });
+  assert.deepEqual(whatsappVariables(['room', 'time'], { title: 'T' }, { time: '18:35' }), { 1: '-', 2: '18:35' }); // mai variabili vuote
+  const cfg = { templates: { issue_urgent: { content_sid: SEGNALAZIONE, variables: ['room', 'category', 'urgency', 'time'] } } };
+  assert.equal(pickTemplate(cfg, 'issue_urgent', 'urgent').contentSid, SEGNALAZIONE);
+  assert.equal(pickTemplate(cfg, 'issue_assigned', 'normal').contentSid, ''); // «assegnata a te» non è una «nuova segnalazione»: saltata
 });
