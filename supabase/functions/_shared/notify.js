@@ -40,18 +40,28 @@ const oneLine = (s, n) => clip(String(s ?? '').replace(/\s+/g, ' ').trim(), n)
 
 // Quali campi della notifica riempiono {{1}}, {{2}}… del modello. Di default: titolo e testo (modello a 2 variabili).
 export const DEFAULT_VARIABLES = ['title', 'body'];
-const FIELD_LIMIT = { title: 60, body: 200, kind: 40, url: 200, hotel: 60 };
+const FIELD_LIMIT = { title: 60, body: 200, note: 255, kind: 40, url: 200, hotel: 60, sender: 60, time: 10, room: 60, category: 60, urgency: 20 };
+
+// Ora italiana «HH:mm» (come il modello «richiesta_urgente_manutenzione_v3» di HotelGio).
+export function romeTime(iso) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  return new Intl.DateTimeFormat('it-IT', { timeZone: 'Europe/Rome', hour: '2-digit', minute: '2-digit', hour12: false }).format(d);
+}
 export function whatsappVariables(spec, payload, ctx = {}) {
   const fields = Array.isArray(spec) && spec.length ? spec : DEFAULT_VARIABLES;
-  const values = { title: payload.title, body: payload.body, kind: payload.tag, url: payload.url, hotel: ctx.hotel };
+  const values = { title: payload.title, body: payload.body, note: ctx.note ?? payload.body, kind: payload.tag, url: payload.url, hotel: ctx.hotel, sender: ctx.sender, time: ctx.time, room: ctx.room, category: ctx.category, urgency: ctx.urgency };
   return Object.fromEntries(fields.map((f, i) => [String(i + 1), oneLine(values[f], FIELD_LIMIT[f] ?? 100) || '-']));
 }
 
 // Modello da usare: quello specifico del tipo di notifica (`templates.<kind>`) oppure quello della struttura.
-// `config` viene da notification_channels.config: { content_sid, variables?, templates?: { <kind>: { content_sid, variables? } } }
-export function pickTemplate(config, kind) {
+// `config` viene da notification_channels.config: { from, content_sid, variables?, templates?: { <kind>: { content_sid, variables?, priority? } } }
+// `priority` (facoltativo) limita il modello alle notifiche con quella priorità: serve perché «Avviso preso in carico» ha lo stesso
+// tipo di «Avviso urgente» ma priorità normale e non deve usare il modello «richiesta urgente».
+export function pickTemplate(config, kind, priority) {
   const c = config && typeof config === 'object' ? config : {};
-  const own = c.templates && typeof c.templates === 'object' ? c.templates[kind] : null;
+  let own = c.templates && typeof c.templates === 'object' ? c.templates[kind] : null;
+  if (own && own.priority && own.priority !== priority) own = null;
   const sid = String((own && own.content_sid) || c.content_sid || '');
   return { contentSid: /^HX[0-9a-f]{32}$/i.test(sid) ? sid : '', variables: (own && own.variables) || c.variables };
 }
