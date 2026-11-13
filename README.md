@@ -132,7 +132,7 @@ Campanella in alto (con numero di non lette) → `/notifications`; impostazioni 
 
 ## Messa in funzione del database (Supabase condiviso con la vecchia app)
 La nuova app **vive nello schema `randapp`** del progetto Supabase "Apice MultiHotel", che ospita anche la vecchia app nello schema `public`. Regole: **non si crea né si modifica niente in `public`**; utenti (`auth.users`) e Storage sono condivisi; le funzioni server della nuova app hanno nomi propri (`randapp-pin-auth`, `ewelink-sync`, `notify-dispatch`) perché `pin-auth`, `presence-status` ecc. sono della vecchia app e **non vanno sovrascritti**.
-1. Applica in ordine tutti i file di `supabase/migrations/` da `0000_schema.sql` all'ultima presente (oggi fino a `0034_issue_photos_hotel_guard.sql`; la `0000` crea lo schema). **Sul database reale** vedi sotto «Stato dell'aggancio» e la tabella in [`docs/STANDARD.md`](./docs/STANDARD.md) §3: alcune migrazioni sono nel repo ma **non ancora applicate**.
+1. Applica in ordine tutti i file di `supabase/migrations/` da `0000_schema.sql` all'ultima presente (oggi fino a `0036_cestino_7_giorni.sql`; la `0000` crea lo schema). **Sul database reale** vedi sotto «Stato dell'aggancio» e la tabella in [`docs/STANDARD.md`](./docs/STANDARD.md) §3: alcune migrazioni sono nel repo ma **non ancora applicate**.
 2. Esponi lo schema all'API: `alter role authenticator set pgrst.db_schemas = '<elenco attuale>, randapp'; notify pgrst, 'reload config';` (il client usa `db: { schema: 'randapp' }`).
 3. Pubblica le funzioni `randapp-pin-auth`, `randapp-admin`, `randapp-pin-recovery`, `ewelink-sync`, `notify-dispatch`, `legacy-sync`. Tutte leggono il database con Postgres diretto (`SUPABASE_DB_URL`) dove previsto. Elenco e regole di deploy: [`docs/STANDARD.md`](./docs/STANDARD.md) §9.
 4. Utenti: gli account esistenti (`auth.users`) si riusano; profilo, appartenenza e PIN della nuova app si **copiano** da `public` a `randapp`. Seed base: `supabase/seed/00_users_from_legacy.sql` (ruoli già mappati). Nuovi utenti dal terminale:
@@ -149,7 +149,7 @@ Progetto condiviso `ooqlfldcrnkudhgjnied`. Schema `randapp` esposto all'API (`pg
 Pianificazioni (pg_cron): `randapp-notify-run` ogni minuto, `randapp-notify-dispatch` ogni minuto, `randapp-ewelink-sync` ogni 10 minuti, `randapp-legacy-sync` ogni notte. Quelle della vecchia app non sono toccate.
 
 **Migrazioni sul DB reale** (dettaglio operativo in [`docs/STANDARD.md`](./docs/STANDARD.md) §3 e in `docs/STATO.md`):
-- **Applicate su Apice MultiHotel**: migrazioni `0000`–`0035`; le `0028`–`0030` risultavano nella cronologia dal 7 novembre e le `0031`–`0035` sono state applicate l'8 novembre 2026, in quest'ordine. Verificati la protezione degli hotel, l'indice sulle sale e il controllo degli amministratori globali. **Restano da effettuare i test funzionali con sessioni utenti reali** e gli eventuali seed separati: applicare una migrazione non importa automaticamente gli utenti legacy.
+- **Applicate su Apice MultiHotel**: migrazioni `0000`–`0036`; la `0036` (cestino di 7 giorni) è stata applicata il 13 novembre 2026; le `0028`–`0030` risultavano nella cronologia dal 7 novembre e le `0031`–`0035` sono state applicate l'8 novembre 2026, in quest'ordine. Verificati la protezione degli hotel, l'indice sulle sale e il controllo degli amministratori globali. **Restano da effettuare i test funzionali con sessioni utenti reali** e gli eventuali seed separati: applicare una migrazione non importa automaticamente gli utenti legacy.
 
 Script seed (in ordine, dopo le migrazioni): `00_users_from_legacy.sql`, `01_locations.sql` / `01_users_from_legacy_roles.sql` (dopo `0031`), `02_sensors.sql` / `02_issue_categories_backfill.sql` (dopo `0032`), `03_cron.sql`, `04_phones_from_legacy.sql`, `05_sale_config.sql`. Nessun PIN, hash o chiave dentro.
 Nota sensori: eWeLink restituisce 30 dei 45 dispositivi; i 15 mancanti sono fermi anche nella vecchia app e la nuova li segnala come "Sensori che non arrivano più".
@@ -163,6 +163,15 @@ La vecchia app di Hotel Giò usa un altro progetto Supabase ("HotelGio", ref `jm
 - Copiati con lo stesso metodo (file `ops.ts`): **interventi** (stato `pending/done` → `da_fare/fatto`; categorie Filtri, Idromassaggio, Edilizio, Extrapiani, Arredi, Altro; assegnatari collegati ai profili per nome; camere e "camere fatte" in `rooms`/`rooms_done`), **planning lavori** (un lavoro con i suoi giorni e lo stato per giorno `fatto/da_finire/da_fare`; lavori senza giorni saltati) e **prenotazioni sale** (una riga per giorno; turno `tutto_giorno` → `giornata`; le date passate risultano già `fatto`). Le righe importate non mandano notifiche. Non copiate: foto degli interventi, piani, dati del tecnico esterno.
 
 - **Numeri sui filtri**: ogni filtro di Segnalazioni e Interventi mostra quanti elementi contiene (es. "Tutte 612"), per controllare che non ne manchino.
+
+## Cestino di 7 giorni (migrazione `0036`)
+
+Le righe cancellate dalle tabelle operative (`issues`, `issue_photos`, `interventions`, `planning_works`, `planning_work_days`, `sale_bookings`, `supply_requests`, `supply_request_items`, `urgent_alerts`, `reminders`) restano 7 giorni in `randapp.cestino`; poi il job `randapp-cestino-7-giorni` (ogni notte alle 03:40 UTC) le elimina per sempre. Dal browser non si cancella già nulla (si annulla con lo stato): il cestino protegge da cancellazioni fatte da SQL, funzioni edge o strumenti di amministrazione.
+
+- Un trigger `BEFORE DELETE` (`cestino_salva`) salva la copia JSON (`tabella`, `riga_id`, `dati`, `eliminato_il`, `operazione`). L'app non la legge: RLS attiva, nessun grant.
+- **Ripristino** (solo da SQL con ruolo di servizio): `select randapp.ripristina_dal_cestino(<id voce>);` rimette la riga e tutte quelle cancellate nella stessa operazione, prima le madri poi le figlie, con i trigger della tabella sospesi (nessuna notifica ripetuta, nessun giorno duplicato).
+- Non coperti: profili, appartenenze, permessi, magazzino, sensori, log e tabelle di notifica.
+- Il database della vecchia app (HotelGio) ha un suo cestino identico, documentato nel suo README.
 
 ## Registro errori (per ogni app, sempre attivo)
 Ogni errore (richiesta al server fallita, script rotto, accesso che non va, variabili mancanti) viene scritto nel registro **con la causa vera** e **di chi è la colpa**: **App** (bug, configurazione, servizio), **Utente** (PIN, permessi, sessione scaduta, troppi tentativi, dato non valido) o **Dispositivo** (nessuna connessione, versione in cache, memoria piena, estensioni del browser). Se dal solo errore non si può essere sicuri, il verdetto dice "probabile". Accanto c'è sempre "Cosa fare".
