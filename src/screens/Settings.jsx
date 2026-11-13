@@ -17,6 +17,7 @@ const TABS = [
   { id: 'notify', label: 'Notifiche' },
   { id: 'ai', label: 'IA' },
   { id: 'usage', label: 'Consumi' },
+  { id: 'trash', label: 'Cestino' },
   { id: 'diag', label: 'Diagnostica' },
 ]
 
@@ -299,6 +300,72 @@ function UsageTab({ ctx }) {
   )
 }
 
+// ------------------------------------------------------------------ Cestino
+const TRASH_KIND = {
+  issues: 'Segnalazione', interventions: 'Intervento', planning_works: 'Lavoro del planning', planning_work_days: 'Giorno di un lavoro',
+  sale_bookings: 'Prenotazione sala', supply_requests: 'Richiesta di rifornimento', supply_request_items: 'Prodotto richiesto',
+  urgent_alerts: 'Avviso urgente', reminders: 'Promemoria', issue_photos: 'Foto',
+}
+const daysLeft = (iso) => Math.max(0, Math.ceil((new Date(iso).getTime() - Date.now()) / 86400000))
+
+function TrashTab({ ctx }) {
+  const { data, error, loading, reload } = useAsync(() => api.trashList(ctx.hotelId), [ctx.hotelId])
+  const [ask, setAsk] = useState(null) // 'all' | `${id}:r` | `${id}:e`
+  const [busy, setBusy] = useState(false)
+  const [msg, setMsg] = useState('')
+  const [err, setErr] = useState('')
+  async function act(fn, done) {
+    setBusy(true); setErr(''); setMsg('')
+    try { await fn(); setMsg(done); await reload() } catch (e) { setErr(e.message) } finally { setBusy(false); setAsk(null) }
+  }
+  const items = data || []
+  return (
+    <div className="stack">
+      <p className="muted">Quello che viene cancellato resta qui 7 giorni, poi sparisce per sempre. Ripristina lo rimette dov'era; Elimina lo toglie subito e non si può annullare.</p>
+      {loading && !data && <Spinner />}
+      <ErrorText>{error || err}</ErrorText>
+      {msg && <p role="status">{msg}</p>}
+      {items.length > 0 && (
+        <div className="row">
+          {ask === 'all' ? (
+            <>
+              <Button variant="danger" disabled={busy} onClick={() => act(() => api.trashEmpty(ctx.hotelId), 'Cestino svuotato')}>Conferma: elimina tutto per sempre</Button>
+              <Button disabled={busy} onClick={() => setAsk(null)}>Annulla</Button>
+            </>
+          ) : <Button variant="danger" onClick={() => setAsk('all')}>Elimina tutto</Button>}
+        </div>
+      )}
+      {data && items.length === 0 && <p className="muted">Il cestino è vuoto.</p>}
+      {items.map((v) => (
+        <div key={v.id} className="card stack">
+          <span className="muted">{TRASH_KIND[v.tabella] || v.tabella}{v.righe > 1 ? ` (+${v.righe - 1} collegate)` : ''}</span>
+          <strong>{v.titolo || '(senza titolo)'}</strong>
+          {v.dettaglio && <span className="muted">{v.dettaglio}</span>}
+          <span className="muted">Cancellato il {formatDate(v.eliminato_il)} · ancora {daysLeft(v.scade_il)} {daysLeft(v.scade_il) === 1 ? 'giorno' : 'giorni'}</span>
+          <div className="row">
+            {ask === `${v.id}:r` ? (
+              <>
+                <Button variant="primary" disabled={busy} onClick={() => act(() => api.trashRestore(ctx.hotelId, v.id), 'Ripristinato')}>Conferma ripristino</Button>
+                <Button disabled={busy} onClick={() => setAsk(null)}>Annulla</Button>
+              </>
+            ) : ask === `${v.id}:e` ? (
+              <>
+                <Button variant="danger" disabled={busy} onClick={() => act(() => api.trashDelete(ctx.hotelId, v.id), 'Eliminato per sempre')}>Conferma: elimina per sempre</Button>
+                <Button disabled={busy} onClick={() => setAsk(null)}>Annulla</Button>
+              </>
+            ) : (
+              <>
+                <Button onClick={() => setAsk(`${v.id}:r`)}>Ripristina</Button>
+                <Button variant="danger" onClick={() => setAsk(`${v.id}:e`)}>Elimina</Button>
+              </>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 // ------------------------------------------------------------------ Diagnostica
 function DiagTab({ ctx }) {
   const u = useAsync(() => api.usage(ctx.hotelId), [ctx.hotelId])
@@ -332,7 +399,7 @@ function DiagTab({ ctx }) {
 export default function Settings({ ctx }) {
   const [tab, setTab] = useState('users')
   const hotel = HOTELS.find((h) => h.id === ctx.hotelId)
-  const Tab = { users: UsersTab, roles: RolesTab, notify: NotifyTab, ai: AiTab, usage: UsageTab, diag: DiagTab }[tab]
+  const Tab = { users: UsersTab, roles: RolesTab, notify: NotifyTab, ai: AiTab, usage: UsageTab, trash: TrashTab, diag: DiagTab }[tab]
   return (
     <div className="page">
       <a href="#/profile">← Profilo</a>
