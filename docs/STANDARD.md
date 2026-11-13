@@ -54,6 +54,7 @@ Aggiornare sempre questa tabella e la sezione equivalente del README dopo un dep
 | `0033` harden UPDATE / foto / slot sale | **Applicata** su Apice MultiHotel (2026-11-08) |
 | `0034` isolamento foto | **Applicata** su Apice MultiHotel (2026-11-08) |
 | `0035` protezione permessi globali | **Applicata** su Apice MultiHotel (2026-11-08): funzione `can_manage_global_roles` verificata, 2 admin globali su 3 hotel attivi. |
+| `0036` cestino di 7 giorni | **Applicata** su Apice MultiHotel (2026-11-13): tabella `randapp.cestino`, trigger `cestino_salva` su 10 tabelle operative, job `randapp-cestino-7-giorni` (03:40 UTC). Provata con un test annullato (lavoro + 2 giorni cancellati e ripristinati senza duplicati). |
 
 **Regola:** se il codice assume una migrazione non ancora applicata, **non redeployare** la funzione edge / non far entrare utenti sui nuovi ruoli finché la migrazione non è sul DB — oppure documenta lo scarto in STATO e lascia un fallback.
 
