@@ -90,3 +90,16 @@ export async function listInterventionsForIssue(hotelId, issueId) {
   if (error) throw new Error('Impossibile caricare gli interventi collegati')
   return data || []
 }
+
+// Segna (done=true) o toglie (done=false) camere come fatte. Funzione sul server: unisce le modifiche di più persone.
+// Ritorna la mappa rooms_done aggiornata.
+export async function setInterventionRooms(hotelId, id, rooms, done) {
+  const { data, error } = await supabase.rpc('set_intervention_rooms', {
+    p_hotel: hotelId, p_id: id, p_rooms: rooms, p_done: Boolean(done),
+  })
+  if (error) {
+    if (error.code === '42501') throw new Error('Non hai il permesso di segnare le camere')
+    throw new Error(`Impossibile aggiornare le camere (codice: ${error.code || 'sconosciuto'})`)
+  }
+  return data && typeof data === 'object' ? data : {}
+}

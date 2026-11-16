@@ -57,6 +57,7 @@ Aggiornare sempre questa tabella e la sezione equivalente del README dopo un dep
 | `0036` cestino di 7 giorni | **Applicata** su Apice MultiHotel (2026-11-13): tabella `randapp.cestino`, trigger `cestino_salva` su 10 tabelle operative, job `randapp-cestino-7-giorni` (03:40 UTC). Provata con un test annullato (lavoro + 2 giorni cancellati e ripristinati senza duplicati). |
 | `0037` schermata Cestino | **Applicata** su Apice MultiHotel (2026-11-13): funzioni `randapp.cestino_elenco/_ripristina/_elimina/_svuota` (permesso `admin.access`, filtro per struttura), grant solo a `authenticated`. Verificati i grant; prova funzionale con sessione admin reale da fare. |
 | `0038` interventi multipiano | **Applicata** su Apice MultiHotel (2026-11-16): `interventions_rooms_check` da 60 a 300 camere. Verificata dal database. |
+| `0039` camere fatte dell'intervento | **Applicata** su Apice MultiHotel (2026-11-16): funzione `randapp.set_intervention_rooms` (permesso `interventions.update`, aggiornamento atomico di `rooms_done`). Provata con rollback: segna, toglie, ignora camere non dell'intervento, rifiuta senza utente. |
 
 **Regola:** se il codice assume una migrazione non ancora applicata, **non redeployare** la funzione edge / non far entrare utenti sui nuovi ruoli finché la migrazione non è sul DB — oppure documenta lo scarto in STATO e lascia un fallback.
 
