@@ -311,3 +311,6 @@ Installate da obra/superpowers (versioni in `skills-lock.json`):
 - subagent-driven-development: lavoro diviso tra sotto-agenti, con revisione a ogni passo
 
 Installazione: `npx skills add obra/superpowers --skill <nome>` dalla cartella del repo.
+
+### Interventi su più piani
+- Un intervento può avere fino a **300 camere** (vincolo `interventions_rooms_check`, migrazione `0038`; prima 60). Se il salvataggio fallisce, l'app dice la causa: troppe camere, permessi o sessione, assegnatario non valido, oppure il codice dell'errore.

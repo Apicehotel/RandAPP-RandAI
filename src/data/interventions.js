@@ -42,7 +42,20 @@ export async function createIntervention(hotelId, userId, input) {
     issue_id: input.issue_id || null,
   }
   const { data, error } = await supabase.from('interventions').insert(row).select(COLUMNS).single()
-  if (error) throw new Error("Impossibile creare l'intervento")
+  if (error) {
+    // Il vincolo sulle camere era 60: non nascondere gli errori di validazione
+    // dietro un generico messaggio di connessione.
+    if (error.code === '23514' && /rooms|camere|interventions_rooms_check/i.test(error.message || '')) {
+      throw new Error('Troppe camere per un solo intervento. Il limite del database deve essere aggiornato a 300 camere')
+    }
+    if (error.code === '42501' || error.code === 'PGRST301') {
+      throw new Error('Permesso o sessione non validi per creare interventi. Rientra nell’app e verifica il ruolo')
+    }
+    if (error.code === '23503') {
+      throw new Error('Un assegnatario o collegamento non è valido. Ricarica i colleghi e riprova')
+    }
+    throw new Error(`Impossibile creare l'intervento (codice: ${error.code || 'sconosciuto'})`)
+  }
   return data
 }
 
