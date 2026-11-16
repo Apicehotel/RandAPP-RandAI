@@ -84,3 +84,55 @@ export function interventionPeople(item, staff) {
   const closer = typeof item?.completed_by_name === 'string' ? item.completed_by_name.trim() : ''
   return { createdBy, completedBy: item?.status === 'fatto' && closer ? closer : null }
 }
+
+// ---------------------------------------------------------------- dettaglio intervento
+// Camere raggruppate per piano: 201 → "Piano 2", 1204 → "Piano 12", 7 → "Piano 0", testo libero → "Altre".
+export const floorOfRoom = (room) => {
+  const r = String(room ?? '').trim()
+  if (/^\d{1,2}$/.test(r)) return 'Piano 0'
+  if (/^\d{3,4}$/.test(r)) return `Piano ${Number(r.slice(0, -2))}`
+  return 'Altre'
+}
+
+const floorNumber = (name) => (name === 'Altre' ? Number.POSITIVE_INFINITY : Number(name.replace('Piano ', '')))
+
+// progress = risultato di roomsProgress. Ritorna [{ name, rooms:[{room,done,at,by}], done, total }] dal piano più basso.
+export function groupRoomsByFloor(progress) {
+  const map = new Map()
+  for (const r of progress?.rooms || []) {
+    const name = floorOfRoom(r.room)
+    if (!map.has(name)) map.set(name, [])
+    map.get(name).push(r)
+  }
+  return [...map.entries()]
+    .map(([name, rooms]) => ({
+      name,
+      rooms: [...rooms].sort((a, b) => String(a.room).localeCompare(String(b.room), 'it', { numeric: true })),
+      done: rooms.filter((r) => r.done).length,
+      total: rooms.length,
+    }))
+    .sort((a, b) => floorNumber(a.name) - floorNumber(b.name))
+}
+
+export const roomsPercent = (progress) =>
+  progress && progress.total > 0 ? Math.round((progress.done / progress.total) * 100) : 0
+
+// Ultima camera segnata (per data), oppure null.
+export function lastRoomDone(progress) {
+  const done = (progress?.rooms || []).filter((r) => r.done && r.at)
+  if (done.length === 0) return null
+  return done.reduce((a, b) => (new Date(b.at).getTime() > new Date(a.at).getTime() ? b : a))
+}
+
+// Cronologia ricavata dai dati che ci sono: creato → programmato → camere → completato.
+export function interventionTimeline(item, progress, people) {
+  const out = []
+  if (item?.created_at) out.push({ key: 'created', label: 'Creato', by: people?.createdBy || null, at: item.created_at })
+  if (item?.scheduled_at) out.push({ key: 'scheduled', label: 'Programmato', by: null, at: item.scheduled_at, until: item.scheduled_until || null })
+  const last = lastRoomDone(progress)
+  if (progress?.done > 0) {
+    out.push({ key: 'rooms', label: `Camere fatte: ${progress.done} su ${progress.total}`, by: last?.by || null, at: last?.at || null, detail: last ? `ultima ${last.room}` : null })
+  }
+  if (item?.status === 'fatto' && item?.completed_at) out.push({ key: 'done', label: 'Completato', by: people?.completedBy || null, at: item.completed_at })
+  return out
+}

@@ -84,3 +84,33 @@ test('interventionPeople: completedBy solo se fatto e con nome', () => {
   assert.equal(interventionPeople({ status: 'in_corso', completed_by_name: 'Luca' }, []).completedBy, null)
   assert.equal(interventionPeople({ status: 'fatto', completed_by_name: null }, []).completedBy, null)
 })
+
+import { floorOfRoom, groupRoomsByFloor, roomsPercent, lastRoomDone, interventionTimeline } from '../src/lib/interventions.js'
+
+test('piano di una camera', () => {
+  assert.equal(floorOfRoom('201'), 'Piano 2')
+  assert.equal(floorOfRoom('1204'), 'Piano 12')
+  assert.equal(floorOfRoom('7'), 'Piano 0')
+  assert.equal(floorOfRoom('Hall'), 'Altre')
+})
+
+test('camere per piano: ordine dei piani e delle camere, conteggi', () => {
+  const p = roomsProgress({ rooms: ['310', '201', 'Hall', '202', '301'], rooms_done: { 201: { at: '2026-11-16T10:00:00Z', by: 'Anna' } } })
+  const g = groupRoomsByFloor(p)
+  assert.deepEqual(g.map((x) => x.name), ['Piano 2', 'Piano 3', 'Altre'])
+  assert.deepEqual(g[0].rooms.map((r) => r.room), ['201', '202'])
+  assert.deepEqual([g[0].done, g[0].total, g[1].done, g[1].total], [1, 2, 0, 2])
+  assert.equal(roomsPercent(p), 20)
+  assert.equal(roomsPercent({ total: 0, done: 0, rooms: [] }), 0)
+})
+
+test('ultima camera e cronologia', () => {
+  const p = roomsProgress({ rooms: ['201', '202'], rooms_done: { 201: { at: '2026-11-16T10:00:00Z', by: 'Anna' }, 202: { at: '2026-11-16T11:00:00Z', by: 'Luca' } } })
+  assert.equal(lastRoomDone(p).room, '202')
+  const item = { created_at: '2026-11-15T08:00:00Z', scheduled_at: '2026-11-16T08:00:00Z', scheduled_until: '2026-11-20T08:00:00Z', status: 'fatto', completed_at: '2026-11-16T12:00:00Z' }
+  const t = interventionTimeline(item, p, { createdBy: 'Domenico', completedBy: 'Luca' })
+  assert.deepEqual(t.map((x) => x.key), ['created', 'scheduled', 'rooms', 'done'])
+  assert.equal(t[2].by, 'Luca')
+  assert.equal(t[2].detail, 'ultima 202')
+  assert.equal(interventionTimeline({ status: 'da_fare', created_at: '2026-11-15T08:00:00Z' }, roomsProgress({}), {}).length, 1)
+})

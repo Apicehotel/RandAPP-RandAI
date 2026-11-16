@@ -313,4 +313,5 @@ Installate da obra/superpowers (versioni in `skills-lock.json`):
 Installazione: `npx skills add obra/superpowers --skill <nome>` dalla cartella del repo.
 
 ### Interventi su più piani
+- **Dettaglio intervento** (`#/interventions/<id>`): testata, note e dati, **camere per piano** (tocca una camera per segnarla fatta; "Segna tutte" per piano; barra %, filtro Da fare/Fatte/Tutte), cronologia e barra fissa in basso con "Segna completato". Le camere si scrivono con la funzione `set_intervention_rooms` (migrazione `0039`, permesso `interventions.update`): più persone possono segnare insieme senza sovrascriversi; la prima camera porta l'intervento a "in corso". Con camere mancanti, "Segna completato" chiede conferma con un secondo tocco.
 - Un intervento può avere fino a **300 camere** (vincolo `interventions_rooms_check`, migrazione `0038`; prima 60). Se il salvataggio fallisce, l'app dice la causa: troppe camere, permessi o sessione, assegnatario non valido, oppure il codice dell'errore.

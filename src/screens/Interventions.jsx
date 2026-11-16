@@ -1,14 +1,15 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { listStaff } from '../data/forms.js'
 import { staffNames } from '../lib/forms.js'
-import { listInterventions, getIntervention, updateInterventionStatus } from '../data/interventions.js'
+import { listInterventions, getIntervention, updateInterventionStatus, setInterventionRooms } from '../data/interventions.js'
+import RoomsProgress from '../ui/RoomsProgress.jsx'
 import { useAsync, go } from '../lib/hooks.js'
 import { can, PERM } from '../lib/permissions.js'
 import {
   INTERVENTION_STATUSES, filterInterventions, sortInterventions, interventionStatusLabel,
 } from '../lib/interventions.js'
 import { StatRow } from '../ui/hub.jsx'
-import { interventionStats, roomsProgress, interventionPeople } from '../lib/interventions.js'
+import { interventionStats, roomsProgress, interventionPeople, interventionTimeline } from '../lib/interventions.js'
 import { todayIso } from '../lib/planning.js'
 import { Badge, Button, ErrorText, Spinner, formatDate } from '../ui/kit.jsx'
 
@@ -77,14 +78,22 @@ export function InterventionDetail({ ctx, id }) {
   const { data: item, error, loading, reload } = useAsync(() => getIntervention(ctx.hotelId, id), [ctx.hotelId, id])
   const [busy, setBusy] = useState(false)
   const [actionError, setActionError] = useState('')
+  const [roomsDone, setRoomsDone] = useState(null) // mappa aggiornata dal server dopo ogni tocco
+  const [confirming, setConfirming] = useState(false)
   const canUpdate = can(ctx.permissions, PERM.INTERVENTIONS_UPDATE)
   const { data: staff } = useAsync(() => listStaff(ctx.hotelId), [ctx.hotelId])
 
-  const change = async (status) => {
+  useEffect(() => {
+    if (!confirming) return undefined
+    const t = setTimeout(() => setConfirming(false), 5000)
+    return () => clearTimeout(t)
+  }, [confirming])
+
+  const run = async (fn) => {
     setBusy(true)
     setActionError('')
     try {
-      await updateInterventionStatus(ctx.hotelId, id, status, ctx.name)
+      await fn()
       await reload()
     } catch (e) {
       setActionError(e.message)
@@ -92,49 +101,72 @@ export function InterventionDetail({ ctx, id }) {
       setBusy(false)
     }
   }
+  const change = (status) => run(() => updateInterventionStatus(ctx.hotelId, id, status, ctx.name))
+  const toggleRooms = (rooms, done) => run(async () => { setRoomsDone(await setInterventionRooms(ctx.hotelId, id, rooms, done)) })
 
   if (loading && !item) return <Spinner />
   if (error) return <div className="page"><ErrorText>{error}</ErrorText></div>
   if (!item) return <div className="page"><p className="muted">Intervento non trovato.</p></div>
 
-  const progress = roomsProgress(item)
+  const live = roomsDone ? { ...item, rooms_done: roomsDone } : item
+  const progress = roomsProgress(live)
   const people = interventionPeople(item, staff)
+  const timeline = interventionTimeline(live, progress, people)
+  const assignees = staffNames(staff, item.assignee_ids)
+  const isDone = item.status === 'fatto'
+  const pending = progress.total - progress.done
+  const where = progress.total > 1 ? `${progress.total} camere` : item.location
+
+  const primary = () => {
+    if (isDone) return change('in_corso')
+    if (pending > 0 && !confirming) return setConfirming(true)
+    setConfirming(false)
+    return change('fatto')
+  }
 
   return (
-    <div className="page">
-      <a href="#/interventions">← Interventi</a>
-      <div className="card stack">
+    <div className="page detail">
+      <div className="detail-head">
+        <a href="#/interventions" className="detail-back">← Interventi</a>
         <div className="row">
           <h1>{item.title}</h1>
           <InterventionBadge status={item.status} />
         </div>
-        <div className="muted">
-          {item.location ? `${item.location} · ` : ''}
-          {item.scheduled_at ? `programmato ${formatDate(item.scheduled_at)}` : `creato ${formatDate(item.created_at)}`}
-        </div>
-        {item.category && <div><Badge>{item.category}</Badge></div>}
-        {item.scheduled_until && <div className="muted">fino a {formatDate(item.scheduled_until)}</div>}
-        {people.createdBy && <div className="muted">Creato da {people.createdBy}</div>}
-        {progress.total > 0 && (
-          <div className="stack">
-            <div className="muted">Camere: {progress.done} su {progress.total} fatte</div>
-            {progress.rooms.map((r) => (
-              <div key={r.room} className={r.done ? '' : 'muted'}>
-                {r.done ? '✓' : '○'} {r.room}
-                {r.done && (r.at || r.by) ? ` · fatta${r.at ? ` il ${formatDate(r.at)}` : ''}${r.by ? ` da ${r.by}` : ''}` : ''}
-              </div>
-            ))}
-          </div>
-        )}
-        {item.assignee_ids?.length > 0 && <div className="muted">Assegnato a: {staffNames(staff, item.assignee_ids).join(', ') || `${item.assignee_ids.length} persone`}</div>}
-        {item.issue_id && <a href={`#/issues/${item.issue_id}`}>Vai alla segnalazione</a>}
-        {item.notes && <p>{item.notes}</p>}
-        {item.completed_at && <div className="muted">Fatto il {formatDate(item.completed_at)}{people.completedBy ? ` da ${people.completedBy}` : ''}</div>}
+        <div className="muted">{[item.category, where].filter(Boolean).join(' · ')}</div>
       </div>
+
+      <div className="card stack">
+        {item.notes && <p>{item.notes}</p>}
+        <dl className="facts">
+          {item.scheduled_at && <><dt>Quando</dt><dd>{formatDate(item.scheduled_at)}{item.scheduled_until ? ` → ${formatDate(item.scheduled_until)}` : ''}</dd></>}
+          {assignees.length > 0 && <><dt>Assegnato a</dt><dd>{assignees.join(', ')}</dd></>}
+          {!assignees.length && item.assignee_ids?.length > 0 && <><dt>Assegnato a</dt><dd>{item.assignee_ids.length} persone</dd></>}
+          {people.createdBy && <><dt>Creato da</dt><dd>{people.createdBy}</dd></>}
+        </dl>
+        {item.issue_id && <a href={`#/issues/${item.issue_id}`}>Vai alla segnalazione</a>}
+      </div>
+
+      {progress.total > 0 && <RoomsProgress progress={progress} busy={busy} onChange={canUpdate && !isDone ? toggleRooms : undefined} />}
+
+      {timeline.length > 0 && (
+        <div className="card stack" data-testid="intervention-timeline">
+          <h2>Cronologia</h2>
+          <ol className="timeline">
+            {timeline.map((e) => (
+              <li key={e.key}>
+                <b>{e.label}</b>
+                <span className="muted">
+                  {[e.by, e.detail, e.at ? formatDate(e.at) : null].filter(Boolean).join(' · ')}{e.until ? ` → ${formatDate(e.until)}` : ''}
+                </span>
+              </li>
+            ))}
+          </ol>
+        </div>
+      )}
 
       {canUpdate && (
         <div className="card stack">
-          <h2>Cambia stato</h2>
+          <h2>Stato</h2>
           <div className="chips">
             {INTERVENTION_STATUSES.map((s) => (
               <button key={s.id} className="chip" aria-pressed={item.status === s.id}
@@ -143,7 +175,16 @@ export function InterventionDetail({ ctx, id }) {
               </button>
             ))}
           </div>
-          <ErrorText>{actionError}</ErrorText>
+        </div>
+      )}
+      <ErrorText>{actionError}</ErrorText>
+
+      {canUpdate && (
+        <div className="dock" data-testid="intervention-dock">
+          <a className="btn" href="#/interventions">‹ Indietro</a>
+          <Button variant="primary" disabled={busy} onClick={primary} data-testid="intervention-primary">
+            {isDone ? 'Riapri' : confirming ? `Confermi? Mancano ${pending}` : 'Segna completato'}
+          </Button>
         </div>
       )}
     </div>
