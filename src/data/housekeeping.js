@@ -1,27 +1,38 @@
 import { supabase } from '../lib/supabase.js'
+import { dropPending, enqueue, fail, isNetworkError, withTimeout } from '../lib/outbox.js'
+import { readThrough } from '../lib/offline-cache.js'
 
 const COLUMNS = 'id,hotel_id,room,floor,kind,status,note,active,updated_at'
 
 export async function listRooms(hotelId) {
-  const { data, error } = await supabase.from('hk_rooms').select(COLUMNS)
-    .eq('hotel_id', hotelId).order('floor').order('room').limit(1000)
-  if (error) throw new Error('Impossibile caricare le camere')
-  return data || []
+  return readThrough(`rooms:${hotelId}`, async () => {
+    const { data, error } = await supabase.from('hk_rooms').select(COLUMNS)
+      .eq('hotel_id', hotelId).order('floor').order('room').limit(1000).retry(false)
+    if (error) throw fail('Impossibile caricare le camere', error)
+    return data || []
+  })
 }
 
-export async function setRoomStatus(hotelId, userId, id, status) {
-  const { data, error } = await supabase.from('hk_rooms').update({ status, updated_by: userId })
-    .eq('hotel_id', hotelId).eq('id', id).select(COLUMNS).single()
-  if (error) throw new Error('Impossibile aggiornare la camera')
-  return data
+// Stato e nota di una camera si possono cambiare anche senza rete: restano in coda (vince l'ultima modifica) e partono da soli.
+async function writeRoom(kind, hotelId, userId, id, fields, errorText) {
+  const { data, error } = await withTimeout(
+    supabase.from('hk_rooms').update({ ...fields, updated_by: userId }).eq('hotel_id', hotelId).eq('id', id).select(COLUMNS).single(),
+  ).catch((e) => ({ data: null, error: e }))
+  if (!error) {
+    dropPending({ kind, hotelId, userId, roomId: id }) // una modifica più vecchia in coda non deve sovrascrivere questa
+    return data
+  }
+  if (!isNetworkError(error)) throw new Error(errorText)
+  const payload = kind === 'hk.status' ? { roomId: id, status: fields.status } : { roomId: id, note: fields.note }
+  if (!enqueue({ kind, hotelId, userId, payload })) throw new Error('Senza connessione e con la memoria del telefono piena: modifica NON salvata')
+  return { id, ...fields, pending: true }
 }
 
-export async function setRoomNote(hotelId, userId, id, note) {
-  const { data, error } = await supabase.from('hk_rooms').update({ note: note.trim() || null, updated_by: userId })
-    .eq('hotel_id', hotelId).eq('id', id).select(COLUMNS).single()
-  if (error) throw new Error('Impossibile salvare la nota')
-  return data
-}
+export const setRoomStatus = (hotelId, userId, id, status) =>
+  writeRoom('hk.status', hotelId, userId, id, { status }, 'Impossibile aggiornare la camera')
+
+export const setRoomNote = (hotelId, userId, id, note) =>
+  writeRoom('hk.note', hotelId, userId, id, { note: note.trim() || null }, 'Impossibile salvare la nota')
 
 // Aggiunge più camere di un piano; quelle già presenti vengono saltate (esito per ogni camera).
 export async function addRooms(hotelId, userId, floor, rooms, kind) {

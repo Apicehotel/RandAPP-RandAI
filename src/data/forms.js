@@ -1,16 +1,21 @@
 import { supabase } from '../lib/supabase.js'
+import { fail } from '../lib/outbox.js'
+import { readThrough } from '../lib/offline-cache.js'
 
 // Catalogo camere/zone della struttura (sola lettura per tutti i colleghi).
 export async function listLocations(hotelId) {
-  const { data, error } = await supabase
-    .from('hotel_locations')
-    .select('id,kind,name,group_name,aliases,sort_order,active')
-    .eq('hotel_id', hotelId)
-    .eq('active', true)
-    .order('sort_order', { ascending: true })
-    .limit(1000)
-  if (error) throw new Error('Impossibile caricare camere e zone')
-  return data || []
+  return readThrough(`locations:${hotelId}`, async () => {
+    const { data, error } = await supabase
+      .from('hotel_locations')
+      .select('id,kind,name,group_name,aliases,sort_order,active')
+      .eq('hotel_id', hotelId)
+      .eq('active', true)
+      .order('sort_order', { ascending: true })
+      .limit(1000)
+      .retry(false)
+    if (error) throw fail('Impossibile caricare camere e zone', error)
+    return data || []
+  })
 }
 
 // Colleghi della stessa struttura: la funzione del server restituisce solo nome e ruolo.

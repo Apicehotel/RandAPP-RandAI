@@ -54,6 +54,8 @@ Aggiornare sempre questa tabella e la sezione equivalente del README dopo un dep
 | `0033` harden UPDATE / foto / slot sale | **Applicata** su Apice MultiHotel (2026-11-08) |
 | `0034` isolamento foto | **Applicata** su Apice MultiHotel (2026-11-08) |
 | `0035` protezione permessi globali | **Applicata** su Apice MultiHotel (2026-11-08): funzione `can_manage_global_roles` verificata, 2 admin globali su 3 hotel attivi. |
+| `0036` cestino di 7 giorni | **Applicata** su Apice MultiHotel (2026-11-13): tabella `randapp.cestino`, trigger `cestino_salva` su 10 tabelle operative, job `randapp-cestino-7-giorni` (03:40 UTC). Provata con un test annullato (lavoro + 2 giorni cancellati e ripristinati senza duplicati). |
+| `0037` schermata Cestino | **Applicata** su Apice MultiHotel (2026-11-13): funzioni `randapp.cestino_elenco/_ripristina/_elimina/_svuota` (permesso `admin.access`, filtro per struttura), grant solo a `authenticated`. Verificati i grant; prova funzionale con sessione admin reale da fare. |
 
 **Regola:** se il codice assume una migrazione non ancora applicata, **non redeployare** la funzione edge / non far entrare utenti sui nuovi ruoli finché la migrazione non è sul DB — oppure documenta lo scarto in STATO e lascia un fallback.
 
@@ -168,3 +170,4 @@ Dopo cambio sorgente: **pubblicare di nuovo** la funzione sul progetto Supabase.
 3. README aggiornato se cambia il funzionamento; riga in STATO.
 4. Se hai aggiunto ruolo/categoria/migrazione: checklist sezioni 3–5 di questo file.
 5. Non dichiarare migrazioni «applicate» se non lo sono sul DB reale.
+6. Se tocchi `public/sw.js` o `vite.config.js` (plugin `swPrecache`): tieni i segnaposto `__BUILD__` / `__PRECACHE__` e, se cambia la strategia di cache, incrementa `VERSION`. Una nuova scrittura che deve funzionare offline passa da `src/lib/outbox.js` (vedi README «Modifiche senza rete»): mai accodare un rifiuto del server, solo «server non raggiunto».

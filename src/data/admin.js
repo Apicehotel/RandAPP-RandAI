@@ -54,3 +54,9 @@ async function callAdmin(body) {
 
 export const createUser = (hotelId, { name, role, pin }) => callAdmin({ action: 'create_user', hotel_id: hotelId, name, role, pin })
 export const resetPin = (hotelId, userId, pin) => callAdmin({ action: 'reset_pin', hotel_id: hotelId, user_id: userId, pin })
+
+// Cestino (migrazione 0037): voci cancellate negli ultimi 7 giorni, ripristino e eliminazione definitiva.
+export const trashList = async (hotelId) => (await rpc('cestino_elenco', { p_hotel: hotelId }, 'Impossibile leggere il cestino')) || []
+export const trashRestore = (hotelId, id) => rpc('cestino_ripristina', { p_hotel: hotelId, p_id: id }, 'Impossibile ripristinare la voce')
+export const trashDelete = (hotelId, id) => rpc('cestino_elimina', { p_hotel: hotelId, p_id: id }, 'Impossibile eliminare la voce')
+export const trashEmpty = (hotelId) => rpc('cestino_svuota', { p_hotel: hotelId }, 'Impossibile svuotare il cestino')

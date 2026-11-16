@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { Suspense, lazy, useEffect, useState } from 'react'
 import { bottomNavFor, initialsFor, isActivePath } from '../lib/permissions.js'
 import { hotelById } from '../lib/hotels.js'
 import { logout } from '../lib/auth.js'
@@ -8,6 +8,10 @@ import { countUnread } from '../data/notifications.js'
 import { useUnread } from '../lib/hooks.js'
 import { badgeText } from '../lib/notifications.js'
 import { Icon } from './kit.jsx'
+import OutboxBanner from './OutboxBanner.jsx'
+
+const UrgentAlert = lazy(() => import('./UrgentAlert.jsx')) // a richiesta: non pesa sull'avvio
+const RoomReadyAlert = lazy(() => import('./RoomReadyAlert.jsx'))
 import { applyPalette } from '../lib/palette.js'
 import { useKeyboardOpen } from '../lib/use-keyboard.js'
 
@@ -55,6 +59,8 @@ export default function Shell({ route, ctx, onLogout, onSwitchHotel, onChangeHot
         </div>
       </header>
 
+      <Suspense fallback={null}><UrgentAlert ctx={ctx} /><RoomReadyAlert ctx={ctx} /></Suspense>
+      <OutboxBanner ctx={ctx} />
       <main className="shell-stage">{children}</main>
 
       <nav className="shell-nav" aria-label="Navigazione principale" data-count={items.length}>

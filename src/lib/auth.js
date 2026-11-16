@@ -1,6 +1,8 @@
 import { supabase, functionsUrl, publicKey } from './supabase.js'
 import { logError } from './errorlog.js'
 import { HOTELS } from './hotels.js'
+import { fail, isNetworkError } from './outbox.js'
+import { cachedContext, claimCache, purgeCache, saveContext, storedSessionUserId } from './offline-cache.js'
 
 // Il frontend non confronta mai il PIN: lo manda alla funzione server "randapp-pin-auth".
 async function callPinAuth(body) {
@@ -85,12 +87,17 @@ export async function loginWithPin({ hotelId, userId, pin }) {
 }
 
 // Ruolo e permessi si leggono dal database, non dalla risposta del login.
-export async function loadContext(hotelId) {
-  const { data: userData } = await supabase.auth.getUser()
+// Senza rete si riapre con l'ultima copia (stesso utente e stessa struttura): i permessi servono a disegnare le schermate,
+// il server li ricontrolla a ogni richiesta.
+async function loadContextOnline(hotelId) {
+  const { data: userData, error: userError } = await supabase.auth.getUser()
   const user = userData?.user
-  if (!user) return null
+  if (!user) {
+    if (userError && isNetworkError(userError)) throw fail('Server non raggiungibile', userError)
+    return null
+  }
 
-  const [{ data: profile }, { data: membership }] = await Promise.all([
+  const [{ data: profile }, { data: membership, error: memberError }] = await Promise.all([
     supabase.from('profiles').select('display_name').eq('auth_user_id', user.id).maybeSingle(),
     supabase
       .from('hotel_memberships')
@@ -99,12 +106,14 @@ export async function loadContext(hotelId) {
       .eq('hotel_id', hotelId)
       .maybeSingle(),
   ])
+  if (memberError && isNetworkError(memberError)) throw fail('Server non raggiungibile', memberError)
   if (!membership?.active) return null
 
-  const { data: perms } = await supabase
+  const { data: perms, error: permError } = await supabase
     .from('role_permissions')
     .select('permission')
     .eq('role', membership.role)
+  if (permError && isNetworkError(permError)) throw fail('Server non raggiungibile', permError)
 
   return {
     userId: user.id,
@@ -114,6 +123,22 @@ export async function loadContext(hotelId) {
     permissions: new Set((perms || []).map((p) => p.permission)),
   }
 }
+
+export async function loadContext(hotelId) {
+  try {
+    const ctx = await loadContextOnline(hotelId)
+    if (ctx) { claimCache(ctx.userId); saveContext(ctx) }
+    return ctx
+  } catch (e) {
+    if (!e?.network) throw e
+    const cached = cachedContext(hotelId, storedSessionUserId())
+    if (cached) return cached
+    throw e
+  }
+}
+
+// Telefono offline e sessione salvata (anche con il token scaduto): si può riaprire l'app con la copia locale.
+export const canResumeOffline = () => globalThis.navigator?.onLine === false && Boolean(storedSessionUserId())
 
 // Le strutture a cui l'utente collegato ha accesso (per cambiare struttura senza rifare il PIN).
 export async function listMyHotels() {
@@ -135,6 +160,7 @@ export async function hasActiveSession() {
 }
 
 export async function logout() {
+  purgeCache() // le copie dei dati e il contesto non restano sul telefono; la coda delle modifiche da inviare sì
   await supabase.auth.signOut()
 }
 

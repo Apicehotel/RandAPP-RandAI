@@ -1,0 +1,13 @@
+{
+  "friendly_name": "randapp_avviso_it",
+  "language": "it",
+  "variables": {
+    "1": "Avviso urgente",
+    "2": "Allagamento al piano 2."
+  },
+  "types": {
+    "twilio/text": {
+      "body": "RandApp - notifica di servizio: {{1}}. Dettaglio: {{2}} Apri l'app RandApp per i dettagli."
+    }
+  }
+}

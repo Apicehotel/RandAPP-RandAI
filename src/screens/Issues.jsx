@@ -3,19 +3,22 @@ import { listIssues, getIssue, updateIssueStatus, listIssuePhotos } from '../dat
 import { listInterventionsForIssue } from '../data/interventions.js'
 import SimilarCases from '../ui/SimilarCases.jsx'
 import { queryFrom } from '../lib/ai.js'
-import { useAsync, go } from '../lib/hooks.js'
+import { useAsync, go, usePending } from '../lib/hooks.js'
 import { can, PERM } from '../lib/permissions.js'
 import { STATUSES, filterByStatus, sortByPriority } from '../lib/queue.js'
 import { StatRow } from '../ui/hub.jsx'
 import { issueStats } from '../lib/queue.js'
 import { todayIso } from '../lib/planning.js'
-import { Button, ErrorText, Spinner, UrgencyBadge, StatusBadge, formatDate } from '../ui/kit.jsx'
+import { Badge, Button, ErrorText, Spinner, UrgencyBadge, StatusBadge, formatDate } from '../ui/kit.jsx'
 
 export function IssueList({ ctx }) {
   const [status, setStatus] = useState('da_fare')
   const { data, error, loading, reload } = useAsync(() => listIssues(ctx.hotelId), [ctx.hotelId])
 
   const visible = sortByPriority(filterByStatus(data || [], status))
+  // Segnalazioni scritte senza rete e non ancora arrivate al server (nuove, quindi «da fare»).
+  const waiting = usePending(ctx).filter((e) => e.kind === 'issue.create' && e.hotelId === ctx.hotelId && e.status === 'pending')
+    .map((e) => e.payload.row).filter(() => status === 'da_fare' || status === 'tutte')
 
   return (
     <div className="page">
@@ -41,6 +44,18 @@ export function IssueList({ ctx }) {
       {error && <Button onClick={reload}>Riprova</Button>}
 
       <div className="list">
+        {waiting.map((row) => (
+          <div key={row.id} className="card issue">
+            <div className="row">
+              <span className="title">{row.title}</span>
+              <UrgencyBadge urgency={row.urgency} />
+            </div>
+            <div className="row muted">
+              <span>{row.room ? `Camera/zona ${row.room} · ` : ''}{row.category}</span>
+              <Badge kind="in_corso">In attesa di invio</Badge>
+            </div>
+          </div>
+        ))}
         {visible.map((issue) => (
           <a key={issue.id} className="card issue" href={`#/issues/${issue.id}`}>
             <div className="row">
@@ -53,7 +68,7 @@ export function IssueList({ ctx }) {
             </div>
           </a>
         ))}
-        {data && visible.length === 0 && <div className="card muted">Nessuna segnalazione in questo stato.</div>}
+        {data && visible.length === 0 && waiting.length === 0 && <div className="card muted">Nessuna segnalazione in questo stato.</div>}
       </div>
     </div>
   )
