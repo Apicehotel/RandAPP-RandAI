@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 
-const migration = readFileSync(new URL('../supabase/migrations/0036_interventions_multi_floor_rooms.sql', import.meta.url), 'utf8')
+const migration = readFileSync(new URL('../supabase/migrations/0038_interventions_multi_floor_rooms.sql', import.meta.url), 'utf8')
 const dataModule = readFileSync(new URL('../src/data/interventions.js', import.meta.url), 'utf8')
 
 test('multi-floor interventions permit 126 rooms, still capped at 300', () => {
