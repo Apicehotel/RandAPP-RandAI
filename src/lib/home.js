@@ -2,7 +2,7 @@
 // `data` ha una chiave per sezione: un array se la sezione è visibile e caricata, altrimenti null.
 import { workQueue } from './queue.js'
 import { filterAlerts, isForRole, isReminderCurrent, sortAlerts, summarizeAlerts, describeSchedule } from './task.js'
-import { filterInterventions, sortInterventions, summarizeInterventions, interventionStatusLabel } from './interventions.js'
+import { filterInterventions, sortInterventions, summarizeInterventions, interventionStatusLabel, interventionWhere } from './interventions.js'
 import { bookingsOnDay, shiftLabel, shortDate, liveDays, workDaysOn } from './planning.js'
 import { urgencyLabel, statusLabel } from './queue.js'
 
@@ -74,7 +74,7 @@ export function buildTodo(data, { today, role, perSection = 3, max = 10 }) {
   if (data.interventions) {
     push('Intervento', sortInterventions(filterInterventions(data.interventions, 'aperti')).map((i) => ({
       key: `v-${i.id}`, title: i.title,
-      meta: `${interventionStatusLabel(i.status)}${i.location ? ` · ${i.location}` : ''}`, href: `#/interventions/${i.id}`,
+      meta: `${interventionStatusLabel(i.status)}${interventionWhere(i) ? ` · ${interventionWhere(i)}` : ''}`, href: `#/interventions/${i.id}`,
     })))
   }
   if (data.works) {

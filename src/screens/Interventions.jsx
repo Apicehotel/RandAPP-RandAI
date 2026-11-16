@@ -9,7 +9,7 @@ import {
   INTERVENTION_STATUSES, filterInterventions, sortInterventions, interventionStatusLabel,
 } from '../lib/interventions.js'
 import { StatRow } from '../ui/hub.jsx'
-import { interventionStats, roomsProgress, interventionPeople, interventionTimeline } from '../lib/interventions.js'
+import { interventionStats, roomsProgress, interventionPeople, interventionTimeline, interventionWhere } from '../lib/interventions.js'
 import { todayIso } from '../lib/planning.js'
 import { Badge, Button, ErrorText, Spinner, formatDate } from '../ui/kit.jsx'
 
@@ -31,7 +31,7 @@ export function InterventionCard({ item }) {
         <InterventionBadge status={item.status} />
       </div>
       <div className="row muted">
-        <span>{item.location || 'Intervento'}</span>
+        <span>{interventionWhere(item) || 'Intervento'}</span>
         <span>{item.scheduled_at ? `Programmato ${formatDate(item.scheduled_at)}` : `Creato ${formatDate(item.created_at)}`}</span>
       </div>
     </a>
@@ -115,7 +115,7 @@ export function InterventionDetail({ ctx, id }) {
   const assignees = staffNames(staff, item.assignee_ids)
   const isDone = item.status === 'fatto'
   const pending = progress.total - progress.done
-  const where = progress.total > 1 ? `${progress.total} camere` : item.location
+  const where = interventionWhere(item)
 
   const primary = () => {
     if (isDone) return change('in_corso')
