@@ -114,3 +114,17 @@ test('ultima camera e cronologia', () => {
   assert.equal(t[2].detail, 'ultima 202')
   assert.equal(interventionTimeline({ status: 'da_fare', created_at: '2026-11-15T08:00:00Z' }, roomsProgress({}), {}).length, 1)
 })
+
+import { interventionWhere } from '../src/lib/interventions.js'
+
+test('luogo leggibile dell\'intervento', () => {
+  const many = (rs) => ({ location: '201 +93', rooms: rs })
+  const floor = (f, n) => Array.from({ length: n }, (_, i) => `${f}${String(i + 1).padStart(2, '0')}`)
+  assert.equal(interventionWhere(many([...floor(2, 32), ...floor(3, 32), ...floor(4, 30)])), '94 camere · piani 2-4')
+  assert.equal(interventionWhere(many([...floor(2, 3), ...floor(4, 2)])), '5 camere · piani 2, 4')
+  assert.equal(interventionWhere(many(floor(3, 6))), '6 camere · piano 3')
+  assert.equal(interventionWhere({ location: 'Hall', rooms: [] }), 'Hall')
+  assert.equal(interventionWhere({ location: 'Camera 204', rooms: ['204'] }), 'Camera 204')
+  assert.equal(interventionWhere({ rooms: ['204'] }), '204')
+  assert.equal(interventionWhere({}), '')
+})

@@ -136,3 +136,18 @@ export function interventionTimeline(item, progress, people) {
   if (item?.status === 'fatto' && item?.completed_at) out.push({ key: 'done', label: 'Completato', by: people?.completedBy || null, at: item.completed_at })
   return out
 }
+
+// Dove si svolge l'intervento, in poche parole. Più camere: "94 camere · piani 2-4" (il campo luogo
+// contiene solo "201 +93" perché è lungo al massimo 40 caratteri). Una camera o nessuna: il luogo scritto.
+export function interventionWhere(item) {
+  const rooms = Array.isArray(item?.rooms) ? item.rooms : []
+  if (rooms.length <= 1) return item?.location || (rooms[0] ? String(rooms[0]) : '')
+  const nums = [...new Set(rooms.map(floorOfRoom).filter((f) => f !== 'Altre').map((f) => Number(f.replace('Piano ', ''))))].sort((a, b) => a - b)
+  let floors = ''
+  if (nums.length === 1) floors = `piano ${nums[0]}`
+  else if (nums.length > 1) {
+    const consecutive = nums.every((n, i) => i === 0 || n === nums[i - 1] + 1)
+    floors = `piani ${consecutive ? `${nums[0]}-${nums[nums.length - 1]}` : nums.join(', ')}`
+  }
+  return [`${rooms.length} camere`, floors].filter(Boolean).join(' · ')
+}
