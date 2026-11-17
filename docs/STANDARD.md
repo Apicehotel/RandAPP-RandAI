@@ -144,6 +144,7 @@ Filtri, Idromassaggio, Extrapiani, Altro
 
 - Telefono prima: reggere **360 px** e densità Piccolo / Normale / Grande **senza scroll orizzontale**.
 - Griglie: `minmax(0, 1fr)` e colonne da variabili (`--hub-cols`, `--tile-cols`, `--sgrid-cols`). Non hardcodare colonne a breakpoint che annullano Grande.
+- Liste (`.list`, anche «Da fare adesso»): una colonna `minmax(0, 1fr)`. Nella scheda `.issue` il titolo va a capo (`overflow-wrap: anywhere`) e l'etichetta (`.badge`) non si restringe.
 - Token in `src/ui/tokens.css`; `base.css` usa i token (se aggiungi una variabile di layout, mettila nei token o documenta l'eccezione).
 - Intestazione fissa: primo blocco `.page` con `h1` (regola in `base.css`).
 - Scelte nei moduli: sempre visibili e togliibili (`RoomsPicker` / pattern «scelte visibili»).
