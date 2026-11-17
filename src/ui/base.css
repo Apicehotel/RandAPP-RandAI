@@ -188,9 +188,11 @@ button { cursor: pointer; }
 }
 .chip[aria-pressed='true'] { background: var(--accent); color: var(--accent-text); border-color: transparent; }
 
-.list { display: grid; gap: var(--gap-list); }
-.issue { display: grid; gap: var(--gap-tight); text-decoration: none; color: inherit; }
-.issue .title { font-weight: 650; }
+/* Come la coda Home della vecchia app: la colonna del testo è minmax(0,1fr) e non allarga la pagina. */
+.list { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--gap-list); }
+.issue { display: grid; gap: var(--gap-tight); min-width: 0; text-decoration: none; color: inherit; }
+.issue .title { font-weight: 650; min-width: 0; overflow-wrap: anywhere; }
+.issue .row > .badge { flex: none; white-space: nowrap; }
 
 /* Hub Operatività — minmax(0,1fr) evita overflow a 360px; niente hardcode che annulla Grande */
 .hub-grid { display: grid; grid-template-columns: repeat(var(--hub-cols), minmax(0, 1fr)); gap: var(--gap); }
