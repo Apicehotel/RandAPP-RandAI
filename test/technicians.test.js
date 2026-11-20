@@ -36,3 +36,10 @@ test('schermata Tecnici e assegnazione dalla segnalazione', () => {
   assert.match(read('src/screens/Issues.jsx'), /<TechnicianCard /)
   assert.ok(!/\.delete\(\)/.test(read('src/data/technicians.js')))
 })
+
+test('Operatività mostra la sezione Tecnici solo con technicians.view e non si rompe se l\'elenco non carica', () => {
+  const src = read('src/screens/Operations.jsx')
+  assert.match(src, /showTechnicians = can\(ctx\.permissions, PERM\.TECHNICIANS_VIEW\)/)
+  assert.match(src, /listTechnicians\(ctx\.hotelId\)\.catch\(\(\) => \[\]\)/)
+  assert.match(src, /href="#\/technicians"/)
+})
