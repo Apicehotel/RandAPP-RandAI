@@ -39,3 +39,11 @@ test('migrazione 0044: appuntamento solo da portal_event, funzioni non pubbliche
   assert.match(sql, /revoke all on function randapp\.portal_get\(text\), randapp\.portal_event\(text, text, text, timestamptz\) from public, anon, authenticated/)
   assert.doesNotMatch(sql, /grant update \(appointment_at\)/)
 })
+test('funzione tecnico: email alla reception solo con segreti Gmail, nessun codice nel testo', () => {
+  const src = readFileSync(new URL('../supabase/functions/randapp-technician-portal/index.ts', import.meta.url), 'utf8')
+  assert.match(src, /m\.role = 'reception'/)
+  assert.match(src, /Deno\.env\.get\("GMAIL_APP_PASSWORD"\)/)
+  assert.match(src, /if \(kind === "arrival_set"\)/)
+  const body = src.slice(src.indexOf('content: `'), src.indexOf('Messaggio automatico'))
+  assert.doesNotMatch(body, /token/)
+})
