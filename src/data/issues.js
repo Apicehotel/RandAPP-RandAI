@@ -5,7 +5,7 @@ import { readThrough } from '../lib/offline-cache.js'
 const COLUMNS =
   'id,hotel_id,title,description,category,urgency,status,room,created_by,assigned_to,created_at,updated_at,completed_at'
 // Solo nel dettaglio: chi l'ha scritta/chiusa, nota di chiusura, tecnico e pezzo (arrivano anche dall'importazione).
-const DETAIL_COLUMNS = `${COLUMNS},source,created_by_name,completed_by_name,completion_note,technician_name,part_replaced,part_needed`
+const DETAIL_COLUMNS = `${COLUMNS},source,created_by_name,completed_by_name,completion_note,technician_name,part_replaced,part_needed,technician_id`
 
 // Ogni query è sempre filtrata per hotel_id: le policy RLS lo impongono comunque,
 // ma il filtro esplicito evita di scaricare dati inutili.
@@ -157,5 +157,14 @@ export async function updateIssueDetails(hotelId, id, { room, title, urgency, ca
     .update({ title: t, room: clean(room, 60), urgency, category })
     .eq('hotel_id', hotelId).eq('id', id).select(COLUMNS).single()
   if (error) throw new Error('Impossibile salvare')
+  return data
+}
+
+// Assegna un tecnico dell'elenco: la segnalazione passa a «Tecnico» (il database controlla che sia della stessa struttura).
+export async function assignTechnician(hotelId, id, technician) {
+  const { data, error } = await supabase.from('issues')
+    .update({ technician_id: technician.id, technician_name: technician.name, status: 'tecnico' })
+    .eq('hotel_id', hotelId).eq('id', id).select(COLUMNS).single()
+  if (error) throw new Error('Impossibile assegnare il tecnico')
   return data
 }

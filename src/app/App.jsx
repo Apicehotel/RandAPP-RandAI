@@ -50,6 +50,7 @@ const SupplyProducts = lazyWithRetry(() => import('../screens/SupplyProducts.jsx
 const Housekeeping = lazyWithRetry(() => import('../screens/Housekeeping.jsx'))
 const Sensors = lazyWithRetry(() => import('../screens/Sensors.jsx'))
 const SensorNew = lazyWithRetry(() => import('../screens/SensorNew.jsx'))
+const Technicians = lazyWithRetry(() => import('../screens/Technicians.jsx'))
 const RandAI = lazyWithRetry(loadRandAI)
 
 const HOTEL_KEY = 'randapp.hotel'
@@ -153,6 +154,9 @@ function ManagementScreen({ route, ctx }) {
   if (module === 'housekeeping') {
     return has(PERM.HOUSEKEEPING_VIEW) ? <Housekeeping ctx={ctx} /> : <NoAccess text="Non hai i permessi per l'Housekeeping." />
   }
+  if (module === 'technicians') {
+    return has(PERM.TECHNICIANS_VIEW) ? <Technicians ctx={ctx} /> : <NoAccess text="Non hai i permessi per i Tecnici." />
+  }
   if (module === 'sensors') {
     if (!has(PERM.SENSORS_VIEW)) return <NoAccess text="Non hai i permessi per i Sensori." />
     if (a === 'new') return has(PERM.SENSORS_MANAGE) ? <SensorNew ctx={ctx} /> : <NoAccess text="Non puoi aggiungere sensori." />
@@ -161,7 +165,7 @@ function ManagementScreen({ route, ctx }) {
   return null
 }
 
-const MANAGEMENT_PREFIXES = ['/warehouse', '/supplies', '/housekeeping', '/sensors']
+const MANAGEMENT_PREFIXES = ['/warehouse', '/supplies', '/housekeeping', '/sensors', '/technicians']
 
 function Screen({ route, ctx, onLogout, onSwitchHotel }) {
   const canView = can(ctx.permissions, PERM.ISSUES_VIEW)

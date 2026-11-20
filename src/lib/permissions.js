@@ -39,6 +39,8 @@ export const PERM = {
   HOUSEKEEPING_MANAGE: 'housekeeping.manage',
   SENSORS_VIEW: 'sensors.view',
   SENSORS_MANAGE: 'sensors.manage',
+  TECHNICIANS_VIEW: 'technicians.view',
+  TECHNICIANS_MANAGE: 'technicians.manage',
   NOTIFICATIONS_MANAGE: 'notifications.manage',
   ADMIN: 'admin.access',
 }
@@ -131,6 +133,7 @@ export function menuGroupsFor(permissions) {
         { id: 'supplies', label: 'Rifornimento', path: '/supplies', icon: 'cart', perm: PERM.SUPPLIES_VIEW },
         { id: 'housekeeping', label: 'Housekeeping', path: '/housekeeping', icon: 'bed', perm: PERM.HOUSEKEEPING_VIEW },
         { id: 'sensors', label: 'Sensori e impianti', path: '/sensors', icon: 'thermo', perm: PERM.SENSORS_VIEW },
+        { id: 'technicians', label: 'Tecnici', path: '/technicians', icon: 'wrench', perm: PERM.TECHNICIANS_VIEW },
       ],
     },
     {
