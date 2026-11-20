@@ -108,3 +108,12 @@ export function getIssueThumb(hotelId, issueId) {
   }
   return thumbCache.get(key)
 }
+
+// Aggiunge la foto «prima» o «dopo» (una sola per tipo: vale la regola unique del database).
+export async function addIssuePhoto(hotelId, issueId, kind, dataUrl) {
+  const { error } = await supabase.from('issue_photos').insert({ hotel_id: hotelId, issue_id: issueId, kind, data_url: dataUrl })
+  if (error) {
+    if (error.code === '23505') throw new Error('Questa foto c\'è già')
+    throw new Error('Impossibile salvare la foto')
+  }
+}
