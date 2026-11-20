@@ -10,7 +10,7 @@ import { can, PERM } from '../lib/permissions.js'
 import { listTechnicians } from '../data/technicians.js'
 import { createTechnicianLink, technicianLinkUrl, listTechnicianEvents } from '../data/technician-links.js'
 import { technicianWaLink } from '../lib/technician-wa.js'
-import { issueTimeline } from '../lib/issue-timeline.js'
+import { issueTimeline, formatArrival } from '../lib/issue-timeline.js'
 import { STATUSES, CATEGORIES, URGENCIES, filterByStatus, sortByPriority } from '../lib/queue.js'
 import { StatRow } from '../ui/hub.jsx'
 import { issueStats } from '../lib/queue.js'
@@ -374,6 +374,7 @@ export function IssueDetail({ ctx, id }) {
           <StatusBadge status={issue.status} />
           {canUpdate && !editing && <Button onClick={() => setEditing(true)}>Modifica</Button>}
         </div>
+        {issue.appointment_at && issue.status !== 'completata' && <div>🚚 Appuntamento tecnico: <strong>{formatArrival(issue.appointment_at)}</strong></div>}
         {issue.part_needed && issue.status === 'attesa_pezzo' && <div className="muted">Pezzo in attesa: {issue.part_needed}</div>}
       </div>
 

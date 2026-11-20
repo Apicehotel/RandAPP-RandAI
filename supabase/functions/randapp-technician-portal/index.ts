@@ -28,8 +28,9 @@ Deno.serve(async (req) => {
     if (body.action === "event") {
       const kind = String(body.kind || "");
       const note = typeof body.note === "string" ? body.note : "";
-      const [row] = await sql`select randapp.portal_event(${token}, ${kind}, ${note}) as ok`;
-      if (!row?.ok) return json({ ok: false, error: "Non è stato possibile registrarlo (link scaduto, lavoro già chiuso o nota vuota)" }, 409);
+      const arrival = typeof body.arrival_at === "string" && !Number.isNaN(Date.parse(body.arrival_at)) ? new Date(body.arrival_at).toISOString() : null;
+      const [row] = await sql`select randapp.portal_event(${token}, ${kind}, ${note}, ${arrival}::timestamptz) as ok`;
+      if (!row?.ok) return json({ ok: false, error: "Non è stato possibile registrarlo (link scaduto, lavoro già chiuso, nota vuota o data non valida)" }, 409);
       const [again] = await sql`select randapp.portal_get(${token}) as data`;
       return json({ ok: true, job: again?.data ?? null });
     }

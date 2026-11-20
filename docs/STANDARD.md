@@ -62,6 +62,7 @@ Aggiornare sempre questa tabella e la sezione equivalente del README dopo un dep
 | `0041` pezzo in attesa | **Applicata** su Apice MultiHotel (2026-11-20): colonna `randapp.issues.part_needed` (max 200 caratteri) + grant update solo su quella colonna. |
 | `0042` tecnici | **Applicata** su Apice MultiHotel (2026-11-20): `technician_competencies`, `external_technicians`, `external_technician_competencies` con RLS (lettura `technicians.view`), scrittura solo con `manage_technician` / `set_technician_competencies` (`technicians.manage`), `issues.technician_id` + trigger stessa struttura. Nessun DELETE dal browser. |
 | `0043` link tecnico | **Applicata** su Apice MultiHotel (2026-11-20): `technician_links` (solo impronta SHA-256 del codice, scadenza 72 h, revocabile) e `technician_events`, RLS senza accesso diretto; lettura eventi con `issues.view`; `create_technician_link` (`issues.update` + `technicians.view`); `portal_get`/`portal_event` revocate a tutti, usate solo da `randapp-technician-portal`. |
+| `0044` appuntamento tecnico | **Applicata** (2026-11-20): `issues.appointment_at` (nessun grant al browser, scritta solo da `portal_event`), `technician_events.arrival_at`, tipo evento `arrival_set`; `portal_event` con data, link esteso a appuntamento + 12 h; funzioni portale sempre revocate a tutti. |
 
 **Regola:** se il codice assume una migrazione non ancora applicata, **non redeployare** la funzione edge / non far entrare utenti sui nuovi ruoli finché la migrazione non è sul DB — oppure documenta lo scarto in STATO e lascia un fallback.
 

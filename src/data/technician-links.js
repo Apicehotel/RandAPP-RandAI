@@ -13,7 +13,7 @@ export const technicianLinkUrl = (token, origin = window.location.origin) => `${
 export async function listTechnicianEvents(hotelId, issueId) {
   const { data, error } = await supabase
     .from('technician_events')
-    .select('id,kind,note,created_at')
+    .select('id,kind,note,arrival_at,created_at')
     .eq('hotel_id', hotelId)
     .eq('issue_id', issueId)
     .order('created_at', { ascending: true })
@@ -42,4 +42,4 @@ async function call(body) {
   return payload.job
 }
 export const getPortalJob = (token) => call({ action: 'get', token })
-export const sendPortalEvent = (token, kind, note = '') => call({ action: 'event', token, kind, note })
+export const sendPortalEvent = (token, kind, note = '', arrivalAt = null) => call({ action: 'event', token, kind, note, arrival_at: arrivalAt })
