@@ -15,3 +15,12 @@ test('dettaglio: coppia Prima | Dopo con aggiunta per chi può modificare', () =
   assert.match(src, /canAdd=\{canUpdate\}/)
   assert.match(readFileSync(new URL('../src/data/issues.js', import.meta.url), 'utf8'), /export async function addIssuePhoto/)
 })
+
+test('dettaglio: note, pezzo sostituito e tecnico salvati solo su colonne già concesse', () => {
+  const data = readFileSync(new URL('../src/data/issues.js', import.meta.url), 'utf8')
+  assert.match(data, /export async function saveIssueWork/)
+  for (const col of ['completion_note', 'part_replaced', 'technician_name']) assert.match(data, new RegExp(col))
+  const grant = readFileSync(new URL('../supabase/migrations/0033_harden_updates.sql', import.meta.url), 'utf8')
+  for (const col of ['completion_note', 'part_replaced', 'technician_name', 'completed_by_name']) assert.match(grant, new RegExp(col))
+  assert.match(readFileSync(new URL('../src/screens/Issues.jsx', import.meta.url), 'utf8'), /<WorkCard /)
+})

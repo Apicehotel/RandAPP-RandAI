@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { listIssues, getIssue, updateIssueStatus, listIssuePhotos, addIssuePhoto } from '../data/issues.js'
+import { listIssues, getIssue, updateIssueStatus, listIssuePhotos, addIssuePhoto, saveIssueWork } from '../data/issues.js'
 import { listInterventionsForIssue } from '../data/interventions.js'
 import IssueThumb from '../ui/IssueThumb.jsx'
 import SimilarCases from '../ui/SimilarCases.jsx'
@@ -145,6 +145,53 @@ function PhotoSlot({ kind, photo, loaded, canAdd, hotelId, issueId, onAdded }) {
   )
 }
 
+// Note sul lavoro fatto, pezzo sostituito, tecnico + «Riparazione completata» (come l'app HotelGio).
+function WorkCard({ issue, ctx, onSaved }) {
+  const [note, setNote] = useState(issue.completion_note || '')
+  const [part, setPart] = useState(issue.part_replaced || '')
+  const [tech, setTech] = useState(issue.technician_name || '')
+  const [busy, setBusy] = useState('')
+  const [error, setError] = useState('')
+  const [saved, setSaved] = useState(false)
+  const run = async (complete) => {
+    setBusy(complete ? 'complete' : 'save')
+    setError('')
+    setSaved(false)
+    try {
+      await saveIssueWork(ctx.hotelId, issue.id, { note, part, technician: tech, complete, closerName: ctx.name })
+      await onSaved()
+      setSaved(true)
+    } catch (e) {
+      setError(e.message)
+    } finally {
+      setBusy('')
+    }
+  }
+  return (
+    <div className="card stack">
+      <h2>Lavoro svolto</h2>
+      <label className="stack">
+        <span className="muted">Note sul lavoro fatto</span>
+        <textarea className="textarea" rows="3" maxLength={2000} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Cosa è stato fatto" />
+      </label>
+      <label className="stack">
+        <span className="muted">Pezzo sostituito</span>
+        <input className="input" maxLength={200} value={part} onChange={(e) => setPart(e.target.value)} placeholder="Es. Lampadina LED bagno" />
+      </label>
+      <label className="stack">
+        <span className="muted">Tecnico (se è intervenuto)</span>
+        <input className="input" maxLength={120} value={tech} onChange={(e) => setTech(e.target.value)} placeholder="Nome del tecnico" />
+      </label>
+      <div className="row">
+        <Button disabled={!!busy} onClick={() => run(false)}>{busy === 'save' ? 'Salvo…' : 'Salva note'}</Button>
+        <Button variant="primary" disabled={!!busy} onClick={() => run(true)}>{busy === 'complete' ? 'Salvo…' : 'Riparazione completata'}</Button>
+      </div>
+      {saved && <div className="muted">Salvato.</div>}
+      <ErrorText>{error}</ErrorText>
+    </div>
+  )
+}
+
 export function IssueDetail({ ctx, id }) {
   const { data: issue, error, loading, reload } = useAsync(() => getIssue(ctx.hotelId, id), [ctx.hotelId, id])
   const [busy, setBusy] = useState(false)
@@ -188,6 +235,8 @@ export function IssueDetail({ ctx, id }) {
       </div>
 
       {issue.status !== 'completata' && <SimilarCases ctx={ctx} query={queryFrom(issue)} exclude={issue.id} />}
+
+      {canUpdate && issue.status !== 'completata' && <WorkCard key={issue.id} issue={issue} ctx={ctx} onSaved={reload} />}
 
       {(issue.completion_note || issue.technician_name || issue.part_replaced || (issue.completed_at && issue.completed_by_name)) && (
         <div className="card stack">
