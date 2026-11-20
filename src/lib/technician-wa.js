@@ -9,6 +9,6 @@ export function technicianWaLink(issue, technician, note = '', portalUrl = '') {
   if (issue.title) lines.push(`Descrizione: ${issue.title}`)
   if (String(note || '').trim()) lines.push(String(note).trim())
   lines.push(`Urgenza: ${URGENCY[issue.urgency] || issue.urgency}`)
-  if (portalUrl) lines.push(`Quando arrivi, inizi o finisci, aggiorna da qui (valido 72 ore):\n${portalUrl}`)
+  if (portalUrl) lines.push(`Fissa l'appuntamento e aggiorna l'intervento da qui (hai 72 ore per fissare l'appuntamento):\n${portalUrl}`)
   return `https://wa.me/${phone}?text=${encodeURIComponent(lines.join('\n\n'))}`
 }

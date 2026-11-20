@@ -22,6 +22,7 @@ export default function TechnicianPortal({ route }) {
   const [note, setNote] = useState('')
   const [editingArrival, setEditingArrival] = useState(false)
   const [arrival, setArrival] = useState('')
+  const [confirm, setConfirm] = useState('')
 
   useEffect(() => {
     if (!token) { setInvalid(true); setLoading(false); return }
@@ -78,16 +79,36 @@ export default function TechnicianPortal({ route }) {
                     </div>
                   </div>
                 ) : (
-                  <Button disabled={busy} onClick={() => { setArrival(toLocalInput(appt)); setEditingArrival(true) }}>{appt ? 'Cambia orario di arrivo' : 'Comunica quando arrivi'}</Button>
+                  appt && confirm === 'change' ? (
+                    <div className="stack" role="alertdialog">
+                      <strong>Sei sicuro di voler modificare l'appuntamento di {formatArrival(appt)}?</strong>
+                      <div className="row">
+                        <Button onClick={() => setConfirm('')}>No, lascia</Button>
+                        <Button variant="primary" onClick={() => { setConfirm(''); setArrival(toLocalInput(appt)); setEditingArrival(true) }}>Sì, modifica</Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <Button disabled={busy} onClick={() => { if (appt) setConfirm('change'); else { setArrival(''); setEditingArrival(true) } }}>{appt ? 'Cambia orario di arrivo' : 'Comunica quando arrivi'}</Button>
+                  )
                 )}
                 <Button disabled={busy || has('started')} onClick={() => send('started')}>{has('started') ? 'Intervento iniziato ✓' : 'Inizia intervento'}</Button>
                 <label className="stack"><span className="muted">Aggiungi una nota</span>
                   <textarea className="textarea" rows="3" maxLength={1000} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Es. serve un ricambio, torno domani…" /></label>
                 <Button disabled={busy || !note.trim()} onClick={() => send('note', note)}>+ Aggiungi nota</Button>
-                <Button variant="primary" disabled={busy || has('completion_requested')} onClick={() => send('completion_requested', note)}>
-                  {has('completion_requested') ? 'Fine intervento comunicata ✓' : 'Intervento terminato · richiedi chiusura'}
-                </Button>
-                <div className="muted">Il personale controlla e chiude la segnalazione. Link valido fino al {formatDate(job.expires_at)}.</div>
+                {confirm === 'done' ? (
+                  <div className="stack" role="alertdialog">
+                    <strong>Sei sicuro che l'intervento è terminato? Il personale riceverà la richiesta di chiusura.</strong>
+                    <div className="row">
+                      <Button onClick={() => setConfirm('')}>No, non ancora</Button>
+                      <Button variant="primary" disabled={busy} onClick={() => { setConfirm(''); send('completion_requested', note) }}>Sì, terminato</Button>
+                    </div>
+                  </div>
+                ) : (
+                  <Button variant="primary" disabled={busy || has('completion_requested')} onClick={() => setConfirm('done')}>
+                    {has('completion_requested') ? 'Fine intervento comunicata ✓' : 'Intervento terminato · richiedi chiusura'}
+                  </Button>
+                )}
+                <div className="muted">Il personale controlla e chiude la segnalazione. Link valido fino al {formatDate(job.expires_at)}; resta attivo fino alla chiusura del lavoro.</div>
               </div>
             )}
             {events.length > 0 && (
