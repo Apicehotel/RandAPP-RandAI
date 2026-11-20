@@ -1,7 +1,7 @@
 // Messaggio WhatsApp per il tecnico (come l'app HotelGio): si apre WhatsApp con il testo già scritto.
 const URGENCY = { urgente: 'Urgente', alta: 'Alta', normale: 'Normale', bassa: 'Bassa' }
 
-export function technicianWaLink(issue, technician, note = '') {
+export function technicianWaLink(issue, technician, note = '', portalUrl = '') {
   const phone = String(technician?.phone || '').replace(/[^\d]/g, '')
   if (!phone) return null
   const where = issue.room ? `in ${issue.room}` : 'in struttura'
@@ -9,5 +9,6 @@ export function technicianWaLink(issue, technician, note = '') {
   if (issue.title) lines.push(`Descrizione: ${issue.title}`)
   if (String(note || '').trim()) lines.push(String(note).trim())
   lines.push(`Urgenza: ${URGENCY[issue.urgency] || issue.urgency}`)
+  if (portalUrl) lines.push(`Quando arrivi, inizi o finisci, aggiorna da qui (valido 72 ore):\n${portalUrl}`)
   return `https://wa.me/${phone}?text=${encodeURIComponent(lines.join('\n\n'))}`
 }

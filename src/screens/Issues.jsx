@@ -8,6 +8,7 @@ import { compressPhotoAsDataUrl } from '../lib/photo.js'
 import { useAsync, go, usePending } from '../lib/hooks.js'
 import { can, PERM } from '../lib/permissions.js'
 import { listTechnicians } from '../data/technicians.js'
+import { createTechnicianLink, technicianLinkUrl, listTechnicianEvents } from '../data/technician-links.js'
 import { technicianWaLink } from '../lib/technician-wa.js'
 import { issueTimeline } from '../lib/issue-timeline.js'
 import { STATUSES, CATEGORIES, URGENCIES, filterByStatus, sortByPriority } from '../lib/queue.js'
@@ -211,7 +212,17 @@ function TechnicianCard({ issue, ctx, onSaved }) {
     setError('')
     try { await assignTechnician(ctx.hotelId, issue.id, t); await onSaved(); setChoice('') } catch (e) { setError(e.message) } finally { setBusy(false) }
   }
-  const link = current ? technicianWaLink(issue, current, note) : null
+  const [portalUrl, setPortalUrl] = useState('')
+  const [copied, setCopied] = useState(false)
+  const makeLink = async () => {
+    setBusy(true)
+    setError('')
+    try { setPortalUrl(technicianLinkUrl(await createTechnicianLink(ctx.hotelId, issue.id, current.id))) } catch (e) { setError(e.message) } finally { setBusy(false) }
+  }
+  const copy = async () => {
+    try { await navigator.clipboard.writeText(portalUrl); setCopied(true) } catch { setError('Copia non riuscita: seleziona il link e copialo a mano') }
+  }
+  const link = current ? technicianWaLink(issue, current, note, portalUrl) : null
   return (
     <div className="card stack">
       <h2>Tecnico</h2>
@@ -220,7 +231,15 @@ function TechnicianCard({ issue, ctx, onSaved }) {
         <>
           <label className="stack"><span className="muted">Nota per il tecnico (facoltativa)</span>
             <textarea className="textarea" rows="2" maxLength={500} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Aggiungi dettagli per il tecnico" /></label>
-          {link && <a className="btn primary" href={link} target="_blank" rel="noopener noreferrer">Apri WhatsApp</a>}
+          {!portalUrl && <Button disabled={busy} onClick={makeLink}>{busy ? 'Creo…' : 'Crea link per la chiusura'}</Button>}
+          {portalUrl && (
+            <div className="stack">
+              <div className="muted">Link personale per il tecnico (72 ore). Un nuovo link annulla il precedente.</div>
+              <input className="input" readOnly value={portalUrl} onFocus={(e) => e.target.select()} aria-label="Link per il tecnico" />
+              <Button onClick={copy}>{copied ? 'Copiato' : 'Copia link'}</Button>
+            </div>
+          )}
+          {link && <a className="btn primary" href={link} target="_blank" rel="noopener noreferrer">Apri WhatsApp{portalUrl ? ' con il link' : ''}</a>}
         </>
       )}
       <label className="stack"><span className="muted">{current ? 'Cambia tecnico' : 'Quale tecnico esterno?'}</span>
@@ -296,8 +315,8 @@ function DetailsEditor({ issue, ctx, onClose, onSaved }) {
   )
 }
 
-function Timeline({ issue }) {
-  const events = issueTimeline(issue)
+function Timeline({ issue, techEvents }) {
+  const events = issueTimeline(issue, techEvents)
   return (
     <div className="card stack">
       <h2>Cronologia</h2>
@@ -318,6 +337,7 @@ export function IssueDetail({ ctx, id }) {
   const canUpdate = can(ctx.permissions, PERM.ISSUES_UPDATE)
   const canMakeIntervention = can(ctx.permissions, PERM.INTERVENTIONS_CREATE)
   const { data: linked } = useAsync(() => listInterventionsForIssue(ctx.hotelId, id), [ctx.hotelId, id])
+  const { data: techEvents } = useAsync(() => listTechnicianEvents(ctx.hotelId, id).catch(() => []), [ctx.hotelId, id])
   const { data: photos, reload: reloadPhotos } = useAsync(() => listIssuePhotos(ctx.hotelId, id), [ctx.hotelId, id])
 
   const change = async (status) => {
@@ -357,6 +377,10 @@ export function IssueDetail({ ctx, id }) {
         {issue.part_needed && issue.status === 'attesa_pezzo' && <div className="muted">Pezzo in attesa: {issue.part_needed}</div>}
       </div>
 
+      {issue.status !== 'completata' && (techEvents || []).some((e) => e.kind === 'completion_requested') && (
+        <div className="card" role="status"><strong>Il tecnico ha comunicato la fine dell'intervento.</strong> Controlla e chiudi la segnalazione con «Lavoro svolto».</div>
+      )}
+
       {editing && <DetailsEditor issue={issue} ctx={ctx} onClose={() => setEditing(false)} onSaved={reload} />}
 
       {issue.status !== 'completata' && <SimilarCases ctx={ctx} query={queryFrom(issue)} exclude={issue.id} />}
@@ -379,7 +403,7 @@ export function IssueDetail({ ctx, id }) {
         </div>
       )}
 
-      <Timeline issue={issue} />
+      <Timeline issue={issue} techEvents={techEvents} />
 
       {(canUpdate || (photos && photos.length > 0)) && (
         <div className="card stack">

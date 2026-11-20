@@ -8,6 +8,7 @@ import { randaiEnabled, loadRandAI } from '../randai/index.js'
 import Shell from '../ui/Shell.jsx'
 import Login from '../screens/Login.jsx'
 import Recover from '../screens/Recover.jsx'
+const TechnicianPortal = lazyWithRetry(() => import('../screens/TechnicianPortal.jsx'))
 import { LocalErrors } from '../screens/ErrorLog.jsx'
 import { Spinner } from '../ui/kit.jsx'
 
@@ -256,6 +257,8 @@ export default function App() {
   }
 
   if (!isConfigured) return <SetupNeeded />
+  // Pagina del tecnico: pubblica, prima del controllo sessione (il tecnico non ha un account).
+  if (route.startsWith('/t/')) return <Suspense fallback={<div className="center"><Spinner /></div>}><TechnicianPortal route={route} /></Suspense>
   if (booting) return <div className="center"><Spinner /></div>
   if (route.startsWith('/recover')) return <Recover route={route} />
 
