@@ -1,16 +1,17 @@
 import { useEffect, useState } from 'react'
-import { listIssues, getIssue, updateIssueStatus, listIssuePhotos } from '../data/issues.js'
+import { listIssues, getIssue, updateIssueStatus, listIssuePhotos, addIssuePhoto } from '../data/issues.js'
 import { listInterventionsForIssue } from '../data/interventions.js'
 import IssueThumb from '../ui/IssueThumb.jsx'
 import SimilarCases from '../ui/SimilarCases.jsx'
 import { queryFrom } from '../lib/ai.js'
+import { compressPhotoAsDataUrl } from '../lib/photo.js'
 import { useAsync, go, usePending } from '../lib/hooks.js'
 import { can, PERM } from '../lib/permissions.js'
 import { STATUSES, filterByStatus, sortByPriority } from '../lib/queue.js'
 import { StatRow } from '../ui/hub.jsx'
 import { issueStats } from '../lib/queue.js'
 import { todayIso } from '../lib/planning.js'
-import { Badge, Button, ErrorText, Spinner, UrgencyBadge, StatusBadge, formatDate } from '../ui/kit.jsx'
+import { Badge, Button, Icon, ErrorText, Spinner, UrgencyBadge, StatusBadge, formatDate } from '../ui/kit.jsx'
 
 export function IssueList({ ctx }) {
   const [status, setStatus] = useState('da_fare')
@@ -105,6 +106,45 @@ function IssuePhoto({ src, alt }) {
   )
 }
 
+// Una casella della coppia Prima | Dopo: foto con ingrandimento, oppure «+ Aggiungi» (scatta o scegli).
+function PhotoSlot({ kind, photo, loaded, canAdd, hotelId, issueId, onAdded }) {
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const label = kind === 'prima' ? 'Prima' : 'Dopo'
+  const pick = async (e) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    setBusy(true)
+    setError('')
+    try {
+      await addIssuePhoto(hotelId, issueId, kind, await compressPhotoAsDataUrl(file))
+      await onAdded()
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setBusy(false)
+    }
+  }
+  return (
+    <figure className="photo-fig">
+      {photo ? (
+        <IssuePhoto src={photo.data_url} alt={kind === 'prima' ? 'Foto del problema' : 'Foto dopo l\'intervento'} />
+      ) : loaded && canAdd ? (
+        <label className="photo-add">
+          <input type="file" accept="image/*" hidden disabled={busy} onChange={pick} />
+          <Icon name="camera" size={24} />
+          <span>{busy ? 'Salvo…' : `+ Foto ${label.toLowerCase()}`}</span>
+        </label>
+      ) : (
+        <div className="photo-missing muted">{loaded ? 'Nessuna foto' : '…'}</div>
+      )}
+      <figcaption className="muted">{label}</figcaption>
+      <ErrorText>{error}</ErrorText>
+    </figure>
+  )
+}
+
 export function IssueDetail({ ctx, id }) {
   const { data: issue, error, loading, reload } = useAsync(() => getIssue(ctx.hotelId, id), [ctx.hotelId, id])
   const [busy, setBusy] = useState(false)
@@ -112,7 +152,7 @@ export function IssueDetail({ ctx, id }) {
   const canUpdate = can(ctx.permissions, PERM.ISSUES_UPDATE)
   const canMakeIntervention = can(ctx.permissions, PERM.INTERVENTIONS_CREATE)
   const { data: linked } = useAsync(() => listInterventionsForIssue(ctx.hotelId, id), [ctx.hotelId, id])
-  const { data: photos } = useAsync(() => listIssuePhotos(ctx.hotelId, id), [ctx.hotelId, id])
+  const { data: photos, reload: reloadPhotos } = useAsync(() => listIssuePhotos(ctx.hotelId, id), [ctx.hotelId, id])
 
   const change = async (status) => {
     setBusy(true)
@@ -161,15 +201,15 @@ export function IssueDetail({ ctx, id }) {
         </div>
       )}
 
-      {photos && photos.length > 0 && (
+      {(canUpdate || (photos && photos.length > 0)) && (
         <div className="card stack">
           <h2>Foto</h2>
-          {['prima', 'dopo'].map((kind) => photos.filter((f) => f.kind === kind).map((f) => (
-            <figure key={f.id} className="photo-fig">
-              <IssuePhoto src={f.data_url} alt={kind === 'prima' ? 'Foto del problema' : 'Foto dopo l\'intervento'} />
-              <figcaption className="muted">{kind === 'prima' ? 'Prima' : 'Dopo'}</figcaption>
-            </figure>
-          )))}
+          <div className="photo-pair">
+            {['prima', 'dopo'].map((kind) => (
+              <PhotoSlot key={kind} kind={kind} photo={(photos || []).find((f) => f.kind === kind)} loaded={!!photos}
+                canAdd={canUpdate} hotelId={ctx.hotelId} issueId={id} onAdded={reloadPhotos} />
+            ))}
+          </div>
         </div>
       )}
 

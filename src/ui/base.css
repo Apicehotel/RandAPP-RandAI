@@ -669,3 +669,12 @@ body {
   border: 1px solid var(--border); background: var(--surface-2); color: var(--text-2);
 }
 .issue-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* Coppia Prima | Dopo */
+.photo-pair { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap-list); align-items: start; }
+.photo-pair .photo-thumb, .photo-pair .photo-missing, .photo-pair .photo-add { width: 100%; height: 150px; box-sizing: border-box; }
+.photo-add {
+  display: grid; place-content: center; justify-items: center; gap: 6px; cursor: pointer; text-align: center;
+  border: 2px dashed var(--border); border-radius: var(--radius); color: var(--text-2); font-weight: 600; font-size: var(--fs-sm);
+}
+.photo-missing { display: grid; place-items: center; text-align: center; }
