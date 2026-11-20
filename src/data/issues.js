@@ -117,3 +117,19 @@ export async function addIssuePhoto(hotelId, issueId, kind, dataUrl) {
     throw new Error('Impossibile salvare la foto')
   }
 }
+
+const clean = (v, max) => String(v || '').trim().slice(0, max) || null
+
+// «Lavoro svolto» (come HotelGio): nota, pezzo sostituito, tecnico. Con complete=true chiude anche la segnalazione.
+// Solo colonne già concesse dal grant (vedi 0033): nessuna migrazione.
+export async function saveIssueWork(hotelId, id, { note, part, technician, complete = false, closerName = '' }) {
+  const patch = { completion_note: clean(note, 2000), part_replaced: clean(part, 200), technician_name: clean(technician, 120) }
+  if (complete) {
+    patch.status = 'completata'
+    patch.completed_at = new Date().toISOString()
+    patch.completed_by_name = clean(closerName, 80)
+  }
+  const { data, error } = await supabase.from('issues').update(patch).eq('hotel_id', hotelId).eq('id', id).select(COLUMNS).single()
+  if (error) throw new Error('Impossibile salvare')
+  return data
+}
