@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { listIssues, getIssue, updateIssueStatus, listIssuePhotos } from '../data/issues.js'
 import { listInterventionsForIssue } from '../data/interventions.js'
 import SimilarCases from '../ui/SimilarCases.jsx'
@@ -9,7 +9,7 @@ import { STATUSES, filterByStatus, sortByPriority } from '../lib/queue.js'
 import { StatRow } from '../ui/hub.jsx'
 import { issueStats } from '../lib/queue.js'
 import { todayIso } from '../lib/planning.js'
-import { Badge, Button, ErrorText, Spinner, UrgencyBadge, StatusBadge, formatDate } from '../ui/kit.jsx'
+import { Badge, Button, PhotoMark, ErrorText, Spinner, UrgencyBadge, StatusBadge, formatDate } from '../ui/kit.jsx'
 
 export function IssueList({ ctx }) {
   const [status, setStatus] = useState('da_fare')
@@ -59,7 +59,7 @@ export function IssueList({ ctx }) {
         {visible.map((issue) => (
           <a key={issue.id} className="card issue" href={`#/issues/${issue.id}`}>
             <div className="row">
-              <span className="title">{issue.title}</span>
+              <span className="title">{issue.title} <PhotoMark count={issue.photo_count} /></span>
               <UrgencyBadge urgency={issue.urgency} />
             </div>
             <div className="row muted">
@@ -71,6 +71,33 @@ export function IssueList({ ctx }) {
         {data && visible.length === 0 && waiting.length === 0 && <div className="card muted">Nessuna segnalazione in questo stato.</div>}
       </div>
     </div>
+  )
+}
+
+// Anteprima piccola; un tocco la apre a tutto schermo (si chiude con un tocco, ×, o Esc).
+function IssuePhoto({ src, alt }) {
+  const [open, setOpen] = useState(false)
+  const [failed, setFailed] = useState(false)
+  useEffect(() => {
+    if (!open) return undefined
+    const close = (e) => { if (e.key === 'Escape') setOpen(false) }
+    document.addEventListener('keydown', close)
+    return () => document.removeEventListener('keydown', close)
+  }, [open])
+  if (!src || failed) return <div className="photo-missing muted">Foto non disponibile</div>
+  return (
+    <>
+      <button type="button" className="photo-thumb" onClick={() => setOpen(true)} aria-label={`Ingrandisci: ${alt}`}>
+        <img src={src} alt={alt} loading="lazy" onError={() => setFailed(true)} />
+        <span className="photo-hint">Tocca per ingrandire</span>
+      </button>
+      {open && (
+        <div className="photo-lightbox" role="dialog" aria-modal="true" aria-label={alt} onClick={() => setOpen(false)}>
+          <button type="button" className="photo-lightbox-close" onClick={() => setOpen(false)} aria-label="Chiudi foto">×</button>
+          <img src={src} alt={alt} onClick={(e) => e.stopPropagation()} />
+        </div>
+      )}
+    </>
   )
 }
 
@@ -134,8 +161,8 @@ export function IssueDetail({ ctx, id }) {
         <div className="card stack">
           <h2>Foto</h2>
           {['prima', 'dopo'].map((kind) => photos.filter((f) => f.kind === kind).map((f) => (
-            <figure key={f.id} className="stack">
-              <img src={f.data_url} alt={kind === 'prima' ? 'Foto del problema' : 'Foto dopo l\'intervento'} loading="lazy" style={{ maxWidth: '100%', borderRadius: 8 }} />
+            <figure key={f.id} className="photo-fig">
+              <IssuePhoto src={f.data_url} alt={kind === 'prima' ? 'Foto del problema' : 'Foto dopo l\'intervento'} />
               <figcaption className="muted">{kind === 'prima' ? 'Prima' : 'Dopo'}</figcaption>
             </figure>
           )))}
