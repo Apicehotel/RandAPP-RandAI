@@ -12,9 +12,12 @@ test('elenco: conta le foto senza scaricarle', () => {
   assert.match(src, /listIssuePhotos/)
 })
 
-test('elenco e Operatività mostrano l\'icona foto', () => {
-  assert.match(read('src/screens/Issues.jsx'), /<PhotoMark count=\{issue\.photo_count\}/)
-  assert.match(read('src/screens/Operations.jsx'), /<PhotoMark count=\{issue\.photo_count\}/)
+test('elenco e Operatività mostrano la miniatura (caricata solo se visibile)', () => {
+  assert.match(read('src/screens/Issues.jsx'), /<IssueThumb hotelId=\{ctx\.hotelId\} issueId=\{issue\.id\}/)
+  assert.match(read('src/screens/Operations.jsx'), /<IssueThumb hotelId=\{ctx\.hotelId\} issueId=\{issue\.id\}/)
+  const thumb = read('src/ui/IssueThumb.jsx')
+  assert.match(thumb, /IntersectionObserver/)
+  assert.match(read('src/data/issues.js'), /\.eq\('kind', 'prima'\)/)
 })
 
 test('dettaglio: anteprima piccola con ingrandimento', () => {

@@ -86,3 +86,25 @@ export async function listIssuePhotos(hotelId, issueId) {
   if (error) throw new Error('Impossibile caricare le foto')
   return data || []
 }
+
+// Miniatura per l'elenco (come l'app HotelGio): si scarica la sola foto «prima» della segnalazione,
+// una volta per sessione e solo per le schede visibili (vedi IssueThumb).
+const thumbCache = new Map()
+export function getIssueThumb(hotelId, issueId) {
+  const key = `${hotelId}:${issueId}`
+  if (!thumbCache.has(key)) {
+    thumbCache.set(key, supabase
+      .from('issue_photos')
+      .select('data_url')
+      .eq('hotel_id', hotelId)
+      .eq('issue_id', issueId)
+      .eq('kind', 'prima')
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (error) throw new Error('Impossibile caricare la foto')
+        return data?.data_url || null
+      })
+      .catch((e) => { thumbCache.delete(key); throw e }))
+  }
+  return thumbCache.get(key)
+}

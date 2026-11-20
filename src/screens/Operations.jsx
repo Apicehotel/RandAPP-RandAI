@@ -1,3 +1,4 @@
+import IssueThumb from '../ui/IssueThumb.jsx'
 import { listIssues } from '../data/issues.js'
 import { listInterventions } from '../data/interventions.js'
 import { useAsync } from '../lib/hooks.js'
@@ -5,7 +6,7 @@ import { can, PERM } from '../lib/permissions.js'
 import { issueStats, workQueue } from '../lib/queue.js'
 import { todayIso } from '../lib/planning.js'
 import { interventionStats, filterInterventions, sortInterventions } from '../lib/interventions.js'
-import { Spinner, ErrorText, PhotoMark, UrgencyBadge, StatusBadge, formatDate } from '../ui/kit.jsx'
+import { Spinner, ErrorText, UrgencyBadge, StatusBadge, formatDate } from '../ui/kit.jsx'
 import { HubChoice } from '../ui/hub.jsx'
 import { InterventionCard } from './Interventions.jsx'
 
@@ -60,15 +61,18 @@ export default function Operations({ ctx }) {
           ) : (
             <div className="list">
               {topIssues.map((issue) => (
-                <a key={issue.id} className="card issue" href={`#/issues/${issue.id}`}>
-                  <div className="row">
-                    <span className="title">{issue.title} <PhotoMark count={issue.photo_count} /></span>
-                    <UrgencyBadge urgency={issue.urgency} />
+                <a key={issue.id} className={`card issue${issue.photo_count ? ' has-thumb' : ''}`} href={`#/issues/${issue.id}`}>
+                  <div className="issue-main">
+                    <div className="row">
+                      <span className="title">{issue.title}</span>
+                      <UrgencyBadge urgency={issue.urgency} />
+                    </div>
+                    <div className="row muted">
+                      <span>{issue.room ? `Camera/zona ${issue.room}` : issue.category}</span>
+                      <span><StatusBadge status={issue.status} /> {formatDate(issue.created_at)}</span>
+                    </div>
                   </div>
-                  <div className="row muted">
-                    <span>{issue.room ? `Camera/zona ${issue.room}` : issue.category}</span>
-                    <span><StatusBadge status={issue.status} /> {formatDate(issue.created_at)}</span>
-                  </div>
+                  {issue.photo_count > 0 && <IssueThumb hotelId={ctx.hotelId} issueId={issue.id} />}
                 </a>
               ))}
             </div>

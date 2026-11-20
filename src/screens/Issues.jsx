@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { listIssues, getIssue, updateIssueStatus, listIssuePhotos } from '../data/issues.js'
 import { listInterventionsForIssue } from '../data/interventions.js'
+import IssueThumb from '../ui/IssueThumb.jsx'
 import SimilarCases from '../ui/SimilarCases.jsx'
 import { queryFrom } from '../lib/ai.js'
 import { useAsync, go, usePending } from '../lib/hooks.js'
@@ -9,7 +10,7 @@ import { STATUSES, filterByStatus, sortByPriority } from '../lib/queue.js'
 import { StatRow } from '../ui/hub.jsx'
 import { issueStats } from '../lib/queue.js'
 import { todayIso } from '../lib/planning.js'
-import { Badge, Button, PhotoMark, ErrorText, Spinner, UrgencyBadge, StatusBadge, formatDate } from '../ui/kit.jsx'
+import { Badge, Button, ErrorText, Spinner, UrgencyBadge, StatusBadge, formatDate } from '../ui/kit.jsx'
 
 export function IssueList({ ctx }) {
   const [status, setStatus] = useState('da_fare')
@@ -57,15 +58,18 @@ export function IssueList({ ctx }) {
           </div>
         ))}
         {visible.map((issue) => (
-          <a key={issue.id} className="card issue" href={`#/issues/${issue.id}`}>
-            <div className="row">
-              <span className="title">{issue.title} <PhotoMark count={issue.photo_count} /></span>
-              <UrgencyBadge urgency={issue.urgency} />
+          <a key={issue.id} className={`card issue${issue.photo_count ? ' has-thumb' : ''}`} href={`#/issues/${issue.id}`}>
+            <div className="issue-main">
+              <div className="row">
+                <span className="title">{issue.title}</span>
+                <UrgencyBadge urgency={issue.urgency} />
+              </div>
+              <div className="row muted">
+                <span>{issue.room ? `Camera/zona ${issue.room} · ` : ''}{issue.category}</span>
+                <span><StatusBadge status={issue.status} /> {formatDate(issue.created_at)}</span>
+              </div>
             </div>
-            <div className="row muted">
-              <span>{issue.room ? `Camera/zona ${issue.room} · ` : ''}{issue.category}</span>
-              <span><StatusBadge status={issue.status} /> {formatDate(issue.created_at)}</span>
-            </div>
+            {issue.photo_count > 0 && <IssueThumb hotelId={ctx.hotelId} issueId={issue.id} />}
           </a>
         ))}
         {data && visible.length === 0 && waiting.length === 0 && <div className="card muted">Nessuna segnalazione in questo stato.</div>}

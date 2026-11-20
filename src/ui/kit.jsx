@@ -65,11 +65,5 @@ export function Icon({ name, size = 22 }) {
   )
 }
 
-// Piccola icona fotocamera: la segnalazione ha almeno una foto (si apre nel dettaglio).
-export function PhotoMark({ count }) {
-  if (!count) return null
-  return <span className="photo-mark" title="Con foto" aria-label="Con foto"><Icon name="camera" size={16} /></span>
-}
-
 export const formatDate = (iso) =>
   iso ? new Date(iso).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : ''
