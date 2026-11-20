@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { listIssues, getIssue, updateIssueStatus, listIssuePhotos, addIssuePhoto, saveIssueWork, requestPart, partArrived, updateIssueDetails } from '../data/issues.js'
+import { listIssues, getIssue, updateIssueStatus, listIssuePhotos, addIssuePhoto, saveIssueWork, assignTechnician, requestPart, partArrived, updateIssueDetails } from '../data/issues.js'
 import { listInterventionsForIssue } from '../data/interventions.js'
 import IssueThumb from '../ui/IssueThumb.jsx'
 import SimilarCases from '../ui/SimilarCases.jsx'
@@ -7,6 +7,8 @@ import { queryFrom } from '../lib/ai.js'
 import { compressPhotoAsDataUrl } from '../lib/photo.js'
 import { useAsync, go, usePending } from '../lib/hooks.js'
 import { can, PERM } from '../lib/permissions.js'
+import { listTechnicians } from '../data/technicians.js'
+import { technicianWaLink } from '../lib/technician-wa.js'
 import { issueTimeline } from '../lib/issue-timeline.js'
 import { STATUSES, CATEGORIES, URGENCIES, filterByStatus, sortByPriority } from '../lib/queue.js'
 import { StatRow } from '../ui/hub.jsx'
@@ -193,6 +195,46 @@ function WorkCard({ issue, ctx, onSaved }) {
   )
 }
 
+// «Assegna tecnico» dall'elenco Tecnici + messaggio WhatsApp con la nota (come HotelGio).
+function TechnicianCard({ issue, ctx, onSaved }) {
+  const { data: techs } = useAsync(() => listTechnicians(ctx.hotelId), [ctx.hotelId])
+  const [choice, setChoice] = useState('')
+  const [note, setNote] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const active = (techs || []).filter((t) => t.active)
+  const current = (techs || []).find((t) => t.id === issue.technician_id)
+  const assign = async () => {
+    const t = active.find((x) => x.id === choice)
+    if (!t) return
+    setBusy(true)
+    setError('')
+    try { await assignTechnician(ctx.hotelId, issue.id, t); await onSaved(); setChoice('') } catch (e) { setError(e.message) } finally { setBusy(false) }
+  }
+  const link = current ? technicianWaLink(issue, current, note) : null
+  return (
+    <div className="card stack">
+      <h2>Tecnico</h2>
+      {issue.technician_name && <div>{issue.technician_name}{current?.company ? ` · ${current.company}` : ''}</div>}
+      {current && (
+        <>
+          <label className="stack"><span className="muted">Nota per il tecnico (facoltativa)</span>
+            <textarea className="textarea" rows="2" maxLength={500} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Aggiungi dettagli per il tecnico" /></label>
+          {link && <a className="btn primary" href={link} target="_blank" rel="noopener noreferrer">Apri WhatsApp</a>}
+        </>
+      )}
+      <label className="stack"><span className="muted">{current ? 'Cambia tecnico' : 'Quale tecnico esterno?'}</span>
+        <select className="select" value={choice} onChange={(e) => setChoice(e.target.value)}>
+          <option value="">Scegli…</option>
+          {active.map((t) => <option key={t.id} value={t.id}>{t.name}{t.company ? ` · ${t.company}` : ''}</option>)}
+        </select></label>
+      {techs && active.length === 0 && <div className="muted">Nessun tecnico attivo per questa struttura: aggiungilo dalla sezione Tecnici.</div>}
+      <Button disabled={busy || !choice} onClick={assign}>{busy ? 'Salvo…' : 'Assegna tecnico'}</Button>
+      <ErrorText>{error}</ErrorText>
+    </div>
+  )
+}
+
 // «Serve pezzo» / «Pezzo arrivato» (come HotelGio).
 function PartCard({ issue, ctx, onSaved }) {
   const [part, setPart] = useState('')
@@ -318,6 +360,8 @@ export function IssueDetail({ ctx, id }) {
       {editing && <DetailsEditor issue={issue} ctx={ctx} onClose={() => setEditing(false)} onSaved={reload} />}
 
       {issue.status !== 'completata' && <SimilarCases ctx={ctx} query={queryFrom(issue)} exclude={issue.id} />}
+
+      {canUpdate && can(ctx.permissions, PERM.TECHNICIANS_VIEW) && issue.status !== 'completata' && <TechnicianCard key={`t${issue.id}${issue.technician_id}`} issue={issue} ctx={ctx} onSaved={reload} />}
 
       {canUpdate && <PartCard key={`p${issue.id}${issue.status}`} issue={issue} ctx={ctx} onSaved={reload} />}
 
