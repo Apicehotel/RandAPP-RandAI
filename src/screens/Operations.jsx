@@ -5,7 +5,7 @@ import { can, PERM } from '../lib/permissions.js'
 import { issueStats, workQueue } from '../lib/queue.js'
 import { todayIso } from '../lib/planning.js'
 import { interventionStats, filterInterventions, sortInterventions } from '../lib/interventions.js'
-import { Spinner, ErrorText, UrgencyBadge, StatusBadge, formatDate } from '../ui/kit.jsx'
+import { Spinner, ErrorText, PhotoMark, UrgencyBadge, StatusBadge, formatDate } from '../ui/kit.jsx'
 import { HubChoice } from '../ui/hub.jsx'
 import { InterventionCard } from './Interventions.jsx'
 
@@ -62,7 +62,7 @@ export default function Operations({ ctx }) {
               {topIssues.map((issue) => (
                 <a key={issue.id} className="card issue" href={`#/issues/${issue.id}`}>
                   <div className="row">
-                    <span className="title">{issue.title}</span>
+                    <span className="title">{issue.title} <PhotoMark count={issue.photo_count} /></span>
                     <UrgencyBadge urgency={issue.urgency} />
                   </div>
                   <div className="row muted">

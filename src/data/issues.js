@@ -14,13 +14,14 @@ export async function listIssues(hotelId, { limit = 1000 } = {}) {
   return readThrough(`issues:${hotelId}`, async () => {
     const { data, error } = await supabase
       .from('issues')
-      .select(COLUMNS)
+      .select(`${COLUMNS},issue_photos(count)`)
       .eq('hotel_id', hotelId)
       .order('created_at', { ascending: false })
       .limit(limit)
       .retry(false)
     if (error) throw fail('Impossibile caricare le segnalazioni', error)
-    return data || []
+    // Solo il numero di foto (0-2): le foto vere si scaricano nel dettaglio.
+    return (data || []).map(({ issue_photos: ph, ...row }) => ({ ...row, photo_count: ph?.[0]?.count || 0 }))
   }, { limit: 300 })
 }
 

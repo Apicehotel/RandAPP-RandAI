@@ -638,3 +638,26 @@ body {
   background: var(--surface); border-top: 1px solid var(--border);
 }
 .dock .btn.primary { flex: 1; }
+
+/* ---------- Foto delle segnalazioni ---------- */
+.photo-mark { display: inline-flex; vertical-align: -3px; color: var(--text-2); margin-left: 4px; }
+.photo-fig { margin: 0; display: grid; gap: 4px; }
+.photo-thumb {
+  position: relative; display: block; width: min(100%, 250px); height: 165px; padding: 0; overflow: hidden;
+  border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface-2); cursor: zoom-in;
+}
+.photo-thumb img { width: 100%; height: 100%; display: block; object-fit: cover; }
+.photo-hint {
+  position: absolute; left: 8px; right: 8px; bottom: 8px; padding: 4px 8px; border-radius: 999px;
+  background: rgba(0, 0, 0, .65); color: #fff; font-size: 12px; font-weight: 600; text-align: center;
+}
+.photo-missing { padding: 14px; border: 1px dashed var(--border); border-radius: var(--radius); width: min(100%, 250px); }
+.photo-lightbox {
+  position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; padding: 16px;
+  background: rgba(0, 0, 0, .92); cursor: zoom-out;
+}
+.photo-lightbox > img { max-width: 100%; max-height: 92dvh; object-fit: contain; border-radius: 10px; cursor: default; }
+.photo-lightbox-close {
+  position: fixed; top: max(14px, env(safe-area-inset-top)); right: 14px; width: 44px; height: 44px; border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, .25); background: rgba(20, 20, 24, .85); color: #fff; font-size: 28px; line-height: 1;
+}

@@ -51,6 +51,7 @@ const PATHS = {
   bell: 'M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0',
   refresh: 'M21 12a9 9 0 1 1-2.64-6.36M21 4v5h-5',
   door: 'M6 21V4h12v17M3 21h18M14 12h.01',
+  camera: 'M4 8h3l2-3h6l2 3h3v12H4zM12 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8z',
   bed: 'M3 18v-7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v7M3 15h18M7 9V7h5v2',
 }
 
@@ -62,6 +63,12 @@ export function Icon({ name, size = 22 }) {
       <path d={PATHS[name] || PATHS.list} />
     </svg>
   )
+}
+
+// Piccola icona fotocamera: la segnalazione ha almeno una foto (si apre nel dettaglio).
+export function PhotoMark({ count }) {
+  if (!count) return null
+  return <span className="photo-mark" title="Con foto" aria-label="Con foto"><Icon name="camera" size={16} /></span>
 }
 
 export const formatDate = (iso) =>
