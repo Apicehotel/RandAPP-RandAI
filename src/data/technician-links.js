@@ -7,6 +7,13 @@ export async function createTechnicianLink(hotelId, issueId, technicianId) {
   return data
 }
 
+// Annulla i link attivi della segnalazione (restituisce quanti).
+export async function revokeTechnicianLinks(hotelId, issueId) {
+  const { data, error } = await supabase.rpc('revoke_technician_links', { p_hotel: hotelId, p_issue: issueId })
+  if (error) throw new Error('Impossibile annullare il link')
+  return Number(data) || 0
+}
+
 export const technicianLinkUrl = (token, origin = window.location.origin) => `${origin}/#/t/${token}`
 
 // Cosa ha comunicato il tecnico (arrivo, inizio, note, fine intervento): per la cronologia della segnalazione.

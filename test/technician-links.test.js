@@ -47,3 +47,10 @@ test('funzione tecnico: email alla reception solo con segreti Gmail, nessun codi
   const body = src.slice(src.indexOf('content: `'), src.indexOf('Messaggio automatico'))
   assert.doesNotMatch(body, /token/)
 })
+test('migrazione 0045: 15 giorni dall\'inizio, annulla link solo per chi può modificare', () => {
+  const sql = readFileSync(new URL('../supabase/migrations/0045_technician_link_durata.sql', import.meta.url), 'utf8')
+  assert.match(sql, /p_kind = 'started'/)
+  assert.match(sql, /now\(\) \+ interval '15 days'/)
+  assert.match(sql, /has_permission\(p_hotel, 'issues\.update'\)/)
+  assert.match(sql, /revoke all on function randapp\.portal_event\(text, text, text, timestamptz\) from public, anon, authenticated/)
+})

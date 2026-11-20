@@ -8,7 +8,7 @@ import { compressPhotoAsDataUrl } from '../lib/photo.js'
 import { useAsync, go, usePending } from '../lib/hooks.js'
 import { can, PERM } from '../lib/permissions.js'
 import { listTechnicians } from '../data/technicians.js'
-import { createTechnicianLink, technicianLinkUrl, listTechnicianEvents } from '../data/technician-links.js'
+import { revokeTechnicianLinks, createTechnicianLink, technicianLinkUrl, listTechnicianEvents } from '../data/technician-links.js'
 import { technicianWaLink } from '../lib/technician-wa.js'
 import { issueTimeline, formatArrival } from '../lib/issue-timeline.js'
 import { STATUSES, CATEGORIES, URGENCIES, filterByStatus, sortByPriority } from '../lib/queue.js'
@@ -214,10 +214,20 @@ function TechnicianCard({ issue, ctx, onSaved }) {
   }
   const [portalUrl, setPortalUrl] = useState('')
   const [copied, setCopied] = useState(false)
+  const [revoked, setRevoked] = useState('')
   const makeLink = async () => {
     setBusy(true)
     setError('')
     try { setPortalUrl(technicianLinkUrl(await createTechnicianLink(ctx.hotelId, issue.id, current.id))) } catch (e) { setError(e.message) } finally { setBusy(false) }
+  }
+  const revoke = async () => {
+    setBusy(true)
+    setError('')
+    try {
+      const n = await revokeTechnicianLinks(ctx.hotelId, issue.id)
+      setPortalUrl('')
+      setRevoked(n > 0 ? 'Link annullato: non funziona più.' : 'Nessun link attivo da annullare.')
+    } catch (e) { setError(e.message) } finally { setBusy(false) }
   }
   const copy = async () => {
     try { await navigator.clipboard.writeText(portalUrl); setCopied(true) } catch { setError('Copia non riuscita: seleziona il link e copialo a mano') }
@@ -231,10 +241,12 @@ function TechnicianCard({ issue, ctx, onSaved }) {
         <>
           <label className="stack"><span className="muted">Nota per il tecnico (facoltativa)</span>
             <textarea className="textarea" rows="2" maxLength={500} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Aggiungi dettagli per il tecnico" /></label>
-          {!portalUrl && <Button disabled={busy} onClick={makeLink}>{busy ? 'Creo…' : 'Crea link per la chiusura'}</Button>}
+          {!portalUrl && <Button disabled={busy} onClick={() => { setRevoked(''); makeLink() }}>{busy ? 'Creo…' : 'Crea link per la chiusura'}</Button>}
+          {revoked && <div className="muted" role="status">{revoked}</div>}
+          <Button disabled={busy} onClick={revoke}>Annulla link</Button>
           {portalUrl && (
             <div className="stack">
-              <div className="muted">Link personale per il tecnico (72 ore). Un nuovo link annulla il precedente.</div>
+              <div className="muted">Link personale per il tecnico: 72 ore per fissare l'appuntamento, poi resta attivo fino a 15 giorni dall'inizio intervento. Un nuovo link annulla il precedente.</div>
               <input className="input" readOnly value={portalUrl} onFocus={(e) => e.target.select()} aria-label="Link per il tecnico" />
               <Button onClick={copy}>{copied ? 'Copiato' : 'Copia link'}</Button>
             </div>
