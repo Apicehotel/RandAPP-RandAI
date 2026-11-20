@@ -2,10 +2,12 @@ import { useEffect, useState } from 'react'
 import { getPortalJob, sendPortalEvent } from '../data/technician-links.js'
 import { tokenFromPortalRoute } from '../lib/technician-portal.js'
 import { apiceLogo } from '../lib/hotels.js'
+import { formatArrival } from '../lib/issue-timeline.js'
+import { toLocalInput } from '../lib/technician-portal.js'
 import { Button, ErrorText, Spinner, formatDate } from '../ui/kit.jsx'
 
 const URGENCY = { urgente: 'Urgente', alta: 'Alta', normale: 'Normale', bassa: 'Bassa' }
-const EVENT = { arrival: 'Arrivo comunicato', started: 'Intervento iniziato', note: 'Nota', completion_requested: 'Intervento terminato' }
+const EVENT = { arrival_set: 'Appuntamento fissato', started: 'Intervento iniziato', note: 'Nota', completion_requested: 'Intervento terminato' }
 
 
 // Pagina pubblica del tecnico (come la vecchia app): arrivo, inizio, note, «intervento terminato».
@@ -18,6 +20,8 @@ export default function TechnicianPortal({ route }) {
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const [note, setNote] = useState('')
+  const [editingArrival, setEditingArrival] = useState(false)
+  const [arrival, setArrival] = useState('')
 
   useEffect(() => {
     if (!token) { setInvalid(true); setLoading(false); return }
@@ -27,17 +31,19 @@ export default function TechnicianPortal({ route }) {
       .finally(() => setLoading(false))
   }, [token])
 
-  const send = async (kind, text = '') => {
+  const send = async (kind, text = '', arrivalAt = null) => {
     setBusy(true)
     setError('')
     try {
-      const next = await sendPortalEvent(token, kind, text)
+      const next = await sendPortalEvent(token, kind, text, arrivalAt)
       if (next) setJob(next)
       if (kind === 'note') setNote('')
+      if (kind === 'arrival_set') setEditingArrival(false)
     } catch (e) { setError(e.message) } finally { setBusy(false) }
   }
 
   const events = job?.events || []
+  const appt = job?.appointment_at
   const has = (k) => events.some((e) => e.kind === k)
   const closed = job?.status === 'completata'
 
@@ -61,7 +67,19 @@ export default function TechnicianPortal({ route }) {
             </div>
             {!closed && (
               <div className="card stack">
-                <Button disabled={busy || has('arrival')} onClick={() => send('arrival')}>{has('arrival') ? 'Arrivo comunicato ✓' : 'Comunica quando arrivi'}</Button>
+                {appt && !editingArrival && <p>🚚 Appuntamento: <strong>{formatArrival(appt)}</strong></p>}
+                {editingArrival ? (
+                  <div className="stack">
+                    <label className="stack"><span className="muted">Quando pensi di arrivare?</span>
+                      <input className="input" type="datetime-local" value={arrival} onChange={(e) => setArrival(e.target.value)} /></label>
+                    <div className="row">
+                      <Button disabled={busy} onClick={() => setEditingArrival(false)}>Annulla</Button>
+                      <Button variant="primary" disabled={busy || !arrival} onClick={() => send('arrival_set', '', new Date(arrival).toISOString())}>Salva orario</Button>
+                    </div>
+                  </div>
+                ) : (
+                  <Button disabled={busy} onClick={() => { setArrival(toLocalInput(appt)); setEditingArrival(true) }}>{appt ? 'Cambia orario di arrivo' : 'Comunica quando arrivi'}</Button>
+                )}
                 <Button disabled={busy || has('started')} onClick={() => send('started')}>{has('started') ? 'Intervento iniziato ✓' : 'Inizia intervento'}</Button>
                 <label className="stack"><span className="muted">Aggiungi una nota</span>
                   <textarea className="textarea" rows="3" maxLength={1000} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Es. serve un ricambio, torno domani…" /></label>
@@ -76,7 +94,7 @@ export default function TechnicianPortal({ route }) {
               <div className="card stack">
                 <h2>Comunicato</h2>
                 <ul className="timeline">
-                  {events.map((e, i) => <li key={i}><span>{EVENT[e.kind] || e.kind}{e.note ? `: ${e.note}` : ''}</span><span className="muted"> · {formatDate(e.at)}</span></li>)}
+                  {events.map((e, i) => <li key={i}><span>{EVENT[e.kind] || e.kind}{e.kind === 'arrival_set' && e.arrival_at ? `: ${formatArrival(e.arrival_at)}` : ''}{e.note ? `: ${e.note}` : ''}</span><span className="muted"> · {formatDate(e.at)}</span></li>)}
                 </ul>
               </div>
             )}

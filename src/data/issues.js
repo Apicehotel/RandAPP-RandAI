@@ -3,7 +3,7 @@ import { enqueue, fail, isNetworkError, newId, withTimeout } from '../lib/outbox
 import { readThrough } from '../lib/offline-cache.js'
 
 const COLUMNS =
-  'id,hotel_id,title,description,category,urgency,status,room,created_by,assigned_to,created_at,updated_at,completed_at'
+  'id,hotel_id,title,description,category,urgency,status,room,created_by,assigned_to,created_at,updated_at,completed_at,appointment_at'
 // Solo nel dettaglio: chi l'ha scritta/chiusa, nota di chiusura, tecnico e pezzo (arrivano anche dall'importazione).
 const DETAIL_COLUMNS = `${COLUMNS},source,created_by_name,completed_by_name,completion_note,technician_name,part_replaced,part_needed,technician_id`
 
