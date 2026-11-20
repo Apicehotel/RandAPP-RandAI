@@ -678,3 +678,7 @@ body {
   border: 2px dashed var(--border); border-radius: var(--radius); color: var(--text-2); font-weight: 600; font-size: var(--fs-sm);
 }
 .photo-missing { display: grid; place-items: center; text-align: center; }
+
+.timeline { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--gap-tight); }
+.timeline li { padding-left: 14px; position: relative; }
+.timeline li::before { content: ''; position: absolute; left: 0; top: .55em; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }

@@ -5,7 +5,7 @@ import { readThrough } from '../lib/offline-cache.js'
 const COLUMNS =
   'id,hotel_id,title,description,category,urgency,status,room,created_by,assigned_to,created_at,updated_at,completed_at'
 // Solo nel dettaglio: chi l'ha scritta/chiusa, nota di chiusura, tecnico e pezzo (arrivano anche dall'importazione).
-const DETAIL_COLUMNS = `${COLUMNS},source,created_by_name,completed_by_name,completion_note,technician_name,part_replaced`
+const DETAIL_COLUMNS = `${COLUMNS},source,created_by_name,completed_by_name,completion_note,technician_name,part_replaced,part_needed`
 
 // Ogni query è sempre filtrata per hotel_id: le policy RLS lo impongono comunque,
 // ma il filtro esplicito evita di scaricare dati inutili.
@@ -130,6 +130,32 @@ export async function saveIssueWork(hotelId, id, { note, part, technician, compl
     patch.completed_by_name = clean(closerName, 80)
   }
   const { data, error } = await supabase.from('issues').update(patch).eq('hotel_id', hotelId).eq('id', id).select(COLUMNS).single()
+  if (error) throw new Error('Impossibile salvare')
+  return data
+}
+
+// «Serve pezzo»: la segnalazione passa in «Attesa pezzo» con il nome del pezzo; «Pezzo arrivato» la rimette «Da fare».
+export async function requestPart(hotelId, id, partName) {
+  const name = clean(partName, 200)
+  if (!name) throw new Error('Scrivi quale pezzo serve')
+  const { data, error } = await supabase.from('issues').update({ status: 'attesa_pezzo', part_needed: name }).eq('hotel_id', hotelId).eq('id', id).select(COLUMNS).single()
+  if (error) throw new Error('Impossibile salvare')
+  return data
+}
+
+export async function partArrived(hotelId, id) {
+  const { data, error } = await supabase.from('issues').update({ status: 'da_fare' }).eq('hotel_id', hotelId).eq('id', id).select(COLUMNS).single()
+  if (error) throw new Error('Impossibile salvare')
+  return data
+}
+
+// Modifica dei dettagli (camera/zona, descrizione, urgenza, categoria): colonne già concesse dalla 0033.
+export async function updateIssueDetails(hotelId, id, { room, title, urgency, category }) {
+  const t = clean(title, 140)
+  if (!t) throw new Error('Scrivi la descrizione')
+  const { data, error } = await supabase.from('issues')
+    .update({ title: t, room: clean(room, 60), urgency, category })
+    .eq('hotel_id', hotelId).eq('id', id).select(COLUMNS).single()
   if (error) throw new Error('Impossibile salvare')
   return data
 }

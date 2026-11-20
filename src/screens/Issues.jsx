@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { listIssues, getIssue, updateIssueStatus, listIssuePhotos, addIssuePhoto, saveIssueWork } from '../data/issues.js'
+import { listIssues, getIssue, updateIssueStatus, listIssuePhotos, addIssuePhoto, saveIssueWork, requestPart, partArrived, updateIssueDetails } from '../data/issues.js'
 import { listInterventionsForIssue } from '../data/interventions.js'
 import IssueThumb from '../ui/IssueThumb.jsx'
 import SimilarCases from '../ui/SimilarCases.jsx'
@@ -7,7 +7,8 @@ import { queryFrom } from '../lib/ai.js'
 import { compressPhotoAsDataUrl } from '../lib/photo.js'
 import { useAsync, go, usePending } from '../lib/hooks.js'
 import { can, PERM } from '../lib/permissions.js'
-import { STATUSES, filterByStatus, sortByPriority } from '../lib/queue.js'
+import { issueTimeline } from '../lib/issue-timeline.js'
+import { STATUSES, CATEGORIES, URGENCIES, filterByStatus, sortByPriority } from '../lib/queue.js'
 import { StatRow } from '../ui/hub.jsx'
 import { issueStats } from '../lib/queue.js'
 import { todayIso } from '../lib/planning.js'
@@ -192,10 +193,86 @@ function WorkCard({ issue, ctx, onSaved }) {
   )
 }
 
+// «Serve pezzo» / «Pezzo arrivato» (come HotelGio).
+function PartCard({ issue, ctx, onSaved }) {
+  const [part, setPart] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const run = async (fn) => {
+    setBusy(true)
+    setError('')
+    try { await fn(); await onSaved(); setPart('') } catch (e) { setError(e.message) } finally { setBusy(false) }
+  }
+  if (issue.status === 'attesa_pezzo') {
+    return (
+      <div className="card stack">
+        <h2>In attesa del pezzo</h2>
+        {issue.part_needed && <div>{issue.part_needed}</div>}
+        <Button variant="primary" disabled={busy} onClick={() => run(() => partArrived(ctx.hotelId, issue.id))}>{busy ? 'Salvo…' : 'Pezzo arrivato'}</Button>
+        <ErrorText>{error}</ErrorText>
+      </div>
+    )
+  }
+  if (issue.status !== 'da_fare') return null
+  return (
+    <div className="card stack">
+      <h2>Serve un pezzo?</h2>
+      <input className="input" maxLength={200} value={part} onChange={(e) => setPart(e.target.value)} placeholder="Es. Faretto LED IP65" />
+      <Button disabled={busy || !part.trim()} onClick={() => run(() => requestPart(ctx.hotelId, issue.id, part))}>{busy ? 'Salvo…' : 'Serve pezzo'}</Button>
+      <ErrorText>{error}</ErrorText>
+    </div>
+  )
+}
+
+// Modifica di camera/zona, descrizione, urgenza e categoria.
+function DetailsEditor({ issue, ctx, onClose, onSaved }) {
+  const [draft, setDraft] = useState({ room: issue.room || '', title: issue.title || '', urgency: issue.urgency, category: issue.category })
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const save = async () => {
+    setBusy(true)
+    setError('')
+    try { await updateIssueDetails(ctx.hotelId, issue.id, draft); await onSaved(); onClose() } catch (e) { setError(e.message) } finally { setBusy(false) }
+  }
+  return (
+    <div className="card stack">
+      <h2>Modifica</h2>
+      <label className="stack"><span className="muted">Camera o zona</span>
+        <input className="input" maxLength={60} value={draft.room} onChange={(e) => setDraft({ ...draft, room: e.target.value })} /></label>
+      <label className="stack"><span className="muted">Descrizione</span>
+        <textarea className="textarea" rows="3" maxLength={140} value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} /></label>
+      <div className="stack"><span className="muted">Urgenza</span>
+        <div className="chips">{URGENCIES.map((u) => <button type="button" key={u.id} className="chip" aria-pressed={draft.urgency === u.id} onClick={() => setDraft({ ...draft, urgency: u.id })}>{u.label}</button>)}</div></div>
+      <div className="stack"><span className="muted">Categoria</span>
+        <div className="chips">{CATEGORIES.map((c) => <button type="button" key={c} className="chip" aria-pressed={draft.category === c} onClick={() => setDraft({ ...draft, category: c })}>{c}</button>)}</div></div>
+      <div className="row">
+        <Button disabled={busy} onClick={onClose}>Annulla</Button>
+        <Button variant="primary" disabled={busy || !draft.title.trim()} onClick={save}>{busy ? 'Salvo…' : 'Salva modifiche'}</Button>
+      </div>
+      <ErrorText>{error}</ErrorText>
+    </div>
+  )
+}
+
+function Timeline({ issue }) {
+  const events = issueTimeline(issue)
+  return (
+    <div className="card stack">
+      <h2>Cronologia</h2>
+      <ul className="timeline">
+        {events.map((e) => (
+          <li key={e.id}><span>{e.text}</span>{e.at && <span className="muted"> · {formatDate(e.at)}</span>}</li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
 export function IssueDetail({ ctx, id }) {
   const { data: issue, error, loading, reload } = useAsync(() => getIssue(ctx.hotelId, id), [ctx.hotelId, id])
   const [busy, setBusy] = useState(false)
   const [actionError, setActionError] = useState('')
+  const [editing, setEditing] = useState(false)
   const canUpdate = can(ctx.permissions, PERM.ISSUES_UPDATE)
   const canMakeIntervention = can(ctx.permissions, PERM.INTERVENTIONS_CREATE)
   const { data: linked } = useAsync(() => listInterventionsForIssue(ctx.hotelId, id), [ctx.hotelId, id])
@@ -231,10 +308,18 @@ export function IssueDetail({ ctx, id }) {
           {issue.created_by_name ? ` da ${issue.created_by_name}` : ''}
         </div>
         {issue.description && <p>{issue.description}</p>}
-        <div><StatusBadge status={issue.status} /></div>
+        <div className="row">
+          <StatusBadge status={issue.status} />
+          {canUpdate && !editing && <Button onClick={() => setEditing(true)}>Modifica</Button>}
+        </div>
+        {issue.part_needed && issue.status === 'attesa_pezzo' && <div className="muted">Pezzo in attesa: {issue.part_needed}</div>}
       </div>
 
+      {editing && <DetailsEditor issue={issue} ctx={ctx} onClose={() => setEditing(false)} onSaved={reload} />}
+
       {issue.status !== 'completata' && <SimilarCases ctx={ctx} query={queryFrom(issue)} exclude={issue.id} />}
+
+      {canUpdate && <PartCard key={`p${issue.id}${issue.status}`} issue={issue} ctx={ctx} onSaved={reload} />}
 
       {canUpdate && issue.status !== 'completata' && <WorkCard key={issue.id} issue={issue} ctx={ctx} onSaved={reload} />}
 
@@ -249,6 +334,8 @@ export function IssueDetail({ ctx, id }) {
           {issue.completion_note && <p>{issue.completion_note}</p>}
         </div>
       )}
+
+      <Timeline issue={issue} />
 
       {(canUpdate || (photos && photos.length > 0)) && (
         <div className="card stack">
