@@ -3,6 +3,7 @@ import { listStaff } from '../data/forms.js'
 import { staffNames } from '../lib/forms.js'
 import { listInterventions, getIntervention, updateInterventionStatus, setInterventionRooms } from '../data/interventions.js'
 import RoomsProgress from '../ui/RoomsProgress.jsx'
+import ItemCard from '../ui/ItemCard.jsx'
 import { useAsync, go } from '../lib/hooks.js'
 import { can, PERM } from '../lib/permissions.js'
 import {
@@ -25,16 +26,10 @@ export const InterventionBadge = ({ status }) => (
 
 export function InterventionCard({ item }) {
   return (
-    <a className="card issue" href={`#/interventions/${item.id}`}>
-      <div className="row">
-        <span className="title">{item.title}</span>
-        <InterventionBadge status={item.status} />
-      </div>
-      <div className="row muted">
-        <span>{interventionWhere(item) || 'Intervento'}</span>
-        <span>{item.scheduled_at ? `Programmato ${formatDate(item.scheduled_at)}` : `Creato ${formatDate(item.created_at)}`}</span>
-      </div>
-    </a>
+    <ItemCard href={`#/interventions/${item.id}`} title={item.title}
+      badge={<InterventionBadge status={item.status} />}
+      where={interventionWhere(item) || 'Intervento'}
+      meta={item.scheduled_at ? `Programmato ${formatDate(item.scheduled_at)}` : `Creato ${formatDate(item.created_at)}`} />
   )
 }
 

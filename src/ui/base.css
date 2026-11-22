@@ -662,8 +662,15 @@ body {
 }
 
 /* Miniatura foto nella scheda segnalazione (stile HotelGio) */
-.issue.has-thumb { grid-template-columns: minmax(0, 1fr) 58px; align-items: center; gap: var(--gap-list); }
+/* Schede uniformi (ItemCard): stessa altezza minima con o senza foto, badge sempre a destra e mai fuori dalla scheda */
+.card.issue { grid-template-columns: minmax(0, 1fr); align-items: center; gap: var(--gap-list); min-height: calc(58px + 2 * var(--pad-card)); }
+.issue.has-thumb { grid-template-columns: minmax(0, 1fr) 58px; }
 .issue-main { display: grid; gap: var(--gap-tight); min-width: 0; }
+.issue .row { align-items: flex-start; }
+.issue .row > .title { flex: 1 1 auto; overflow-wrap: anywhere; }
+.issue .row > .badge { flex: none; white-space: nowrap; }
+.issue .row.muted > :first-child { flex: 1 1 auto; overflow-wrap: anywhere; }
+.issue .row.muted > .issue-meta { flex: none; text-align: right; white-space: nowrap; }
 .issue-thumb {
   width: 58px; height: 58px; border-radius: 13px; overflow: hidden; flex: none; display: grid; place-items: center;
   border: 1px solid var(--border); background: var(--surface-2); color: var(--text-2);
