@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { listIssues, getIssue, updateIssueStatus, listIssuePhotos, addIssuePhoto, saveIssueWork, assignTechnician, requestPart, partArrived, updateIssueDetails } from '../data/issues.js'
 import { listInterventionsForIssue } from '../data/interventions.js'
 import IssueThumb from '../ui/IssueThumb.jsx'
+import ItemCard from '../ui/ItemCard.jsx'
 import SimilarCases from '../ui/SimilarCases.jsx'
 import { queryFrom } from '../lib/ai.js'
 import { compressPhotoAsDataUrl } from '../lib/photo.js'
@@ -51,31 +52,16 @@ export function IssueList({ ctx }) {
 
       <div className="list">
         {waiting.map((row) => (
-          <div key={row.id} className="card issue">
-            <div className="row">
-              <span className="title">{row.title}</span>
-              <UrgencyBadge urgency={row.urgency} />
-            </div>
-            <div className="row muted">
-              <span>{row.room ? `Camera/zona ${row.room} · ` : ''}{row.category}</span>
-              <Badge kind="in_corso">In attesa di invio</Badge>
-            </div>
-          </div>
+          <ItemCard key={row.id} title={row.title} badge={<UrgencyBadge urgency={row.urgency} />}
+            where={`${row.room ? `Camera/zona ${row.room} · ` : ''}${row.category}`}
+            meta={<Badge kind="in_corso">In attesa di invio</Badge>} />
         ))}
         {visible.map((issue) => (
-          <a key={issue.id} className={`card issue${issue.photo_count ? ' has-thumb' : ''}`} href={`#/issues/${issue.id}`}>
-            <div className="issue-main">
-              <div className="row">
-                <span className="title">{issue.title}</span>
-                <UrgencyBadge urgency={issue.urgency} />
-              </div>
-              <div className="row muted">
-                <span>{issue.room ? `Camera/zona ${issue.room} · ` : ''}{issue.category}</span>
-                <span><StatusBadge status={issue.status} /> {formatDate(issue.created_at)}</span>
-              </div>
-            </div>
-            {issue.photo_count > 0 && <IssueThumb hotelId={ctx.hotelId} issueId={issue.id} />}
-          </a>
+          <ItemCard key={issue.id} href={`#/issues/${issue.id}`} title={issue.title}
+            badge={<UrgencyBadge urgency={issue.urgency} />}
+            where={`${issue.room ? `Camera/zona ${issue.room} · ` : ''}${issue.category}`}
+            meta={<><StatusBadge status={issue.status} /> {formatDate(issue.created_at)}</>}
+            thumb={issue.photo_count > 0 ? <IssueThumb hotelId={ctx.hotelId} issueId={issue.id} /> : null} />
         ))}
         {data && visible.length === 0 && waiting.length === 0 && <div className="card muted">Nessuna segnalazione in questo stato.</div>}
       </div>
