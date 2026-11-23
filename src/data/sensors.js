@@ -51,7 +51,7 @@ export async function setSeason(hotelId, userId, season) {
 
 // Tasto "Aggiorna": chiede alla funzione di rileggere eWeLink adesso (sola lettura).
 // Se la funzione non risponde l'app si limita a ricaricare quello che c'è già nel database.
-export async function refreshFromDevices(hotelId) {
+export async function refreshFromDevices(hotelId, extra = {}) {
   const { data } = await supabase.auth.getSession()
   const token = data?.session?.access_token
   if (!token) throw new Error('Sessione scaduta: rientra con il PIN')
@@ -61,7 +61,7 @@ export async function refreshFromDevices(hotelId) {
     res = await fetch(`${functionsUrl}/ewelink-sync`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, apikey: publicKey },
-      body: JSON.stringify({ hotel_id: hotelId }),
+      body: JSON.stringify({ hotel_id: hotelId, ...extra }),
     })
   } catch {
     // fetch fallisce solo se la rete non raggiunge il server (non se eWeLink risponde errore).
@@ -72,4 +72,37 @@ export async function refreshFromDevices(hotelId) {
   if (res.status === 403) throw new Error('Non hai il permesso di aggiornare')
   if (!res.ok || !out.ok) throw new Error('Lettura dai dispositivi non riuscita: riprova tra un minuto')
   return out
+}
+
+// Impostazioni → Sensori: "Sincronizza" rilegge eWeLink subito (salta il freno dei 60 secondi)
+// e restituisce l'elenco di tutti i dispositivi dell'account (`devices`).
+export const syncDevices = (hotelId) => refreshFromDevices(hotelId, { force: true })
+
+// Tutti i sensori che l'utente può vedere (di tutte le sue strutture, anche disattivati).
+export async function listAllSensors() {
+  const { data, error } = await supabase.from('sensors').select(COLUMNS).order('name')
+  if (error) throw new Error('Impossibile caricare i sensori')
+  return data || []
+}
+
+// Mette un dispositivo eWeLink in una struttura (o lo toglie con toHotelId = null).
+// Non cancella mai: il sensore vecchio viene disattivato; se esisteva già nella struttura si riattiva.
+export async function assignDevice(userId, device, rows, toHotelId) {
+  for (const r of rows.filter((x) => x.active && x.hotel_id !== toHotelId)) {
+    const { error } = await supabase.from('sensors').update({ active: false }).eq('id', r.id)
+    if (error) throw new Error('Impossibile togliere il sensore dalla struttura precedente')
+  }
+  if (!toHotelId) return
+  const existing = rows.find((x) => x.hotel_id === toHotelId)
+  if (existing) {
+    if (existing.active) return
+    const { error } = await supabase.from('sensors').update({ active: true }).eq('id', existing.id)
+    if (error) throw new Error('Impossibile riattivare il sensore')
+    return
+  }
+  const kind = device.temperature === null || device.temperature === undefined ? 'relay' : 'temperatura'
+  const { error } = await supabase.from('sensors').insert({
+    hotel_id: toHotelId, created_by: userId, device_key: device.device_key, name: device.name, kind, role: 'ambiente',
+  })
+  if (error) throw new Error(error.code === '23505' ? 'Esiste già un sensore con questo codice' : 'Impossibile aggiungere il sensore')
 }

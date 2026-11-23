@@ -8,6 +8,8 @@ import { recoveryStatus } from '../data/recovery.js'
 import { adminSetPhone } from '../data/profile.js'
 import { aiStats, aiTrainingExport } from '../data/ai.js'
 import { localShare, toJsonl } from '../lib/ai.js'
+import { deviceAssignments, orphanSensors, formatTemp } from '../lib/sensors.js'
+import { assignDevice, listAllSensors, syncDevices } from '../data/sensors.js'
 import { Button, ErrorText, Spinner, formatDate } from '../ui/kit.jsx'
 import PhoneField from '../ui/PhoneField.jsx'
 
@@ -17,6 +19,7 @@ const TABS = [
   { id: 'notify', label: 'Notifiche' },
   { id: 'ai', label: 'IA' },
   { id: 'usage', label: 'Consumi' },
+  { id: 'sensors', label: 'Sensori' },
   { id: 'trash', label: 'Cestino' },
   { id: 'diag', label: 'Diagnostica' },
 ]
@@ -366,6 +369,68 @@ function TrashTab({ ctx }) {
   )
 }
 
+// ------------------------------------------------------------------ Sensori
+function SensorsTab({ ctx }) {
+  const all = useAsync(() => listAllSensors(), [])
+  const [devices, setDevices] = useState(null)
+  const [syncing, setSyncing] = useState(false)
+  const [busyKey, setBusyKey] = useState('')
+  const [msg, setMsg] = useState('')
+  const [err, setErr] = useState('')
+  async function sync() {
+    setSyncing(true); setErr(''); setMsg('')
+    try {
+      const out = await syncDevices(ctx.hotelId)
+      setDevices(out.devices || [])
+      setMsg(`${(out.devices || []).length} dispositivi letti da eWeLink`)
+      await all.reload()
+    } catch (e) { setErr(e.message) } finally { setSyncing(false) }
+  }
+  async function move(item, toHotelId) {
+    setBusyKey(item.device.device_key); setErr(''); setMsg('')
+    try {
+      await assignDevice(ctx.userId, item.device, item.rows, toHotelId || null)
+      await all.reload()
+      setMsg(`${item.device.name}: ${toHotelId ? HOTELS.find((h) => h.id === toHotelId)?.name : 'tolto dalle strutture'}`)
+    } catch (e) { setErr(e.message) } finally { setBusyKey('') }
+  }
+  const sensors = all.data || []
+  const items = devices ? deviceAssignments(devices, sensors) : []
+  const orphans = devices ? orphanSensors(devices, sensors) : []
+  return (
+    <div className="stack">
+      <p className="muted">Premi Sincronizza per leggere i dispositivi dell'account eWeLink, poi scegli in quale hotel stanno. «Nessuna» li toglie (il sensore si disattiva, non si cancella).</p>
+      <Button variant="primary" disabled={syncing} onClick={sync}>{syncing ? 'Sincronizzo…' : 'Sincronizza con eWeLink'}</Button>
+      <ErrorText>{all.error || err}</ErrorText>
+      {msg && <p role="status">{msg}</p>}
+      {devices && items.length === 0 && <p className="muted">Nessun dispositivo trovato.</p>}
+      {items.map((it) => (
+        <div key={it.device.device_key} className="card stack">
+          <strong>{it.device.name}</strong>
+          <span className="muted">
+            {it.device.device_key} · {it.device.online ? 'online' : 'offline'}
+            {it.device.temperature !== null && it.device.temperature !== undefined ? ` · ${formatTemp(it.device.temperature)}` : ' · relay'}
+            {!it.hotelId ? ' · da assegnare' : ''}
+          </span>
+          <select aria-label={`Hotel di ${it.device.name}`} value={it.hotelId || ''} disabled={busyKey === it.device.device_key}
+            onChange={(e) => move(it, e.target.value)}>
+            <option value="">Nessuna</option>
+            {HOTELS.map((h) => <option key={h.id} value={h.id}>{h.name}</option>)}
+          </select>
+        </div>
+      ))}
+      {orphans.length > 0 && (
+        <div className="card stack">
+          <strong>In app ma non più in eWeLink ({orphans.length})</strong>
+          {orphans.map((o) => (
+            <span key={o.id} className="muted">{o.name} · {HOTELS.find((h) => h.id === o.hotel_id)?.name || o.hotel_id} · {o.device_key}</span>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ------------------------------------------------------------------ Diagnostica
 function DiagTab({ ctx }) {
   const u = useAsync(() => api.usage(ctx.hotelId), [ctx.hotelId])
@@ -399,7 +464,7 @@ function DiagTab({ ctx }) {
 export default function Settings({ ctx }) {
   const [tab, setTab] = useState('users')
   const hotel = HOTELS.find((h) => h.id === ctx.hotelId)
-  const Tab = { users: UsersTab, roles: RolesTab, notify: NotifyTab, ai: AiTab, usage: UsageTab, trash: TrashTab, diag: DiagTab }[tab]
+  const Tab = { users: UsersTab, roles: RolesTab, notify: NotifyTab, ai: AiTab, usage: UsageTab, sensors: SensorsTab, trash: TrashTab, diag: DiagTab }[tab]
   return (
     <div className="page">
       <a href="#/profile">← Profilo</a>
