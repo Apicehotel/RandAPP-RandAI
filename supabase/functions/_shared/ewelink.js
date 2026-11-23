@@ -83,6 +83,62 @@ export async function listThings(session, appId, fetchImpl = fetch) {
   return all
 }
 
+// Recupero per id (come HotelGio): POST /v2/device/thing con fino a 10 id per richiesta.
+// Serve quando l'elenco paginato non restituisce un dispositivo già in app (brand/autorizzazione,
+// famiglia diversa, oppure ancora oltre le pagine). itemType 1 = proprio, 2 = condiviso.
+const THING_BY_ID_BATCH = 10
+
+export async function listThingsByIds(session, appId, ids, fetchImpl = fetch) {
+  const unique = [...new Set((ids || []).map((id) => String(id || '').trim()).filter(Boolean))]
+  if (!unique.length) return []
+
+  const headers = {
+    Authorization: `Bearer ${session.token}`,
+    'X-CK-Appid': appId,
+    'Content-Type': 'application/json',
+  }
+  const url = `${regionHost(session.region)}/v2/device/thing`
+  const found = []
+  const seen = new Set()
+
+  const pull = async (batch, itemType) => {
+    const body = JSON.stringify({
+      thingList: batch.map((id) => ({ itemType, id })),
+    })
+    const res = await fetchImpl(url, { method: 'POST', headers, body })
+    if (res.status === 401) {
+      const err = new Error('Sessione eWeLink scaduta')
+      err.code = 'expired'
+      throw err
+    }
+    const json = await res.json().catch(() => ({}))
+    if (json.error === 401 || json.error === 406) {
+      const err = new Error('Sessione eWeLink scaduta')
+      err.code = 'expired'
+      throw err
+    }
+    if (json.error !== 0) throw new Error(`Recupero dispositivi eWeLink non riuscito (codice ${json.error ?? res.status})`)
+    for (const t of json.data?.thingList || []) {
+      const id = t?.itemData?.deviceid
+      if (!id || seen.has(String(id))) continue
+      seen.add(String(id))
+      found.push(t)
+    }
+  }
+
+  for (let i = 0; i < unique.length; i += THING_BY_ID_BATCH) {
+    const batch = unique.slice(i, i + THING_BY_ID_BATCH)
+    await pull(batch, 1)
+  }
+  // Quelli ancora assenti: riprova come dispositivi condivisi (itemType 2).
+  const still = unique.filter((id) => !seen.has(id))
+  for (let i = 0; i < still.length; i += THING_BY_ID_BATCH) {
+    await pull(still.slice(i, i + THING_BY_ID_BATCH), 2)
+  }
+
+  return found
+}
+
 const num = (v) => {
   if (v === null || v === undefined || v === '') return null
   const n = Number(v)
