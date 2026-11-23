@@ -2,7 +2,7 @@
 // Stesso schema della vecchia app (sync-sensori-temperatura): sola lettura, Postgres diretto.
 // Elenco paginato (30/pagina) + recupero per id dei sensori già in app ma assenti dall'elenco
 // (come HotelGio: POST /v2/device/thing). Logica in `_shared/ewelink.js`.
-// Si chiama a intervalli (vedi README, pg_cron) con l'intestazione x-sync-secret,
+// Si chiama ogni ora (pg_cron) e all'apertura scheda Sensori; intestazione x-sync-secret,
 // oppure dal tasto "Aggiorna" dell'app con la sessione dell'utente (permesso sensors.view).
 //   ?dry=1  -> mostra cosa leggerebbe, senza scrivere nulla (per provare)
 //
