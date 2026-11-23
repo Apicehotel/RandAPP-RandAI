@@ -49,12 +49,13 @@ export async function setSeason(hotelId, userId, season) {
   return created.data
 }
 
-// Tasto "Aggiorna": chiede alla funzione di rileggere eWeLink adesso (solo lettura).
+// Tasto "Aggiorna": chiede alla funzione di rileggere eWeLink adesso (sola lettura).
 // Se la funzione non risponde l'app si limita a ricaricare quello che c'è già nel database.
 export async function refreshFromDevices(hotelId) {
   const { data } = await supabase.auth.getSession()
   const token = data?.session?.access_token
   if (!token) throw new Error('Sessione scaduta: rientra con il PIN')
+  if (!functionsUrl) throw new Error('App non configurata: manca l\'indirizzo del server')
   let res
   try {
     res = await fetch(`${functionsUrl}/ewelink-sync`, {
@@ -63,9 +64,12 @@ export async function refreshFromDevices(hotelId) {
       body: JSON.stringify({ hotel_id: hotelId }),
     })
   } catch {
-    throw new Error('Nessuna connessione')
+    // fetch fallisce solo se la rete non raggiunge il server (non se eWeLink risponde errore).
+    throw new Error('Nessuna connessione al server sensori: controlla Wi‑Fi/dati e riprova')
   }
   const out = await res.json().catch(() => ({}))
-  if (!res.ok || !out.ok) throw new Error(res.status === 403 ? 'Non hai il permesso di aggiornare' : 'Lettura dai dispositivi non riuscita')
+  if (res.status === 401) throw new Error('Sessione scaduta: rientra con il PIN')
+  if (res.status === 403) throw new Error('Non hai il permesso di aggiornare')
+  if (!res.ok || !out.ok) throw new Error('Lettura dai dispositivi non riuscita: riprova tra un minuto')
   return out
 }
