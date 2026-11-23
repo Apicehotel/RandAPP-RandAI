@@ -40,23 +40,47 @@ export async function login(cfg, fetchImpl = fetch) {
 }
 
 // Elenco di tutti i dispositivi dell'account.
+// L'API v2 restituisce al massimo `num` (default 30) per richiesta: senza paginazione
+// i dispositivi oltre la prima pagina non arrivano (sintomo tipico: ~30 su ~45).
+const THING_PAGE = 30
+const THING_MAX_PAGES = 20 // tetto di sicurezza (600 dispositivi)
+
 export async function listThings(session, appId, fetchImpl = fetch) {
-  const res = await fetchImpl(`${regionHost(session.region)}/v2/device/thing`, {
-    headers: { Authorization: `Bearer ${session.token}`, 'X-CK-Appid': appId },
-  })
-  if (res.status === 401) {
-    const err = new Error('Sessione eWeLink scaduta')
-    err.code = 'expired'
-    throw err
+  const headers = { Authorization: `Bearer ${session.token}`, 'X-CK-Appid': appId }
+  const base = `${regionHost(session.region)}/v2/device/thing`
+  const all = []
+  let beginIndex = -9999999
+  let total = null
+
+  for (let page = 0; page < THING_MAX_PAGES; page += 1) {
+    const url = `${base}?lang=en&num=${THING_PAGE}&beginIndex=${beginIndex}`
+    const res = await fetchImpl(url, { headers })
+    if (res.status === 401) {
+      const err = new Error('Sessione eWeLink scaduta')
+      err.code = 'expired'
+      throw err
+    }
+    const json = await res.json().catch(() => ({}))
+    if (json.error === 401 || json.error === 406) {
+      const err = new Error('Sessione eWeLink scaduta')
+      err.code = 'expired'
+      throw err
+    }
+    if (json.error !== 0) throw new Error(`Elenco dispositivi eWeLink non riuscito (codice ${json.error ?? res.status})`)
+
+    const batch = Array.isArray(json.data?.thingList) ? json.data.thingList : []
+    if (typeof json.data?.total === 'number') total = json.data.total
+    all.push(...batch)
+
+    // Fine: pagina vuota, meno di una pagina piena, oppure raggiunto il totale dichiarato.
+    if (batch.length === 0 || batch.length < THING_PAGE || (total !== null && all.length >= total)) break
+
+    const lastIndex = batch[batch.length - 1]?.index
+    if (typeof lastIndex !== 'number') break
+    beginIndex = lastIndex
   }
-  const json = await res.json().catch(() => ({}))
-  if (json.error === 401 || json.error === 406) {
-    const err = new Error('Sessione eWeLink scaduta')
-    err.code = 'expired'
-    throw err
-  }
-  if (json.error !== 0) throw new Error(`Elenco dispositivi eWeLink non riuscito (codice ${json.error ?? res.status})`)
-  return json.data?.thingList || []
+
+  return all
 }
 
 const num = (v) => {

@@ -76,8 +76,38 @@ test('login fallito: errore chiaro, senza password nel messaggio', async () => {
 test('elenco dispositivi: sessione scaduta riconoscibile, altrimenti la lista', async () => {
   await assert.rejects(() => listThings({ token: 't', region: 'eu' }, 'A', async () => reply({}, 401)), (e) => e.code === 'expired')
   await assert.rejects(() => listThings({ token: 't', region: 'eu' }, 'A', async () => reply({ error: 401 })), (e) => e.code === 'expired')
-  const list = await listThings({ token: 't', region: 'eu' }, 'A', async () => reply({ error: 0, data: { thingList: [thing({})] } }))
+  const list = await listThings({ token: 't', region: 'eu' }, 'A', async () => reply({ error: 0, data: { thingList: [thing({})], total: 1 } }))
   assert.equal(list.length, 1)
+})
+
+test('elenco dispositivi: paginazione oltre i 30 (beginIndex = index dell\'ultimo)', async () => {
+  const page1 = Array.from({ length: 30 }, (_, i) => ({
+    index: i + 1,
+    itemType: 1,
+    itemData: { deviceid: `d${i}`, name: `S${i}`, online: true, params: {} },
+  }))
+  const page2 = Array.from({ length: 15 }, (_, i) => ({
+    index: 31 + i,
+    itemType: 1,
+    itemData: { deviceid: `d${30 + i}`, name: `S${30 + i}`, online: true, params: {} },
+  }))
+  const urls = []
+  const fetchImpl = async (url) => {
+    urls.push(url)
+    const u = new URL(url)
+    assert.equal(u.searchParams.get('num'), '30')
+    const begin = Number(u.searchParams.get('beginIndex'))
+    if (begin === -9999999) return reply({ error: 0, data: { thingList: page1, total: 45 } })
+    if (begin === 30) return reply({ error: 0, data: { thingList: page2, total: 45 } })
+    throw new Error(`beginIndex inatteso: ${begin}`)
+  }
+  const list = await listThings({ token: 't', region: 'eu' }, 'APP', fetchImpl)
+  assert.equal(list.length, 45)
+  assert.equal(urls.length, 2)
+  assert.match(urls[0], /beginIndex=-9999999/)
+  assert.match(urls[1], /beginIndex=30/)
+  assert.equal(list[0].itemData.deviceid, 'd0')
+  assert.equal(list[44].itemData.deviceid, 'd44')
 })
 
 test('la funzione sync protegge la chiamata e non scrive in modalità prova', () => {
