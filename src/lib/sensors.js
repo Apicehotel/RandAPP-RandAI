@@ -148,3 +148,20 @@ export function agoText(iso, now = Date.now()) {
   if (h < 48) return `${h} ore fa`
   return `${Math.round(h / 24)} giorni fa`
 }
+
+// Impostazioni → Sensori: abbina i dispositivi eWeLink ai sensori già in app.
+// Un dispositivo è "assegnato" alla struttura dove ha un sensore attivo; i non assegnati vengono prima.
+export function deviceAssignments(devices, sensors) {
+  const rows = (devices || []).map((d) => {
+    const mine = (sensors || []).filter((s) => s.device_key === d.device_key)
+    const active = mine.find((s) => s.active)
+    return { device: d, rows: mine, hotelId: active ? active.hotel_id : null }
+  })
+  return rows.sort((a, b) => (a.hotelId ? 1 : 0) - (b.hotelId ? 1 : 0) || a.device.name.localeCompare(b.device.name, 'it'))
+}
+
+// Sensori attivi in app che eWeLink non restituisce più (da togliere o da ricollegare).
+export const orphanSensors = (devices, sensors) => {
+  const seen = new Set((devices || []).map((d) => d.device_key))
+  return (sensors || []).filter((s) => s.active && !seen.has(s.device_key))
+}

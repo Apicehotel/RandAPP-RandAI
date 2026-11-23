@@ -66,6 +66,7 @@ Deno.serve(async (req) => {
     const dry = new URL(req.url).searchParams.get("dry") === "1";
     let hotelId = Deno.env.get("EWELINK_HOTEL_ID") ?? "hotelgio";
     let byUser = false;
+    let force = false;
 
     const provided = req.headers.get("x-sync-secret");
     if (provided !== null) {
@@ -83,6 +84,7 @@ Deno.serve(async (req) => {
       if (!uid) return json({ ok: false, error: "Non autorizzato" }, 401);
       const body = await req.json().catch(() => ({}));
       if (typeof body.hotel_id === "string" && body.hotel_id) hotelId = body.hotel_id;
+      force = body.force === true; // "Sincronizza" in Impostazioni → Sensori: salta il freno
       const allowed = await sql`
         select 1 from randapp.hotel_memberships m
         join randapp.role_permissions rp on rp.role = m.role
@@ -91,7 +93,7 @@ Deno.serve(async (req) => {
       byUser = true;
       // Freno: se i dati sono già di meno di 60 secondi fa non si richiama eWeLink.
       const [recent] = await sql`select max(last_seen) > now() - interval '60 seconds' as fresh from randapp.sensors where hotel_id = ${hotelId}`;
-      if (recent?.fresh) return json({ ok: true, throttled: true });
+      if (recent?.fresh && !force && !dry) return json({ ok: true, throttled: true });
     }
 
     const [appId, appSecret, email, password] = await Promise.all([
@@ -150,6 +152,8 @@ Deno.serve(async (req) => {
       ok: true, dry, by_user: byUser,
       found: readings.length, matched: matched.length, updated, recovered,
       unmatched, missing,
+      // Tutti i dispositivi dell'account: servono a Impostazioni → Sensori per assegnarli alle strutture.
+      devices: readings.map((r) => ({ device_key: r.device_key, name: r.name, online: r.online, temperature: r.temperature, humidity: r.humidity, switch_state: r.switch_state })),
     });
   } catch (e) {
     console.error("ewelink-sync", (e as Error).message);
