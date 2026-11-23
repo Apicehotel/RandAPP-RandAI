@@ -139,7 +139,11 @@ export default function Sensors({ ctx }) {
                 onClick={() => setShowOutdated((value) => !value)}>
                 {showOutdated ? 'Nascondi dispositivi da verificare' : `Mostra dispositivi da verificare (${outdated.length})`}
               </button>
-              <p className="muted">Questi dispositivi non inviano dati recenti. Rimangono registrati e non sono stati disattivati.</p>
+              <p className="muted">
+                {outdated.some((s) => !s.last_seen)
+                  ? 'Alcuni non hanno mai ricevuto una lettura (codice dispositivo da verificare). Gli altri hanno dati vecchi: restano in elenco finché non tornano o non li nascondi.'
+                  : 'Questi dispositivi non inviano dati recenti. Rimangono registrati e non sono stati disattivati.'}
+              </p>
               {showOutdated && <div className="sgrid">{outdated.map(renderTemperature)}</div>}
             </div>
           )}
