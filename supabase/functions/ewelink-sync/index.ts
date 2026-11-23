@@ -1,7 +1,7 @@
 // Legge i dispositivi eWeLink e aggiorna la tabella `sensors` (tutte le strutture, per device_key).
 // Stesso schema della vecchia app (sync-sensori-temperatura): sola lettura, Postgres diretto.
 // L'elenco dispositivi è paginato (30 per pagina) in `_shared/ewelink.js`.
-// Si chiama a intervalli (vedi README, pg_cron) con l'intestazione x-sync-secret,
+// Si chiama ogni ora (pg_cron) e all'apertura scheda Sensori; intestazione x-sync-secret,
 // oppure dal tasto "Aggiorna" dell'app con la sessione dell'utente (permesso sensors.view).
 //   ?dry=1  -> mostra cosa leggerebbe, senza scrivere nulla (per provare)
 //
