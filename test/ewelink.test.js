@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { createHmac } from 'node:crypto'
 import { readFileSync } from 'node:fs'
-import { login, listThings, sensorPatch, signBody, switchState, toReading, toReadings } from '../supabase/functions/_shared/ewelink.js'
+import { login, listThings, listThingsByIds, sensorPatch, signBody, switchState, toReading, toReadings } from '../supabase/functions/_shared/ewelink.js'
 
 const NOW = new Date('2026-11-02T20:00:00Z')
 const thing = (params, extra = {}) => ({ itemType: 1, itemData: { deviceid: '1000abc', name: 'Cella', online: true, params, ...extra } })
@@ -110,6 +110,44 @@ test('elenco dispositivi: paginazione oltre i 30 (beginIndex = index dell\'ultim
   assert.equal(list[44].itemData.deviceid, 'd44')
 })
 
+test('recupero per id: POST a lotti di 10, poi itemType 2 se ancora assenti', async () => {
+  const calls = []
+  const fetchImpl = async (url, opts = {}) => {
+    calls.push({ url, method: opts.method || 'GET', body: opts.body ? JSON.parse(opts.body) : null })
+    assert.equal(opts.method, 'POST')
+    const ids = (calls[calls.length - 1].body.thingList || []).map((t) => t.id)
+    const type = calls[calls.length - 1].body.thingList[0].itemType
+    // Prima passata (tipo 1): restituisce solo i primi 2; seconda (tipo 2): il terzo.
+    if (type === 1) {
+      return reply({
+        error: 0,
+        data: {
+          thingList: ids.slice(0, 2).map((id) => ({ itemType: 1, itemData: { deviceid: id, name: id, online: true, params: {} } })),
+        },
+      })
+    }
+    return reply({
+      error: 0,
+      data: {
+        thingList: ids.map((id) => ({ itemType: 2, itemData: { deviceid: id, name: id, online: true, params: { currentTemperature: 12 } } })),
+      },
+    })
+  }
+  const ids = Array.from({ length: 12 }, (_, i) => `id${i}`)
+  const list = await listThingsByIds({ token: 't', region: 'eu' }, 'APP', ids, fetchImpl)
+  // 10 + 2 tip1, poi i mancanti tip2: id2..id9 dalla prima batch tip2 + id10,id11 dalla seconda tip1 già parziale…
+  // Batch1 tip1 (id0-9): torna id0,id1 → mancano id2-9
+  // Batch2 tip1 (id10-11): torna id10 → manca id11 (slice 0,2 di 2 elementi = entrambi? ids.slice(0,2) of [id10,id11] = both)
+  // Wait: for batch of 2, slice(0,2) returns both. So tip1 returns all from batch2.
+  // still after tip1: id2..id9 (8 ids)
+  // tip2 batches: id2-9 → all returned
+  assert.equal(list.length, 12)
+  assert.ok(calls.length >= 3)
+  assert.equal(calls[0].body.thingList.length, 10)
+  assert.equal(calls[0].body.thingList[0].itemType, 1)
+  assert.ok(calls.some((c) => c.body.thingList[0].itemType === 2))
+})
+
 test('la funzione sync protegge la chiamata e non scrive in modalità prova', () => {
   const src = readFileSync(new URL('../supabase/functions/ewelink-sync/index.ts', import.meta.url), 'utf8')
   assert.match(src, /x-sync-secret/)
@@ -121,13 +159,14 @@ test('la funzione sync protegge la chiamata e non scrive in modalità prova', ()
 import { missingSensors, syncHealth, agoText } from '../src/lib/sensors.js'
 
 // L'account eWeLink è condiviso e SOLO LETTURA: il codice non deve mai poter comandare un dispositivo.
-test('eWeLink: solo lettura (login + elenco dispositivi, nessun comando)', () => {
+test('eWeLink: solo lettura (login + elenco/recupero dispositivi, nessun comando)', () => {
   const src = ['supabase/functions/_shared/ewelink.js', 'supabase/functions/ewelink-sync/index.ts'].map((f) => readFileSync(f, 'utf8')).join('\n')
   const paths = [...src.matchAll(/\/v2\/[A-Za-z0-9/_-]+/g)].map((m) => m[0])
   assert.deepEqual([...new Set(paths)].sort(), ['/v2/device/thing', '/v2/user/login'])
-  const posts = [...src.matchAll(/method:\s*['"]([A-Z]+)['"]/g)].map((m) => m[1])
-  assert.deepEqual(posts, ['POST']) // l'unico POST è il login
-  assert.ok(!/(status|control|switch)['"`]?\s*:\s*['"]on['"]/.test(src.replace(/switch_state|\.switch\b/g, '')))
+  // POST: login + recupero specificato (GET elenco). Niente /status di comando né switch on/off.
+  assert.ok(!/\/v2\/device\/thing\/status/.test(src))
+  assert.ok(!/(control|switch)['"`]?\s*:\s*['"]on['"]/.test(src.replace(/switch_state|\.switch\b/g, '')))
+  assert.match(src, /listThingsByIds/)
 })
 
 test('eWeLink: la funzione non usa la chiave service_role via API', () => {

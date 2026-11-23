@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { getSettings, listSensors, refreshFromDevices, setSeason, updateSensor } from '../data/sensors.js'
 import { useAsync, go } from '../lib/hooks.js'
 import { can, PERM } from '../lib/permissions.js'
@@ -11,6 +11,12 @@ import { Badge, Button, ErrorText, Icon, Spinner, formatDate } from '../ui/kit.j
 
 const BADGE = { ok: 'fatto', allerta: 'aperto', offline: 'alta' }
 const GROUP_BADGE = { on: 'fatto', off: '', mixed: 'alta', unreachable: 'alta' }
+const HOUR_MS = 60 * 60 * 1000
+
+const refreshNoteFrom = (out) =>
+  out.throttled
+    ? 'Dati già aggiornati un attimo fa'
+    : `Aggiornati ${out.updated ?? 0} dispositivi su ${out.found ?? 0} rilevati da eWeLink${out.missing?.length ? ` · ${out.missing.length} non restituiti` : ''}${out.unmatched?.length ? ` · ${out.unmatched.length} da associare` : ''}`
 
 const limitText = (t) => {
   const parts = []
@@ -48,17 +54,40 @@ export default function Sensors({ ctx }) {
     setBusy(true); setActionError('')
     try { await fn() } catch (e) { setActionError(e.message) } finally { setBusy(false) }
   }
-  const refresh = async () => {
-    setRefreshing(true); setRefreshNote(''); setActionError('')
+  // silent=true: senza messaggio di errore (ricarica comunque il DB).
+  const refresh = async ({ silent = false } = {}) => {
+    setRefreshing(true)
+    if (!silent) { setRefreshNote(''); setActionError('') }
     try {
       const out = await refreshFromDevices(ctx.hotelId)
       await reload()
-      setRefreshNote(out.throttled ? 'Dati già aggiornati un attimo fa' : `Aggiornati ${out.updated ?? 0} dispositivi su ${out.found ?? 0} rilevati da eWeLink${out.missing?.length ? ` · ${out.missing.length} non restituiti` : ''}${out.unmatched?.length ? ` · ${out.unmatched.length} da associare` : ''}`)
+      setRefreshNote(refreshNoteFrom(out))
     } catch (e) {
       await reload().catch(() => {})
-      setActionError(e.message)
+      if (!silent) setActionError(e.message)
     } finally { setRefreshing(false) }
   }
+  // All'apertura della scheda e ogni ora finché resta aperta (il cron server aggiorna anche a schermo spento).
+  useEffect(() => {
+    let cancelled = false
+    const tick = async () => {
+      if (cancelled) return
+      setRefreshing(true)
+      try {
+        const out = await refreshFromDevices(ctx.hotelId)
+        if (cancelled) return
+        await reload()
+        if (!cancelled) setRefreshNote(refreshNoteFrom(out))
+      } catch {
+        if (!cancelled) await reload().catch(() => {})
+      } finally {
+        if (!cancelled) setRefreshing(false)
+      }
+    }
+    tick()
+    const id = setInterval(tick, HOUR_MS)
+    return () => { cancelled = true; clearInterval(id) }
+  }, [ctx.hotelId]) // eslint-disable-line react-hooks/exhaustive-deps -- solo cambio struttura
   const setActive = (id, active) => run(async () => { await updateSensor(ctx.hotelId, id, { active }); await reload() })
   const changeSeason = (season) => run(async () => { await setSeason(ctx.hotelId, ctx.userId, season); await settingsState.reload() })
 
@@ -116,7 +145,7 @@ export default function Sensors({ ctx }) {
             ))}
           </div>
         ) : <Badge kind={settings.season === 'estate' ? 'alta' : 'in_corso'}>{seasonLabel(settings.season)}</Badge>}
-        <button type="button" className={`iconbtn${refreshing ? ' spin' : ''}`} onClick={refresh} disabled={refreshing || loading}
+        <button type="button" className={`iconbtn${refreshing ? ' spin' : ''}`} onClick={() => refresh()} disabled={refreshing || loading}
           aria-label={refreshing ? 'Aggiorno…' : 'Aggiorna i sensori'} title="Aggiorna"><Icon name="refresh" size={18} /></button>
       </div>
       <p className="muted season-note">
@@ -139,7 +168,11 @@ export default function Sensors({ ctx }) {
                 onClick={() => setShowOutdated((value) => !value)}>
                 {showOutdated ? 'Nascondi dispositivi da verificare' : `Mostra dispositivi da verificare (${outdated.length})`}
               </button>
-              <p className="muted">Questi dispositivi non inviano dati recenti. Rimangono registrati e non sono stati disattivati.</p>
+              <p className="muted">
+                {outdated.some((s) => !s.last_seen)
+                  ? 'Alcuni non hanno mai ricevuto una lettura (codice dispositivo da verificare). Gli altri hanno dati vecchi: restano in elenco finché non tornano o non li nascondi.'
+                  : 'Questi dispositivi non inviano dati recenti. Rimangono registrati e non sono stati disattivati.'}
+              </p>
               {showOutdated && <div className="sgrid">{outdated.map(renderTemperature)}</div>}
             </div>
           )}

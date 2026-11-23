@@ -8,7 +8,9 @@ select cron.schedule('randapp-notify-dispatch', '* * * * *', $$select net.http_p
   headers := jsonb_build_object('content-type','application/json','x-sync-secret',(select value from public.edge_function_secrets where key='sensor_sync_secret')),
   body := '{}'::jsonb, timeout_milliseconds := 20000);$$);
 
-select cron.schedule('randapp-ewelink-sync', '*/10 * * * *', $$select net.http_post(
+-- Ogni ora (minuto 0). cron.schedule con lo stesso nome aggiorna il job esistente.
+-- Se in produzione è ancora */10, rieseguire solo questa riga (o tutto il file).
+select cron.schedule('randapp-ewelink-sync', '0 * * * *', $$select net.http_post(
   url := 'https://ooqlfldcrnkudhgjnied.supabase.co/functions/v1/ewelink-sync',
   headers := jsonb_build_object('content-type','application/json','x-sync-secret',(select value from public.edge_function_secrets where key='sensor_sync_secret')),
   body := '{}'::jsonb, timeout_milliseconds := 20000);$$);

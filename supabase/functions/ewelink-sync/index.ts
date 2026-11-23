@@ -1,7 +1,8 @@
 // Legge i dispositivi eWeLink e aggiorna la tabella `sensors` (tutte le strutture, per device_key).
 // Stesso schema della vecchia app (sync-sensori-temperatura): sola lettura, Postgres diretto.
-// L'elenco dispositivi è paginato (30 per pagina) in `_shared/ewelink.js`.
-// Si chiama a intervalli (vedi README, pg_cron) con l'intestazione x-sync-secret,
+// Elenco paginato (30/pagina) + recupero per id dei sensori già in app ma assenti dall'elenco
+// (come HotelGio: POST /v2/device/thing). Logica in `_shared/ewelink.js`.
+// Si chiama ogni ora (pg_cron) e all'apertura scheda Sensori; intestazione x-sync-secret,
 // oppure dal tasto "Aggiorna" dell'app con la sessione dell'utente (permesso sensors.view).
 //   ?dry=1  -> mostra cosa leggerebbe, senza scrivere nulla (per provare)
 //
@@ -12,7 +13,7 @@
 // SUPABASE_DB_URL lo fornisce Supabase. NON si usa la chiave service_role via PostgREST:
 // dal 1 ottobre 2026 risponde 401 alle Edge Function (lo stesso problema della vecchia app).
 import postgres from "npm:postgres@3.4.7";
-import { listThings, login, toReadings } from "../_shared/ewelink.js";
+import { listThings, listThingsByIds, login, toReadings } from "../_shared/ewelink.js";
 
 const sql = postgres(Deno.env.get("SUPABASE_DB_URL")!, { prepare: false, max: 2, connect_timeout: 5, idle_timeout: 10 });
 
@@ -46,11 +47,11 @@ function sameSecret(a: string, b: string) {
 // La sessione eWeLink dura a lungo: la teniamo finché l'istanza resta calda.
 let session: { token: string; region: string } | null = null;
 
-async function readThings(cfg: Record<string, string>) {
+async function withSession<T>(cfg: Record<string, string>, fn: (s: { token: string; region: string }) => Promise<T>): Promise<T> {
   for (let attempt = 0; attempt < 2; attempt += 1) {
     if (!session) session = await login(cfg);
     try {
-      return await listThings(session, cfg.appId);
+      return await fn(session);
     } catch (e) {
       if ((e as { code?: string }).code === "expired") { session = null; continue; }
       throw e;
@@ -99,21 +100,34 @@ Deno.serve(async (req) => {
       secret("EWELINK_EMAIL", "ewelink_email"),
       secret("EWELINK_PASSWORD", "ewelink_password"),
     ]);
-    const things = await readThings({
+    const cfg = {
       appId, appSecret, email, password,
       region: Deno.env.get("EWELINK_REGION") ?? "eu",
       countryCode: Deno.env.get("EWELINK_COUNTRY_CODE") ?? "+39",
-    });
-    const readings = toReadings(things);
-
+    };
     // Un solo account eWeLink serve tutte le strutture: si aggiornano i sensori di tutte, per codice dispositivo.
     const known = await sql`select device_key, name, last_seen from randapp.sensors where active`;
     const knownKeys = new Set(known.map((s) => s.device_key));
-    const seenKeys = new Set(readings.map((r) => r.device_key));
+
+    let things = await withSession(cfg, (s) => listThings(s, cfg.appId));
+    let readings = toReadings(things);
+    let seenKeys = new Set(readings.map((r) => r.device_key));
+    const absentKeys = known.map((s) => s.device_key).filter((k) => !seenKeys.has(k));
+    let recovered = 0;
+    if (absentKeys.length) {
+      const extra = await withSession(cfg, (s) => listThingsByIds(s, cfg.appId, absentKeys));
+      recovered = extra.length;
+      if (extra.length) {
+        things = things.concat(extra);
+        readings = toReadings(things);
+        seenKeys = new Set(readings.map((r) => r.device_key));
+      }
+    }
+
     const matched = readings.filter((r) => knownKeys.has(r.device_key));
     // Dispositivi eWeLink senza sensore nell'app: servono per scegliere il "codice dispositivo".
     const unmatched = readings.filter((r) => !knownKeys.has(r.device_key)).map((r) => ({ device_key: r.device_key, name: r.name }));
-    // Sensori dell'app che eWeLink NON restituisce più (tolti dall'account, condivisione revocata...).
+    // Sensori dell'app che eWeLink NON restituisce più (tolti dall'account, brand non autorizzato, codice sbagliato...).
     const missing = known.filter((s) => !seenKeys.has(s.device_key)).map((s) => ({ device_key: s.device_key, name: s.name, last_seen: s.last_seen }));
 
     let updated = 0;
@@ -132,7 +146,11 @@ Deno.serve(async (req) => {
       `;
       updated = res.count;
     }
-    return json({ ok: true, dry, by_user: byUser, found: readings.length, matched: matched.length, updated, unmatched, missing });
+    return json({
+      ok: true, dry, by_user: byUser,
+      found: readings.length, matched: matched.length, updated, recovered,
+      unmatched, missing,
+    });
   } catch (e) {
     console.error("ewelink-sync", (e as Error).message);
     return json({ ok: false, error: "temporary_error" }, 500);

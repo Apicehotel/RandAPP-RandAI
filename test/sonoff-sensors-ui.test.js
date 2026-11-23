@@ -30,6 +30,17 @@ test('Vista Sonoff raggruppa tutti gli interruttori senza mostrarli come comandi
   assert.doesNotMatch(screen, /sendSwitchCommand|toggleRelay|switchDevice\(/)
 })
 
+test('Sensori: sync all\'apertura scheda e ogni ora', () => {
+  const screen = readFileSync(new URL('../src/screens/Sensors.jsx', import.meta.url), 'utf8')
+  assert.match(screen, /useEffect/)
+  assert.match(screen, /HOUR_MS/)
+  assert.match(screen, /setInterval\(tick,\s*HOUR_MS\)/)
+  assert.match(screen, /refreshFromDevices\(ctx\.hotelId\)/)
+  const cron = readFileSync(new URL('../supabase/seed/03_cron.sql', import.meta.url), 'utf8')
+  assert.match(cron, /randapp-ewelink-sync',\s*'0 \* \* \* \*'/)
+  assert.doesNotMatch(cron, /randapp-ewelink-sync',\s*'\*\/10/)
+})
+
 test('Temperature: dati attuali davanti, sensori mai aggiornati in sezione consultabile', () => {
   const readings = [
     { ...device('legacy', 'off'), kind: 'temperatura', temperature: null, last_seen: null },
