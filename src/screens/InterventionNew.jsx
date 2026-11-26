@@ -1,3 +1,4 @@
+import { autoFocusOnDesktop } from '../lib/autofocus.js'
 import { useEffect, useRef, useState } from 'react'
 import { createIntervention } from '../data/interventions.js'
 import { getIssue, updateIssueStatus } from '../data/issues.js'
@@ -76,7 +77,7 @@ export default function InterventionNew({ ctx, issueId = null }) {
       {issue && <p className="banner">Da segnalazione: <strong>{issue.title}</strong></p>}
       <div className="card stack">
         <Field label="Cosa bisogna fare" id="title">
-          <input id="title" className="input" value={form.title} onChange={set('title')} maxLength={140} autoFocus />
+          <input id="title" name="title" autoComplete="off" className="input" value={form.title} onChange={set('title')} maxLength={140} autoFocus={autoFocusOnDesktop} />
         </Field>
         <div className="stack">
           <span className="field-label">Categoria (facoltativo)</span>

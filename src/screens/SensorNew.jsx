@@ -1,3 +1,4 @@
+import { autoFocusOnDesktop } from '../lib/autofocus.js'
 import { useState } from 'react'
 import { createSensor } from '../data/sensors.js'
 import { go } from '../lib/hooks.js'
@@ -29,8 +30,8 @@ export default function SensorNew({ ctx }) {
       <a href="#/sensors">← Sensori e impianti</a>
       <h1>Nuovo sensore</h1>
       <div className="card stack">
-        <Field label="Nome" id="name"><input id="name" className="input" value={form.name} onChange={set('name')} maxLength={80} placeholder="es. Cella frigo cucina" autoFocus /></Field>
-        <Field label="Codice dispositivo" id="key"><input id="key" className="input" value={form.device_key} onChange={set('device_key')} maxLength={80} placeholder="id del dispositivo eWeLink" /></Field>
+        <Field label="Nome" id="name"><input id="name" name="name" autoComplete="off" className="input" value={form.name} onChange={set('name')} maxLength={80} placeholder="es. Cella frigo cucina" autoFocus={autoFocusOnDesktop} /></Field>
+        <Field label="Codice dispositivo" id="key"><input id="key" name="key" autoComplete="off" className="input" value={form.device_key} onChange={set('device_key')} maxLength={80} placeholder="id del dispositivo eWeLink" /></Field>
         <div className="chips" role="group" aria-label="Tipo">
           {SENSOR_KINDS.map((k) => (
             <button key={k.id} type="button" className="chip" aria-pressed={form.kind === k.id} onClick={() => setForm((f) => ({ ...f, kind: k.id }))}>{k.label}</button>
@@ -48,8 +49,8 @@ export default function SensorNew({ ctx }) {
         )}
         {form.kind === 'temperatura' && form.role === 'ambiente' && (
           <>
-            <Field label="Allerta sotto (°C, facoltativa)" id="min"><input id="min" className="input" inputMode="decimal" value={form.min} onChange={set('min')} /></Field>
-            <Field label="Allerta sopra (°C, facoltativa)" id="max"><input id="max" className="input" inputMode="decimal" value={form.max} onChange={set('max')} /></Field>
+            <Field label="Allerta sotto (°C, facoltativa)" id="min"><input id="min" name="min" autoComplete="off" className="input" inputMode="decimal" value={form.min} onChange={set('min')} /></Field>
+            <Field label="Allerta sopra (°C, facoltativa)" id="max"><input id="max" name="max" autoComplete="off" className="input" inputMode="decimal" value={form.max} onChange={set('max')} /></Field>
           </>
         )}
         <ErrorText>{error}</ErrorText>

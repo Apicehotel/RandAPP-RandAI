@@ -131,7 +131,7 @@ export function NotificationSettings({ ctx }) {
           <div className="row"><span>{wa.token}</span><Button disabled={busy} onClick={() => run(() => setDeviceActive(ctx.hotelId, wa.id, false), 'Numero rimosso')}>Rimuovi</Button></div>
         ) : (
           <div className="row">
-            <input className="input" inputMode="tel" placeholder="+39 333 1234567" value={phone} onChange={(e) => setPhone(e.target.value)} aria-label="Numero WhatsApp" />
+            <input className="input" type="tel" name="phone" autoComplete="tel" inputMode="tel" placeholder="+39 333 1234567…" value={phone} onChange={(e) => setPhone(e.target.value)} aria-label="Numero WhatsApp" />
             <Button disabled={busy || !normalizePhone(phone)} onClick={() => run(() => saveDevice({ hotelId: ctx.hotelId, userId: ctx.userId, platform: 'whatsapp', token: normalizePhone(phone), label: 'WhatsApp' }), 'Numero salvato')}>Salva</Button>
           </div>
         )}

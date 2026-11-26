@@ -20,8 +20,8 @@ function TechnicianForm({ ctx, draft, competencies, onClose, onSaved }) {
   return (
     <div className="card stack">
       <h2>{t.id ? 'Modifica tecnico' : 'Nuovo tecnico'}</h2>
-      <label className="stack"><span className="muted">Nome</span><input className="input" maxLength={80} value={t.name} onChange={(e) => setT({ ...t, name: e.target.value })} /></label>
-      <label className="stack"><span className="muted">Telefono WhatsApp</span><input className="input" inputMode="tel" placeholder="+39…" value={t.phone} onChange={(e) => setT({ ...t, phone: e.target.value })} /></label>
+      <label className="stack"><span className="muted">Nome</span><input className="input" name="name" autoComplete="off" maxLength={80} value={t.name} onChange={(e) => setT({ ...t, name: e.target.value })} /></label>
+      <label className="stack"><span className="muted">Telefono WhatsApp</span><input className="input" type="tel" name="phone" autoComplete="off" inputMode="tel" placeholder="+39…" value={t.phone} onChange={(e) => setT({ ...t, phone: e.target.value })} /></label>
       <label className="stack"><span className="muted">Azienda</span><input className="input" maxLength={80} value={t.company} onChange={(e) => setT({ ...t, company: e.target.value })} /></label>
       <label className="stack"><span className="muted">Email</span><input className="input" type="email" maxLength={120} value={t.email} onChange={(e) => setT({ ...t, email: e.target.value })} /></label>
       <label className="stack"><span className="muted">Note</span><textarea className="textarea" rows="2" maxLength={500} value={t.notes} onChange={(e) => setT({ ...t, notes: e.target.value })} /></label>

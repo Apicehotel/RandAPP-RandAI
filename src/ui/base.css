@@ -682,3 +682,25 @@ body {
 .timeline { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--gap-tight); }
 .timeline li { padding-left: 14px; position: relative; }
 .timeline li::before { content: ''; position: absolute; left: 0; top: .55em; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+
+/* ---------- Linee guida interfaccia web (audit 2026-11-26) ---------- */
+/* Tocco: niente attesa del doppio tocco */
+button, a, [role='button'], input, select, textarea, label { touch-action: manipulation; }
+/* Titoli senza parole sole all'ultima riga */
+h1, h2 { text-wrap: balance; }
+/* Numeri incolonnati: le cifre non "ballano" quando cambiano */
+.stile-temp, .stat-num, .num, .mc-count, .row > b { font-variant-numeric: tabular-nums; }
+/* Pannelli sovrapposti: lo scorrimento non passa alla pagina sotto */
+.drawer, .drawer-body, .photo-lightbox, .suggest { overscroll-behavior: contain; }
+/* Elenco lungo (600+ segnalazioni): le schede fuori schermo non si disegnano finché non servono */
+a.card.issue { content-visibility: auto; contain-intrinsic-size: auto 96px; }
+/* Mouse: risposta al passaggio (solo dove esiste un puntatore preciso) */
+@media (hover: hover) and (pointer: fine) {
+  .btn:not(:disabled):not(.primary):hover, .chip:not(:disabled):not([aria-pressed='true']):hover, .drawer-link:hover, .nav-item:hover { background: var(--surface-2); }
+  .btn.primary:not(:disabled):hover, .chip[aria-pressed='true']:not(:disabled):hover { filter: brightness(1.08); }
+  .linkbtn:hover { text-decoration: underline; }
+  a.card.issue:hover { border-color: var(--accent); }
+}
+/* «Vai al contenuto»: visibile solo con la tastiera */
+.skip-link { position: absolute; left: var(--pad-page); top: -100px; z-index: 100; padding: 8px 14px; border-radius: var(--radius-sm); background: var(--accent); color: var(--accent-text); border: 0; font-weight: 650; }
+.skip-link:focus-visible { top: calc(var(--safe-top) + 6px); }

@@ -1,3 +1,4 @@
+import { autoFocusOnDesktop } from '../lib/autofocus.js'
 import { useState } from 'react'
 import { createReminder } from '../data/task.js'
 import { go } from '../lib/hooks.js'
@@ -40,7 +41,7 @@ export default function TaskReminderNew({ ctx }) {
       <div className="card stack">
         <Field label="Messaggio" id="message">
           <textarea id="message" className="textarea" value={form.message} onChange={(e) => patch({ message: e.target.value })}
-            maxLength={500} placeholder="es. Controllare l'irrigazione prima di uscire" autoFocus />
+            maxLength={500} placeholder="es. Controllare l'irrigazione prima di uscire" autoFocus={autoFocusOnDesktop} />
         </Field>
 
         <div className="stack">

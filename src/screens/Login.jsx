@@ -177,7 +177,7 @@ export default function Login({ initialHotel, onLoggedIn }) {
           <p className="muted">Gestione e manutenzione delle strutture</p>
         </div>
 
-        <form className="card stack login-card" onSubmit={(e) => { e.preventDefault(); submit() }} autoComplete="off">
+        <form className="card stack login-card" onSubmit={(e) => { e.preventDefault(); submit() }}>
           <header>
             {adminMode && <button type="button" className="login-back" data-testid="admin-back" onClick={() => { setAdminMode(false); setError(''); setPin('') }}>‹ RandApp</button>}
             <h2>{adminMode ? 'Impostazioni' : 'Bentornato'}</h2>
@@ -187,7 +187,7 @@ export default function Login({ initialHotel, onLoggedIn }) {
           {!adminMode && <Field label="Utente" id="login-user">
             <div className="suggest-wrap">
               <input
-                id="login-user" className="input" value={query} placeholder="Scrivi il tuo nome o username" autoComplete="username"
+                id="login-user" name="username" spellCheck={false} className="input" value={query} placeholder="Scrivi il tuo nome o username" autoComplete="username"
                 autoCapitalize="words" data-testid="login-user-input"
                 onFocus={() => setOpen(true)}
                 onBlur={() => setTimeout(() => setOpen(false), 150)}
@@ -213,7 +213,7 @@ export default function Login({ initialHotel, onLoggedIn }) {
 
           <Field label={adminMode ? 'PIN amministratore' : 'PIN'} id="login-pin">
             <input
-              id="login-pin" ref={pinRef} className="input pin-input" type="password" value={pin} placeholder={adminMode ? '••••••' : '••••'}
+              id="login-pin" name="pin" ref={pinRef} className="input pin-input" type="password" value={pin} placeholder={adminMode ? '••••••' : '••••'}
               inputMode="numeric" enterKeyHint="go" autoComplete="current-password" maxLength={adminMode ? ADMIN_PIN_LENGTH : PIN_LENGTH} data-testid="login-pin-input"
               onChange={(e) => {
                 const max = adminMode ? ADMIN_PIN_LENGTH : PIN_LENGTH

@@ -1,3 +1,4 @@
+import { autoFocusOnDesktop } from '../lib/autofocus.js'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createBookingDays, getBooking, listBookings, updateBooking } from '../data/planning.js'
 import { addSaleLayout, getSaleConfig, saveSaleClient } from '../data/forms.js'
@@ -137,7 +138,7 @@ export default function PlanningSaleNew({ ctx, editId = null }) {
       </div>
       <div className="card stack">
         <Field label="Cliente o evento" id="client">
-          <input id="client" className="input" list="sale-clients" value={form.client} onChange={set('client')} maxLength={80} autoFocus />
+          <input id="client" name="client" autoComplete="off" className="input" list="sale-clients" value={form.client} onChange={set('client')} maxLength={80} autoFocus={autoFocusOnDesktop} />
           <datalist id="sale-clients">{(config?.clients || []).map((c) => <option key={c.id} value={c.name} />)}</datalist>
         </Field>
         {client && (client.preferred_room || client.preferred_layout) && (
@@ -218,7 +219,7 @@ export default function PlanningSaleNew({ ctx, editId = null }) {
           </div>
         ) : (
           <Field label="Sala" id="room">
-            <input id="room" className="input" list="sale-rooms" value={form.room} onChange={set('room')} maxLength={60} placeholder="es. Sala Giotto" />
+            <input id="room" name="room" autoComplete="off" className="input" list="sale-rooms" value={form.room} onChange={set('room')} maxLength={60} placeholder="es. Sala Giotto" />
             <datalist id="sale-rooms">{roomHints.map((r) => <option key={r} value={r} />)}</datalist>
           </Field>
         )}

@@ -1,3 +1,4 @@
+import { autoFocusOnDesktop } from '../lib/autofocus.js'
 import { useState } from 'react'
 import { createAlert } from '../data/task.js'
 import { go } from '../lib/hooks.js'
@@ -29,7 +30,7 @@ export default function TaskUrgentNew({ ctx }) {
       <div className="card stack">
         <Field label="Cosa è successo e dove" id="note">
           <textarea id="note" className="textarea" value={note} onChange={(e) => setNote(e.target.value)}
-            maxLength={300} placeholder="es. Perdita d'acqua in cucina, vicino al lavello" autoFocus />
+            maxLength={300} placeholder="es. Perdita d'acqua in cucina, vicino al lavello" autoFocus={autoFocusOnDesktop} />
         </Field>
         <p className="muted">{note.length}/300</p>
         <ErrorText>{error}</ErrorText>

@@ -97,7 +97,7 @@ function IssuePhoto({ src, alt }) {
   return (
     <>
       <button type="button" className="photo-thumb" onClick={() => setOpen(true)} aria-label={`Ingrandisci: ${alt}`}>
-        <img src={src} alt={alt} loading="lazy" onError={() => setFailed(true)} />
+        <img src={src} alt={alt} width="250" height="165" loading="lazy" onError={() => setFailed(true)} />
         <span className="photo-hint">Tocca per ingrandire</span>
       </button>
       {open && (

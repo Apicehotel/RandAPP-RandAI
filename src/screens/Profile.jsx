@@ -28,8 +28,7 @@ function MyData() {
     setBusy(true); setErr(''); setMsg('')
     try {
       const prof = await setMyProfile({ username: normalizeUsername(v.username), firstName: normalizeName(v.firstName), lastName: normalizeName(v.lastName) })
-      const phone = await setMyPhone(v.phone)
-      const email = await setMyEmail(normalizeEmail(v.email))
+      const [phone, email] = await Promise.all([setMyPhone(v.phone), setMyEmail(normalizeEmail(v.email))])
       setF({ ...prof, phone, email })
       setMsg('Dati salvati. Le segnalazioni che hai mandato su WhatsApp con questo numero ora sono a tuo nome.')
     } catch (e) { setErr(e.message) } finally { setBusy(false) }

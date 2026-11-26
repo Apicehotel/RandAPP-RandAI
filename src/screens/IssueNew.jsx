@@ -1,3 +1,4 @@
+import { autoFocusOnDesktop } from '../lib/autofocus.js'
 import { useEffect, useRef, useState } from 'react'
 import { createIssue } from '../data/issues.js'
 import { listLocations } from '../data/forms.js'
@@ -70,7 +71,7 @@ export default function IssueNew({ ctx }) {
       {draft.current && <p className="banner">Bozza ripresa. <button type="button" className="linkbtn" onClick={() => { clearDraft('issue', ctx.hotelId, ctx.userId); setForm(EMPTY) }}>Svuota</button></p>}
       <div className="card stack">
         <Field label="Cosa non funziona" id="title">
-          <input id="title" className="input" value={form.title} onChange={set('title')} maxLength={140} autoFocus />
+          <input id="title" name="title" autoComplete="off" className="input" value={form.title} onChange={set('title')} maxLength={140} autoFocus={autoFocusOnDesktop} />
         </Field>
         <Field label="Camera o zona" id="room">
           <LocationInput id="room" locations={locations || []} value={form.room} onChange={pick('room')} />
