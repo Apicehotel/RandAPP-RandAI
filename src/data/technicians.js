@@ -1,7 +1,12 @@
 import { supabase } from '../lib/supabase.js'
+import { shared } from '../lib/shared-requests.js'
 
 // Elenco dei tecnici esterni della struttura (con numero) e le loro competenze. Lo vede chi ha technicians.view (RLS).
 export async function listTechnicians(hotelId) {
+  return shared(`technicians:${hotelId}`, () => loadTechnicians(hotelId))
+}
+
+async function loadTechnicians(hotelId) {
   const [t, c] = await Promise.all([
     supabase.from('external_technicians').select('id,name,phone,company,email,notes,active').eq('hotel_id', hotelId).order('name'),
     supabase.from('external_technician_competencies').select('technician_id,competency_id'),

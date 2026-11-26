@@ -1,6 +1,7 @@
 import { supabase } from '../lib/supabase.js'
 import { fail } from '../lib/outbox.js'
 import { readThrough } from '../lib/offline-cache.js'
+import { shared } from '../lib/shared-requests.js'
 
 // Catalogo camere/zone della struttura (sola lettura per tutti i colleghi).
 export async function listLocations(hotelId) {
@@ -20,13 +21,19 @@ export async function listLocations(hotelId) {
 
 // Colleghi della stessa struttura: la funzione del server restituisce solo nome e ruolo.
 export async function listStaff(hotelId) {
-  const { data, error } = await supabase.rpc('hotel_staff', { p_hotel: hotelId })
-  if (error) throw new Error('Impossibile caricare i colleghi')
-  return data || []
+  return shared(`staff:${hotelId}`, async () => {
+    const { data, error } = await supabase.rpc('hotel_staff', { p_hotel: hotelId })
+    if (error) throw new Error('Impossibile caricare i colleghi')
+    return data || []
+  })
 }
 
 // ---- Sale: configurazione, allestimenti, clienti
 export async function getSaleConfig(hotelId) {
+  return shared(`sale-config:${hotelId}`, () => loadSaleConfig(hotelId))
+}
+
+async function loadSaleConfig(hotelId) {
   const [rooms, layouts, clients] = await Promise.all([
     supabase.from('sale_rooms').select('id,name,family,parts,capacity,sort_order,active').eq('hotel_id', hotelId).order('sort_order').limit(200),
     supabase.from('sale_layouts').select('id,name,sort_order').eq('hotel_id', hotelId).order('sort_order').limit(200),
