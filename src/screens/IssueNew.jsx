@@ -85,7 +85,7 @@ export default function IssueNew({ ctx }) {
           <ChipPick label="Urgenza" options={URGS} value={form.urgency} onChange={pick('urgency')} />
         </div>
         <Field label="Dettagli (facoltativo)" id="description">
-          <textarea id="description" className="textarea" value={form.description} onChange={set('description')} maxLength={2000} />
+          <textarea id="description" name="description" autoComplete="off" className="textarea" value={form.description} onChange={set('description')} maxLength={2000} />
         </Field>
         <ErrorText>{error}</ErrorText>
         <SimilarCases ctx={ctx} query={queryFrom(form)} />

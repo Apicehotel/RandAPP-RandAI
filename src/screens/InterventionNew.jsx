@@ -103,7 +103,7 @@ export default function InterventionNew({ ctx, issueId = null }) {
           <StaffPicker staff={assignable(staff)} selected={form.assignees} onChange={pick('assignees')} />
         </div>
         <Field label="Note (facoltativo)" id="notes">
-          <textarea id="notes" className="textarea" value={form.notes} onChange={set('notes')} maxLength={2000} />
+          <textarea id="notes" name="notes" autoComplete="off" className="textarea" value={form.notes} onChange={set('notes')} maxLength={2000} />
         </Field>
         <ErrorText>{error}</ErrorText>
         <Button variant="primary" type="submit" block disabled={busy}>

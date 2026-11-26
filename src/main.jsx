@@ -2,7 +2,7 @@ import React from 'react'
 import { createRoot } from 'react-dom/client'
 import './ui/tokens.css'
 import './ui/base.css'
-import { applyPrefs } from './lib/ui-prefs.js'
+import { applyPrefs, watchSystemTheme } from './lib/ui-prefs.js'
 import { applyStoredPalette } from './lib/palette.js'
 import { installGlobalHandlers, logError } from './lib/errorlog.js'
 import { registerServiceWorker } from './lib/pwa.js'
@@ -10,6 +10,7 @@ import App from './app/App.jsx'
 
 // Tema e dimensione prima del primo disegno, per evitare lampi di colore.
 applyPrefs()
+watchSystemTheme()
 applyStoredPalette()
 installGlobalHandlers()
 registerServiceWorker() // solo in produzione: cache offline, push e controllo versione

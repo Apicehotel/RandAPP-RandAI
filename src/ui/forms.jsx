@@ -24,7 +24,7 @@ export function LocationInput({ id, locations, value, onChange, placeholder = 'e
   const bad = value.trim() && !locationOk(locations, value)
   return (
     <div className="suggest-wrap">
-      <input id={id} className="input" value={value} maxLength={40} autoComplete="off" placeholder={placeholder}
+      <input id={id} name={id} className="input" value={value} maxLength={40} autoComplete="off" placeholder={placeholder}
         onChange={(e) => { onChange(e.target.value); setOpen(true) }}
         onFocus={() => setOpen(true)} onBlur={() => setTimeout(() => setOpen(false), 120)} />
       {open && hints.length > 0 && (

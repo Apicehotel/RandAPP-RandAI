@@ -30,3 +30,37 @@ test('link «Vai al contenuto» presente e il login non spegne il gestore passwo
 test('il colore della barra del browser segue il tema', () => {
   assert.match(src('src/lib/ui-prefs.js'), /syncThemeColor/)
 })
+
+test('un solo ascoltatore visibilitychange: l\'app usa onBecameVisible', () => {
+  for (const f of ['src/app/App.jsx', 'src/ui/RoomReadyAlert.jsx', 'src/ui/OutboxBanner.jsx', 'src/ui/UrgentAlert.jsx']) {
+    assert.match(src(f), /onBecameVisible/, f)
+    assert.doesNotMatch(src(f), /addEventListener\('visibilitychange'/, f)
+  }
+  assert.equal((src('src/lib/visibility.js').match(/addEventListener\('visibilitychange'/g) || []).length, 1)
+})
+
+test('onBecameVisible chiama le iscrizioni solo con la scheda visibile e si può annullare', async () => {
+  const listeners = {}
+  globalThis.document = {
+    visibilityState: 'hidden',
+    addEventListener: (t, f) => { listeners[t] = f },
+    removeEventListener: (t) => { delete listeners[t] },
+  }
+  const { onBecameVisible } = await import('../src/lib/visibility.js')
+  let n = 0
+  const stop = onBecameVisible(() => { n += 1 })
+  const stop2 = onBecameVisible(() => { throw new Error('non deve fermare le altre') })
+  listeners.visibilitychange()
+  assert.equal(n, 0)
+  document.visibilityState = 'visible'
+  listeners.visibilitychange()
+  assert.equal(n, 1)
+  stop(); stop2()
+  assert.equal(listeners.visibilitychange, undefined)
+  delete globalThis.document
+})
+
+test('campi di Nuova segnalazione con name', () => {
+  assert.match(src('src/ui/forms.jsx'), /<input id=\{id\} name=\{id\}/)
+  assert.match(src('src/screens/IssueNew.jsx'), /<textarea id="description" name="description"/)
+})

@@ -1,3 +1,4 @@
+import { onBecameVisible } from '../lib/visibility.js'
 import { Suspense, useEffect, useState } from 'react'
 import { isConfigured, missingConfig } from '../lib/supabase.js'
 import { canResumeOffline, hasActiveSession, loadContext, onSessionLost, verifySession } from '../lib/auth.js'
@@ -240,11 +241,8 @@ export default function App() {
     if (!isConfigured || !ctx) return undefined
     const lost = () => { setCtx(null); setExpired(true) }
     const stop = onSessionLost(lost)
-    const onVisible = () => {
-      if (document.visibilityState === 'visible') verifySession().then((ok) => { if (!ok) lost() }).catch(() => {})
-    }
-    document.addEventListener('visibilitychange', onVisible)
-    return () => { stop(); document.removeEventListener('visibilitychange', onVisible) }
+    const stopVisible = onBecameVisible(() => { verifySession().then((ok) => { if (!ok) lost() }).catch(() => {}) })
+    return () => { stop(); stopVisible() }
   }, [ctx])
 
   // Cambio struttura senza rifare il PIN: stessa sessione, nuova iscrizione (ruolo e permessi si rileggono).

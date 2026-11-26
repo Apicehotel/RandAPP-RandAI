@@ -22,6 +22,6 @@ test('verifySession non butta fuori chi è solo offline', () => {
 test('App: avviso di sessione scaduta e controllo al ritorno sull\'app', () => {
   const app = readFileSync(fileURLToPath(new URL('../src/app/App.jsx', import.meta.url)), 'utf8')
   assert.match(app, /onSessionLost\(lost\)/)
-  assert.match(app, /visibilitychange/)
+  assert.match(app, /onBecameVisible/)
   assert.match(app, /Sessione scaduta/)
 })
