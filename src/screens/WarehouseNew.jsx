@@ -39,7 +39,7 @@ export default function WarehouseNew({ ctx }) {
         <Field label="Unità" id="unit"><input id="unit" name="unit" autoComplete="off" className="input" value={form.unit} onChange={set('unit')} maxLength={12} placeholder="pz, kg, lt, conf." /></Field>
         <Field label="Scorta minima (avvisa sotto questo valore)" id="min"><input id="min" name="min" autoComplete="off" className="input" inputMode="decimal" value={form.min} onChange={set('min')} /></Field>
         <Field label="Ubicazione (facoltativa)" id="location"><input id="location" name="location" autoComplete="off" className="input" value={form.location} onChange={set('location')} maxLength={80} placeholder="es. Magazzino piano -1, scaffale B" /></Field>
-        <Field label="Note (facoltative)" id="notes"><textarea id="notes" className="textarea" value={form.notes} onChange={set('notes')} maxLength={500} /></Field>
+        <Field label="Note (facoltative)" id="notes"><textarea id="notes" name="notes" autoComplete="off" className="textarea" value={form.notes} onChange={set('notes')} maxLength={500} /></Field>
         <ErrorText>{error}</ErrorText>
         <Button variant="primary" type="submit" block disabled={busy}>{busy ? 'Salvo…' : 'Crea articolo'}</Button>
       </div>

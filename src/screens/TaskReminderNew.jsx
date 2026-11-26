@@ -40,7 +40,7 @@ export default function TaskReminderNew({ ctx }) {
       <h1>Nuovo promemoria</h1>
       <div className="card stack">
         <Field label="Messaggio" id="message">
-          <textarea id="message" className="textarea" value={form.message} onChange={(e) => patch({ message: e.target.value })}
+          <textarea id="message" name="message" autoComplete="off" className="textarea" value={form.message} onChange={(e) => patch({ message: e.target.value })}
             maxLength={500} placeholder="es. Controllare l'irrigazione prima di uscire" autoFocus={autoFocusOnDesktop} />
         </Field>
 

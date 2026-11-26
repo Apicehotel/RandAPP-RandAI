@@ -1,3 +1,4 @@
+import { onBecameVisible } from '../lib/visibility.js'
 import { useEffect, useState } from 'react'
 import { flushOutbox } from '../data/outbox.js'
 import { removeEntry } from '../lib/outbox.js'
@@ -22,10 +23,10 @@ export default function OutboxBanner({ ctx }) {
   useEffect(() => {
     flushOutbox(ctx.userId)
     const timer = setInterval(() => flushOutbox(ctx.userId), 30000)
-    const onVisible = () => document.visibilityState === 'visible' && flushOutbox(ctx.userId)
-    window.addEventListener('online', onVisible)
-    document.addEventListener('visibilitychange', onVisible)
-    return () => { clearInterval(timer); window.removeEventListener('online', onVisible); document.removeEventListener('visibilitychange', onVisible) }
+    const flush = () => flushOutbox(ctx.userId)
+    window.addEventListener('online', flush)
+    const stopVisible = onBecameVisible(flush)
+    return () => { clearInterval(timer); window.removeEventListener('online', flush); stopVisible() }
   }, [ctx.userId])
 
   if (online && !pending.length && !failed.length) return null

@@ -49,6 +49,13 @@ function syncThemeColor() {
   } catch { /* nessun problema: resta il colore di default */ }
 }
 
+// Con «Sistema», se il telefono cambia tema ad app aperta la barra del browser si riallinea.
+export function watchSystemTheme() {
+  try {
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { syncThemeColor() })
+  } catch { /* browser senza matchMedia: niente da fare */ }
+}
+
 export function setTheme(theme) {
   write(KEY_THEME, theme)
   applyPrefs({ theme })

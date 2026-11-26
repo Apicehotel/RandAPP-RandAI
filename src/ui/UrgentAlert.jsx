@@ -1,3 +1,4 @@
+import { onBecameVisible } from '../lib/visibility.js'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { listAlerts, updateAlertStatus } from '../data/task.js'
 import { listPresence } from '../data/presence.js'
@@ -35,13 +36,12 @@ export default function UrgentAlert({ ctx }) {
     if (!canView) return undefined
     load()
     const timer = setInterval(load, POLL_MS)
-    const onVisible = () => document.visibilityState === 'visible' && load()
-    document.addEventListener('visibilitychange', onVisible)
+    const stopVisible = onBecameVisible(load)
     window.addEventListener('outbox:flushed', load)
     window.addEventListener('pointerdown', unlockAudio, { passive: true })
     return () => {
       clearInterval(timer)
-      document.removeEventListener('visibilitychange', onVisible)
+      stopVisible()
       window.removeEventListener('outbox:flushed', load)
       window.removeEventListener('pointerdown', unlockAudio)
     }

@@ -1,3 +1,4 @@
+import { onBecameVisible } from '../lib/visibility.js'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { listRooms } from '../data/housekeeping.js'
 import { can, PERM } from '../lib/permissions.js'
@@ -30,9 +31,8 @@ export default function RoomReadyAlert({ ctx }) {
     if (!enabled) return undefined
     load()
     const timer = setInterval(load, POLL_MS)
-    const onVisible = () => document.visibilityState === 'visible' && load()
-    document.addEventListener('visibilitychange', onVisible)
-    return () => { clearInterval(timer); document.removeEventListener('visibilitychange', onVisible) }
+    const stopVisible = onBecameVisible(load)
+    return () => { clearInterval(timer); stopVisible() }
   }, [enabled, load])
 
   if (!enabled || ready.length === 0) return null
