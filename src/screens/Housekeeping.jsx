@@ -45,6 +45,7 @@ export default function Housekeeping({ ctx }) {
   const { data, error, loading, reload } = useAsync(() => listRooms(ctx.hotelId), [ctx.hotelId])
   const [onlyOpen, setOnlyOpen] = useState(false)
   const [selected, setSelected] = useState(null)
+  const [askReset, setAskReset] = useState(false)
   const [note, setNote] = useState('')
   const [busy, setBusy] = useState(false)
   const [actionError, setActionError] = useState('')
@@ -117,7 +118,12 @@ export default function Housekeeping({ ctx }) {
           <div className="card stack">
             <h2>Nuova giornata</h2>
             <p className="muted">Rimette "da fare" tutte le camere.</p>
-            <Button disabled={busy} onClick={() => { if (window.confirm('Rimettere tutte le camere da fare?')) run(() => resetDay(ctx.hotelId)) }}>Riparti da zero</Button>
+            {askReset ? (
+              <div className="row">
+                <Button variant="danger" disabled={busy} onClick={() => { setAskReset(false); run(() => resetDay(ctx.hotelId)) }}>Conferma: rimetti tutte da fare</Button>
+                <Button onClick={() => setAskReset(false)}>Annulla</Button>
+              </div>
+            ) : <Button disabled={busy} onClick={() => setAskReset(true)}>Riparti da zero</Button>}
           </div>
         </>
       )}

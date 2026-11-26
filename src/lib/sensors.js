@@ -51,7 +51,8 @@ export function sensorState(sensor, now = Date.now(), settings = DEFAULT_SETTING
 }
 export const STATE_LABELS = { ok: 'Regolare', allerta: 'In allerta', offline: 'Non aggiornato' }
 
-export const formatTemp = (t) => (t === null || t === undefined ? '—' : `${String(Number(t).toFixed(1)).replace('.', ',')}°C`)
+const TEMP_FORMAT = new Intl.NumberFormat('it-IT', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+export const formatTemp = (t) => (t === null || t === undefined ? '—' : `${TEMP_FORMAT.format(Number(t))}°C`)
 export const formatHumidity = (h) => (h === null || h === undefined ? '—' : `${Math.round(Number(h))}%`)
 
 export const summarizeSensors = (sensors, now = Date.now(), settings = DEFAULT_SETTINGS) => {

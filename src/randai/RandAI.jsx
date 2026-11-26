@@ -44,6 +44,7 @@ export default function RandAI({ live = false, ctx = {} }) {
       </div>
       <form className="chat-compose" onSubmit={send}>
         <input
+          name="message" autoComplete="off"
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder={live ? 'Scrivi a RandAI…' : 'RandAI è in pausa'}

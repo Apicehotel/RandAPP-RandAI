@@ -47,7 +47,7 @@ export default function SupplyNew({ ctx }) {
       ))}
       {groups.length > 0 && (
         <div className="card stack">
-          <Field label="Nota (facoltativa)" id="note"><input id="note" className="input" value={note} onChange={(e) => setNote(e.target.value)} maxLength={300} placeholder="es. piano 2, entro le 14" /></Field>
+          <Field label="Nota (facoltativa)" id="note"><input id="note" name="note" autoComplete="off" className="input" value={note} onChange={(e) => setNote(e.target.value)} maxLength={300} placeholder="es. piano 2, entro le 14" /></Field>
           <ErrorText>{actionError}</ErrorText>
           <Button variant="primary" type="submit" block disabled={busy}>{busy ? 'Invio…' : `Invia richiesta (${picked.size})`}</Button>
         </div>

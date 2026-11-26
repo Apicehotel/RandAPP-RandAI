@@ -1,3 +1,4 @@
+import { autoFocusOnDesktop } from '../lib/autofocus.js'
 import { useRef, useState, useEffect } from 'react'
 import { createWork } from '../data/planning.js'
 import { listStaff } from '../data/forms.js'
@@ -52,7 +53,7 @@ export default function PlanningWorkNew({ ctx }) {
       <h1>Nuovo lavoro</h1>
       <div className="card stack">
         <Field label="Quale lavoro" id="description">
-          <input id="description" className="input" value={form.description} onChange={(e) => pick('description')(e.target.value)} maxLength={200} autoFocus />
+          <input id="description" name="description" autoComplete="off" className="input" value={form.description} onChange={(e) => pick('description')(e.target.value)} maxLength={200} autoFocus={autoFocusOnDesktop} />
         </Field>
         <div className="stack">
           <span className="field-label">Categoria (facoltativo)</span>

@@ -26,7 +26,7 @@ export default function IssueThumb({ hotelId, issueId }) {
 
   return (
     <span ref={ref} className="issue-thumb" aria-label="Con foto">
-      {src ? <img src={src} alt="" decoding="async" onError={() => setSrc(null)} /> : <Icon name="camera" size={20} />}
+      {src ? <img src={src} alt="" width="58" height="58" decoding="async" onError={() => setSrc(null)} /> : <Icon name="camera" size={20} />}
     </span>
   )
 }

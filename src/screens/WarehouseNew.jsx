@@ -1,3 +1,4 @@
+import { autoFocusOnDesktop } from '../lib/autofocus.js'
 import { useState } from 'react'
 import { createItem } from '../data/warehouse.js'
 import { go } from '../lib/hooks.js'
@@ -33,11 +34,11 @@ export default function WarehouseNew({ ctx }) {
       <h1>Nuovo articolo</h1>
       <p className="muted">La giacenza parte da zero: dopo averlo creato registra un carico.</p>
       <div className="card stack">
-        <Field label="Nome" id="name"><input id="name" className="input" value={form.name} onChange={set('name')} maxLength={120} autoFocus /></Field>
-        <Field label="Categoria (facoltativa)" id="category"><input id="category" className="input" value={form.category} onChange={set('category')} maxLength={60} placeholder="es. Idraulica, Elettrico, Pulizia" /></Field>
-        <Field label="Unità" id="unit"><input id="unit" className="input" value={form.unit} onChange={set('unit')} maxLength={12} placeholder="pz, kg, lt, conf." /></Field>
-        <Field label="Scorta minima (avvisa sotto questo valore)" id="min"><input id="min" className="input" inputMode="decimal" value={form.min} onChange={set('min')} /></Field>
-        <Field label="Ubicazione (facoltativa)" id="location"><input id="location" className="input" value={form.location} onChange={set('location')} maxLength={80} placeholder="es. Magazzino piano -1, scaffale B" /></Field>
+        <Field label="Nome" id="name"><input id="name" name="name" autoComplete="off" className="input" value={form.name} onChange={set('name')} maxLength={120} autoFocus={autoFocusOnDesktop} /></Field>
+        <Field label="Categoria (facoltativa)" id="category"><input id="category" name="category" autoComplete="off" className="input" value={form.category} onChange={set('category')} maxLength={60} placeholder="es. Idraulica, Elettrico, Pulizia" /></Field>
+        <Field label="Unità" id="unit"><input id="unit" name="unit" autoComplete="off" className="input" value={form.unit} onChange={set('unit')} maxLength={12} placeholder="pz, kg, lt, conf." /></Field>
+        <Field label="Scorta minima (avvisa sotto questo valore)" id="min"><input id="min" name="min" autoComplete="off" className="input" inputMode="decimal" value={form.min} onChange={set('min')} /></Field>
+        <Field label="Ubicazione (facoltativa)" id="location"><input id="location" name="location" autoComplete="off" className="input" value={form.location} onChange={set('location')} maxLength={80} placeholder="es. Magazzino piano -1, scaffale B" /></Field>
         <Field label="Note (facoltative)" id="notes"><textarea id="notes" className="textarea" value={form.notes} onChange={set('notes')} maxLength={500} /></Field>
         <ErrorText>{error}</ErrorText>
         <Button variant="primary" type="submit" block disabled={busy}>{busy ? 'Salvo…' : 'Crea articolo'}</Button>

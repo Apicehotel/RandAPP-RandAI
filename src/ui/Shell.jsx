@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useState } from 'react'
+import { Suspense, lazy, useEffect, useRef, useState } from 'react'
 import { bottomNavFor, initialsFor, isActivePath } from '../lib/permissions.js'
 import { hotelById } from '../lib/hotels.js'
 import { logout } from '../lib/auth.js'
@@ -19,6 +19,7 @@ import { useKeyboardOpen } from '../lib/use-keyboard.js'
 // In alto: struttura a sinistra, cerchio del profilo a destra. In basso: 5 sezioni.
 export default function Shell({ route, ctx, onLogout, onSwitchHotel, onChangeHotel, children }) {
   const [menuOpen, setMenuOpen] = useState(false)
+  const mainRef = useRef(null)
   const [pickerOpen, setPickerOpen] = useState(false)
   const items = bottomNavFor(ctx.permissions)
   const hotel = hotelById(ctx.hotelId)
@@ -30,6 +31,8 @@ export default function Shell({ route, ctx, onLogout, onSwitchHotel, onChangeHot
 
   return (
     <div className={`shell${keyboard ? ' kb' : ''}`}>
+      {/* Link «salta al contenuto»: un pulsante, perché gli indirizzi con # sono le rotte dell'app */}
+      <button type="button" className="skip-link" onClick={() => mainRef.current?.focus()}>Vai al contenuto</button>
       <header className="shell-top">
         <button
           type="button"
@@ -61,7 +64,7 @@ export default function Shell({ route, ctx, onLogout, onSwitchHotel, onChangeHot
 
       <Suspense fallback={null}><UrgentAlert ctx={ctx} /><RoomReadyAlert ctx={ctx} /></Suspense>
       <OutboxBanner ctx={ctx} />
-      <main className="shell-stage">{children}</main>
+      <main className="shell-stage" ref={mainRef} tabIndex={-1}>{children}</main>
 
       <nav className="shell-nav" aria-label="Navigazione principale" data-count={items.length}>
         {items.map((item) => {

@@ -72,7 +72,7 @@ export default function TechnicianPortal({ route }) {
                 {editingArrival ? (
                   <div className="stack">
                     <label className="stack"><span className="muted">Quando pensi di arrivare?</span>
-                      <input className="input" type="datetime-local" value={arrival} onChange={(e) => setArrival(e.target.value)} /></label>
+                      <input className="input" name="arrival" autoComplete="off" type="datetime-local" value={arrival} onChange={(e) => setArrival(e.target.value)} /></label>
                     <div className="row">
                       <Button disabled={busy} onClick={() => setEditingArrival(false)}>Annulla</Button>
                       <Button variant="primary" disabled={busy || !arrival} onClick={() => send('arrival_set', '', new Date(arrival).toISOString())}>Salva orario</Button>

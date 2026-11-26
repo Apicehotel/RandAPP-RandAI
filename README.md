@@ -175,6 +175,16 @@ Le righe cancellate dalle tabelle operative (`issues`, `issue_photos`, `interven
 - Non coperti: profili, appartenenze, permessi, magazzino, sensori, log e tabelle di notifica.
 - Il database della vecchia app (HotelGio) ha un suo cestino identico, documentato nel suo README.
 
+## Accessibilità e interfaccia (controllo del 26 novembre 2026)
+Regole applicate dalle linee guida «Web Interface Guidelines» e «React Best Practices» (skill Claude, vedi sotto):
+- **Tastiera**: link «Vai al contenuto» (`skip-link` in `Shell.jsx`, è un pulsante perché le rotte usano `#`); focus visibile globale.
+- **Moduli**: `autoFocus` solo su desktop (`src/lib/autofocus.js`, `autoFocusOnDesktop`); campi con `name` e `autocomplete` (telefono personale `tel`, gli altri `off`); il login non spegne il gestore password.
+- **Mouse e tocco**: stati `:hover` solo con puntatore preciso, `touch-action: manipulation`, `overscroll-behavior: contain` su menu, foto a schermo intero e suggerimenti.
+- **Numeri e titoli**: cifre incolonnate (`tabular-nums`) e `text-wrap: balance` sui titoli; temperature con `Intl.NumberFormat('it-IT')`.
+- **Elenchi lunghi**: le schede delle segnalazioni usano `content-visibility: auto`.
+- **Conferme in pagina** (niente `window.confirm`): «Riparti da zero» in Housekeeping e «Svuota» nel registro errori.
+- **Barra del browser**: il `theme-color` segue il tema attivo (`syncThemeColor` in `ui-prefs.js`).
+
 ## Registro errori (per ogni app, sempre attivo)
 Ogni errore (richiesta al server fallita, script rotto, accesso che non va, variabili mancanti) viene scritto nel registro **con la causa vera** e **di chi è la colpa**: **App** (bug, configurazione, servizio), **Utente** (PIN, permessi, sessione scaduta, troppi tentativi, dato non valido) o **Dispositivo** (nessuna connessione, versione in cache, memoria piena, estensioni del browser). Se dal solo errore non si può essere sicuri, il verdetto dice "probabile". Accanto c'è sempre "Cosa fare".
 - Dove si vede: **Profilo → Registro errori** (`#/errors`), e anche **prima del login** ("Problemi? Vedi registro errori" nella schermata di accesso e nella schermata "Configurazione mancante"). Filtri per causa, "Copia tutto" per mandarlo a chi gestisce l'app. Gli **admin** vedono anche gli errori di tutti i dispositivi (ultimi 7 giorni).

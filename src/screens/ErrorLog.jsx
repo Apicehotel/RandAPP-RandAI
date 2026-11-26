@@ -55,6 +55,7 @@ const byFilter = (rows, filter) => (filter === 'tutti' ? rows : rows.filter((r) 
 export function LocalErrors() {
   const [rows, setRows] = useState(readLog)
   const [msg, setMsg] = useState('')
+  const [askClear, setAskClear] = useState(false)
   const [filter, setFilter] = useState('tutti')
   const copy = async () => {
     try {
@@ -69,7 +70,9 @@ export function LocalErrors() {
       <div className="row">
         <Button onClick={() => setRows(readLog())}>Aggiorna</Button>
         <Button onClick={copy} disabled={rows.length === 0}>Copia tutto</Button>
-        <Button variant="danger" onClick={() => { clearLog(); setRows([]); setMsg('') }} disabled={rows.length === 0}>Svuota</Button>
+        {askClear
+          ? <Button variant="danger" onClick={() => { clearLog(); setRows([]); setMsg(''); setAskClear(false) }}>Conferma: svuota il registro</Button>
+          : <Button variant="danger" onClick={() => setAskClear(true)} disabled={rows.length === 0}>Svuota</Button>}
       </div>
       {msg && <p role="status">{msg}</p>}
       {rows.length === 0 && <div className="card muted">Nessun errore su questo dispositivo.</div>}
