@@ -64,3 +64,11 @@ test('campi di Nuova segnalazione con name', () => {
   assert.match(src('src/ui/forms.jsx'), /<input id=\{id\} name=\{id\}/)
   assert.match(src('src/screens/IssueNew.jsx'), /<textarea id="description" name="description"/)
 })
+
+test('ewelink-sync risponde alla richiesta OPTIONS del browser con le intestazioni CORS', () => {
+  const fn = src('supabase/functions/ewelink-sync/index.ts')
+  assert.match(fn, /req\.method === "OPTIONS"/)
+  assert.match(fn, /Access-Control-Allow-Origin/)
+  assert.match(fn, /Access-Control-Allow-Headers[^\n]*authorization[^\n]*x-sync-secret/)
+  assert.match(fn, /headers: \{ \.\.\.cors,/)
+})

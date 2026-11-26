@@ -29,10 +29,20 @@ async function secret(envName: string, tableKey: string): Promise<string> {
   throw new Error(`Segreto mancante: ${envName}`);
 }
 
+// CORS: il tasto "Aggiorna" e l'apertura della scheda Sensori chiamano la funzione dal browser (POST con
+// intestazioni proprie), quindi il browser prima fa una richiesta OPTIONS. Senza queste intestazioni la
+// chiamata veniva bloccata («No 'Access-Control-Allow-Origin' header»). L'accesso resta protetto dal token dell'utente.
+const cors = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info, x-sync-secret",
+  "Access-Control-Max-Age": "86400",
+};
+
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
     status,
-    headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
+    headers: { ...cors, "Content-Type": "application/json", "Cache-Control": "no-store" },
   });
 
 // Confronto a tempo costante del segreto di chiamata.
@@ -62,6 +72,7 @@ async function withSession<T>(cfg: Record<string, string>, fn: (s: { token: stri
 
 Deno.serve(async (req) => {
   try {
+    if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
     if (req.method !== "POST") return json({ ok: false, error: "Metodo non consentito" }, 405);
     const dry = new URL(req.url).searchParams.get("dry") === "1";
     let hotelId = Deno.env.get("EWELINK_HOTEL_ID") ?? "hotelgio";
