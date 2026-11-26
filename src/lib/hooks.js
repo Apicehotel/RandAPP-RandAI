@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { logError } from './errorlog.js'
 import { readWithJwtRecovery } from './jwt-recovery.js'
 import { listOutbox, OUTBOX_EVENT } from './outbox.js'
+import { clearShared } from './shared-requests.js'
+import { onBecameVisible } from './visibility.js'
 
 // Piccolo hook di caricamento: niente librerie extra, si ricarica a mano o quando torni sull'app.
 // Ogni esecuzione ha un numero di generazione: una risposta vecchia non sovrascrive una più recente
@@ -9,7 +11,8 @@ import { listOutbox, OUTBOX_EVENT } from './outbox.js'
 export function useAsync(fn, deps = []) {
   const [state, setState] = useState({ data: null, error: null, loading: true })
   const gen = useRef(0)
-  const run = useCallback(async () => {
+  const run = useCallback(async (fromMount = false) => {
+    if (fromMount !== true) clearShared() // ricarico esplicito: dati freschi, non quelli condivisi
     const mine = ++gen.current
     setState((s) => ({ ...s, loading: true, error: null }))
     try {
@@ -23,18 +26,19 @@ export function useAsync(fn, deps = []) {
   }, deps)
 
   useEffect(() => {
-    run()
-    const onVisible = () => document.visibilityState === 'visible' && run()
-    document.addEventListener('visibilitychange', onVisible)
-    window.addEventListener('outbox:flushed', run) // le modifiche fatte offline sono arrivate al server
+    run(true)
+    const offVisible = onBecameVisible(run)
+    const onFlushed = () => run()
+    window.addEventListener('outbox:flushed', onFlushed) // le modifiche fatte offline sono arrivate al server
     return () => {
       gen.current += 1
-      document.removeEventListener('visibilitychange', onVisible)
-      window.removeEventListener('outbox:flushed', run)
+      offVisible()
+      window.removeEventListener('outbox:flushed', onFlushed)
     }
   }, [run])
 
-  return { ...state, reload: run }
+  const reload = useCallback(() => run(), [run])
+  return { ...state, reload }
 }
 
 // Router a hash minimale: #/home, #/issues, #/issues/new, #/issues/<id>
@@ -68,13 +72,12 @@ export function useUnread(loader, deps = []) {
     }
     run()
     const timer = setInterval(run, 60000)
-    const onVisible = () => document.visibilityState === 'visible' && run()
-    document.addEventListener('visibilitychange', onVisible)
+    const offVisible = onBecameVisible(run)
     window.addEventListener('notifications:changed', run)
     return () => {
       gen += 1
       clearInterval(timer)
-      document.removeEventListener('visibilitychange', onVisible)
+      offVisible()
       window.removeEventListener('notifications:changed', run)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

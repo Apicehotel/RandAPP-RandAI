@@ -1,10 +1,15 @@
 import { supabase } from '../lib/supabase.js'
+import { shared } from '../lib/shared-requests.js'
 
 const PRODUCT_COLUMNS = 'id,hotel_id,category,name,active,sort_order'
 const REQUEST_COLUMNS = 'id,hotel_id,requested_by,requested_by_name,note,created_at,completed_at'
 const ITEM_COLUMNS = 'id,hotel_id,request_id,product_id,product_name,category,status,resolved_by_name,resolved_at,created_at'
 
 export async function listProducts(hotelId) {
+  return shared(`products:${hotelId}`, () => loadProducts(hotelId))
+}
+
+async function loadProducts(hotelId) {
   const { data, error } = await supabase.from('supply_products').select(PRODUCT_COLUMNS)
     .eq('hotel_id', hotelId).order('category').order('sort_order').order('name')
   if (error) throw new Error('Impossibile caricare i prodotti')
