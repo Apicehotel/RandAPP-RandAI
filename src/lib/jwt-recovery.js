@@ -8,7 +8,13 @@ export function isFutureJwtError(error) {
   return /JWT issued at future/i.test(text)
 }
 
-async function defaultRefresh() {
+let refreshInFlight = null
+function defaultRefresh() {
+  if (!refreshInFlight) refreshInFlight = refreshOnce().finally(() => { refreshInFlight = null })
+  return refreshInFlight
+}
+
+async function refreshOnce() {
   const { supabase } = await import('./supabase.js')
   if (!supabase) return false
   const { data } = await supabase.auth.getSession()
