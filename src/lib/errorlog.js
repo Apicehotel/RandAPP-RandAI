@@ -27,6 +27,7 @@ export function classify({ kind = '', message = '', detail = '', status = 0, onl
   const out = (cause, hint, probable = false) => ({ cause, hint, probable })
 
   // Dispositivo: connessione, versione in cache, memoria, estensioni del browser.
+  if (kind === 'disegno') return out('app', 'Errore di visualizzazione: torna alla Home o riprova.')
   if (!isOnline) return out('dispositivo', 'Nessuna connessione: controlla Wi‑Fi o dati mobili e riprova.')
   if (has(/dynamically imported module|Loading chunk|ChunkLoadError|Importing a module script failed/i)) {
     return out('dispositivo', 'Il telefono ha in memoria una versione vecchia o la rete è caduta: ricarica la pagina.', true)
@@ -45,19 +46,19 @@ export function classify({ kind = '', message = '', detail = '', status = 0, onl
     return out('utente', 'Non hai il permesso per questa azione: chiedi a un amministratore di abilitare il tuo ruolo.')
   }
   if (has(/JWT issued at future/i)) {
-    return out('dispositivo', 'Orario del telefono o del server non allineato: la sessione risulta emessa nel futuro. Controlla data e ora automatiche del telefono; se resta, esci e rientra con il PIN.', true)
+    return out('app', 'Sessione emessa nel futuro: verificare gli orologi dei servizi di autenticazione e database.', true)
   }
   if (status === 401 || has(/JWT expired|PGRST301|Invalid Refresh Token|sessione scaduta/i)) {
-    return out('utente', 'Sessione scaduta: esci e rientra con il PIN.')
+    return out('app', 'Sessione non valida: rientra con il PIN se il recupero automatico non riesce.', true)
   }
   if (has(/"code":"23505"|duplicate key|già usato/i)) return out('utente', 'Esiste già un elemento uguale: controlla i dati inseriti.')
   if (has(/"code":"23514"|"code":"22023"|"code":"23502"|violates check|not-null/i)) {
-    return out('utente', 'Un dato inserito non è valido (troppo lungo, vuoto o fuori valore): controlla il modulo.', true)
+    return out('app', 'Validazione database fallita: verificare modulo e vincoli.', true)
   }
 
   // Rete che fallisce mentre il dispositivo risulta online: può essere il telefono o il servizio.
   if (kind === 'rete' && !status && has(/Failed to fetch|NetworkError|Load failed|connessione|timed? ?out/i)) {
-    return out('dispositivo', 'Il server non è stato raggiunto: probabile segnale debole o rete bloccata. Se succede a tutti, è il servizio.', true)
+    return out('dispositivo', 'Il server non è stato raggiunto: origine non determinata (rete, browser o servizio).', true)
   }
   if (kind === 'accesso' && has(/connessione assente o bloccata/i)) {
     return out('dispositivo', 'Il server di accesso non è stato raggiunto: probabile segnale debole o rete bloccata. Se succede a tutti, è l\'indirizzo del servizio.', true)
