@@ -45,13 +45,15 @@ export const supabase = isConfigured
   : null
 
 if (supabase) {
-  let hotel = null
-  try { hotel = localStorage.getItem('randapp.hotel') } catch { /* ignora */ }
-  setSink((row) => supabase.rpc('log_client_error', {
+  setSink((row) => {
+    let hotel = null
+    try { hotel = localStorage.getItem('randapp.hotel') } catch { /* ignora */ }
+    return supabase.rpc('log_client_error', {
     p_kind: row.kind, p_message: row.message, p_detail: row.detail || null, p_route: row.route || null,
     p_version: row.version, p_device: row.device || null, p_hotel: hotel,
     p_cause: row.cause || null, p_hint: row.hint || null,
-  }))
+    })
+  })
 } else {
   logError('config', `Mancano le variabili: ${missingConfig.join(', ')}`)
 }
