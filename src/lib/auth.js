@@ -97,7 +97,7 @@ async function loadContextOnline(hotelId) {
     return null
   }
 
-  const [{ data: profile }, { data: membership, error: memberError }] = await Promise.all([
+  const [{ data: profile, error: profileError }, { data: membership, error: memberError }] = await Promise.all([
     supabase.from('profiles').select('display_name').eq('auth_user_id', user.id).maybeSingle(),
     supabase
       .from('hotel_memberships')
@@ -106,7 +106,10 @@ async function loadContextOnline(hotelId) {
       .eq('hotel_id', hotelId)
       .maybeSingle(),
   ])
-  if (memberError && isNetworkError(memberError)) throw fail('Server non raggiungibile', memberError)
+  for (const error of [profileError, memberError]) {
+    if (error && isNetworkError(error)) throw fail('Server non raggiungibile', error)
+    if (error) throw error
+  }
   if (!membership?.active) return null
 
   const { data: perms, error: permError } = await supabase
@@ -114,6 +117,7 @@ async function loadContextOnline(hotelId) {
     .select('permission')
     .eq('role', membership.role)
   if (permError && isNetworkError(permError)) throw fail('Server non raggiungibile', permError)
+  if (permError) throw permError
 
   return {
     userId: user.id,
@@ -199,7 +203,7 @@ export function onSessionLost(callback) {
 export async function verifySession() {
   const { data, error } = await supabase.auth.getUser()
   if (data?.user) return true
-  if (error && /session|jwt|token|403|401/i.test(`${error.status} ${error.code} ${error.message}`)) {
+  if (error && !isNetworkError(error) && /session_not_found|refresh_token_not_found|refresh_token_already_used|bad_jwt|session expired|invalid refresh token/i.test(`${error.code} ${error.message}`)) {
     await supabase.auth.signOut({ scope: 'local' }).catch(() => {})
     return false
   }

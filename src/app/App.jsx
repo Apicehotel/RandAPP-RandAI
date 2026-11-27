@@ -1,5 +1,5 @@
 import { onBecameVisible } from '../lib/visibility.js'
-import { Suspense, useEffect, useState } from 'react'
+import { Component, Suspense, useEffect, useState } from 'react'
 import { isConfigured, missingConfig } from '../lib/supabase.js'
 import { canResumeOffline, hasActiveSession, loadContext, onSessionLost, verifySession } from '../lib/auth.js'
 import { lazyWithRetry } from '../lib/lazy-retry.js'
@@ -11,6 +11,7 @@ import Login from '../screens/Login.jsx'
 import Recover from '../screens/Recover.jsx'
 const TechnicianPortal = lazyWithRetry(() => import('../screens/TechnicianPortal.jsx'))
 import { LocalErrors } from '../screens/ErrorLog.jsx'
+import { logError } from '../lib/errorlog.js'
 import { Spinner } from '../ui/kit.jsx'
 
 // Ogni schermata si scarica solo quando la apri.
@@ -54,6 +55,16 @@ const Sensors = lazyWithRetry(() => import('../screens/Sensors.jsx'))
 const SensorNew = lazyWithRetry(() => import('../screens/SensorNew.jsx'))
 const Technicians = lazyWithRetry(() => import('../screens/Technicians.jsx'))
 const RandAI = lazyWithRetry(loadRandAI)
+
+class ScreenBoundary extends Component {
+  state = { failed: false }
+  static getDerivedStateFromError() { return { failed: true } }
+  componentDidCatch(error, info) { logError('disegno', error, info?.componentStack) }
+  render() {
+    if (!this.state.failed) return this.props.children
+    return <div className="page"><p>Impossibile aprire questa schermata.</p><button className="btn" onClick={() => this.setState({ failed: false })}>Riprova</button><a href="#/home">Torna alla Home</a></div>
+  }
+}
 
 const HOTEL_KEY = 'randapp.hotel'
 const readHotel = () => {
@@ -286,6 +297,7 @@ export default function App() {
       onSwitchHotel={() => { writeHotel(null); setCtx(null) }}
       onChangeHotel={changeHotel}
     >
+      <ScreenBoundary key={JSON.stringify([ctx.userId, ctx.hotelId, route])}>
       <Suspense fallback={<Spinner />}>
         <Screen
           route={route}
@@ -294,6 +306,7 @@ export default function App() {
           onSwitchHotel={() => { writeHotel(null); setCtx(null) }}
         />
       </Suspense>
+      </ScreenBoundary>
     </Shell>
   )
 }

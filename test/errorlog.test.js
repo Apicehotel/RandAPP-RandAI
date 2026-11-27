@@ -59,7 +59,7 @@ test('classify: di chi è la causa', () => {
   assert.equal(c({ kind: 'accesso', message: 'login → 401: Utente o PIN non validi', status: 401 }).cause, 'utente')
   assert.equal(c({ kind: 'accesso', message: 'login → 429: Troppi tentativi. Riprova più tardi.', status: 429 }).cause, 'utente')
   assert.equal(c({ kind: 'rete', message: 'POST /rest/v1/issues → 403', detail: '{"code":"42501","message":"permission denied"}', status: 403 }).cause, 'utente')
-  assert.equal(c({ kind: 'rete', message: 'GET /rest/v1/issues → 401', detail: '{"message":"JWT expired"}', status: 401 }).cause, 'utente')
+  assert.equal(c({ kind: 'rete', message: 'GET /rest/v1/issues → 401', detail: '{"message":"JWT expired"}', status: 401 }).cause, 'app')
   assert.equal(c({ kind: 'rete', message: 'POST /rest/v1/issues → 409', detail: '{"code":"23505"}', status: 409 }).cause, 'utente')
   assert.equal(c({ kind: 'rete', message: 'GET /rest/v1/x → 500', status: 500 }).cause, 'app')
   assert.equal(c({ kind: 'rete', message: 'GET /rest/v1/x → 400', detail: '{"code":"42703","message":"column x does not exist"}', status: 400 }).cause, 'app')
@@ -78,3 +78,9 @@ test('classify: rete che cade con il dispositivo online è "probabile" dispositi
     assert.ok(c(o).hint.length > 10)
   }
 })
+
+ test('cronologia tollera eventi non ancora caricati', async () => {
+ const { issueTimeline } = await import('../src/lib/issue-timeline.js')
+ assert.equal(issueTimeline({ created_at: '2026-11-27' }, null).length, 1)
+ assert.equal(issueTimeline({}, [null]).length, 1)
+ })

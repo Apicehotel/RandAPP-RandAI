@@ -43,6 +43,7 @@ export default function InterventionNew({ ctx, issueId = null }) {
 
   const submit = async (e) => {
     e.preventDefault()
+    if (!Array.isArray(form.rooms) || form.rooms.length > 300) return setError('Seleziona al massimo 300 camere per intervento')
     if (!form.title.trim()) return setError('Scrivi cosa bisogna fare')
     if (form.zone.trim() && !locationOk(locations || [], form.zone)) return setError("Scegli la zona dall'elenco")
     if (!rangeOk(form.scheduled, form.until)) return setError('La fine deve essere dopo l\'inizio')
