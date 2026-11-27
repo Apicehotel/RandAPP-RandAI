@@ -17,7 +17,7 @@ export function scrubText(text) {
 
 // Testo di ricerca da una segnalazione in scrittura (titolo + dettagli + categoria).
 export const queryFrom = ({ title = '', description = '', category = '' } = {}) =>
-  [title, description, category].map((s) => String(s).trim()).filter(Boolean).join(' ').slice(0, 400)
+  [title, description, category].map((s) => String(s ?? '').trim()).filter(Boolean).join(' ').slice(0, 400)
 
 export const shouldSearch = (query) => String(query || '').trim().length >= MIN_QUERY_CHARS
 
